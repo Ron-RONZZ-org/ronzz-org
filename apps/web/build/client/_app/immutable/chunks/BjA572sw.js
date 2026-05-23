@@ -1,0 +1,1 @@
+import{d as a}from"./BAgOblYg.js";function u(s,t,e,r="fr"){return{fr:s,eo:t,en:e}[r]}const n=()=>{const s=a;return{page:{subscribe:s.page.subscribe},navigating:{subscribe:s.navigating.subscribe},updated:s.updated}},b={subscribe(s){return n().page.subscribe(s)}};export{b as p,u as t};
