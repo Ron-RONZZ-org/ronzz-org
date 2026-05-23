@@ -15,12 +15,12 @@
     return currentPath.startsWith(linkHref)
   }
 
-  const links = [
+  const links = $derived([
     { href: "/", label: tr_multi("Accueil", "Hejmo", "Home", locale) },
     { href: "/lib", label: "RonLib" },
     { href: "/stats", label: "RonStats" },
     { href: "/encik", label: "RonEncik" },
-  ]
+  ])
 </script>
 
 <nav class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
