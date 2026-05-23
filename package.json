@@ -1,0 +1,37 @@
+{
+  "name": "ronzz-org",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @ronzz/web dev",
+    "build": "pnpm --filter @ronzz/web build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "check": "pnpm --filter @ronzz/web check",
+    "db:migrate:sqlite": "pnpm --filter database db:migrate:sqlite",
+    "db:migrate:pg": "pnpm --filter database db:migrate:pg",
+    "db:seed": "pnpm --filter database db:seed",
+    "clean": "pnpm -r exec rm -rf node_modules dist .svelte-kit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@node-rs/argon2",
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "biome": "^0.3.3",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
+    "vitest": "^4.1.7"
+  }
+}
