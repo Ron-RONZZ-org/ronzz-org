@@ -9,5 +9,5 @@ export { logger, requestLogger } from "./logger"
 export { checkRateLimit, resetRateLimit, resetAllRateLimits } from "./rate-limiter"
 export type { RateLimitConfig } from "./rate-limiter"
 
-export { tr_multi, detectLocale } from "./i18n"
+export { tr_multi, detectLocale, setLocale, getLocale, t } from "./i18n"
 export type { Locale } from "./i18n"

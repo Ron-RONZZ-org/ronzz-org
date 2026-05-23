@@ -6,8 +6,22 @@
   "exports": {
     "./db": "./db.ts",
     "./schema/sqlite/users": "./schema/sqlite/users.ts",
+    "./schema/sqlite/search": "./schema/sqlite/search.ts",
+    "./schema/sqlite/api-tokens": "./schema/sqlite/api-tokens.ts",
+    "./schema/sqlite/resources": "./schema/sqlite/resources.ts",
+    "./schema/sqlite/resource-types": "./schema/sqlite/resource-types.ts",
+    "./schema/sqlite/datasets": "./schema/sqlite/datasets.ts",
+    "./schema/sqlite/datapoints": "./schema/sqlite/datapoints.ts",
+    "./schema/sqlite/articles-metadata": "./schema/sqlite/articles-metadata.ts",
     "./schema/sqlite/index": "./schema/sqlite/index.ts",
     "./schema/pg/users": "./schema/pg/users.ts",
+    "./schema/pg/search": "./schema/pg/search.ts",
+    "./schema/pg/api-tokens": "./schema/pg/api-tokens.ts",
+    "./schema/pg/resources": "./schema/pg/resources.ts",
+    "./schema/pg/resource-types": "./schema/pg/resource-types.ts",
+    "./schema/pg/datasets": "./schema/pg/datasets.ts",
+    "./schema/pg/datapoints": "./schema/pg/datapoints.ts",
+    "./schema/pg/articles-metadata": "./schema/pg/articles-metadata.ts",
     "./schema/pg/index": "./schema/pg/index.ts"
   },
   "scripts": {

@@ -1,0 +1,20 @@
+{
+  "nav.home": "Ĉefpaĝo",
+  "nav.lib": "RonLib",
+  "nav.stats": "RonStats",
+  "nav.encik": "RonEncik",
+  "nav.login": "Ensaluti",
+  "nav.logout": "Elsaluti",
+  "nav.admin": "Administrado",
+  "footer.source": "Fontkodo laŭ permesilo AGPL v3",
+  "search.placeholder": "Serĉi…",
+  "search.button": "Serĉi",
+  "pagination.previous": "Antaŭa",
+  "pagination.next": "Sekva",
+  "pagination.page": "Paĝo {page} el {total}",
+  "error.notFound": "Paĝo ne trovita",
+  "error.unauthorized": "Ne rajtigita",
+  "locale.fr": "Franca",
+  "locale.eo": "Esperanto",
+  "locale.en": "Angla"
+}

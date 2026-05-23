@@ -11,6 +11,9 @@ declare global {
         role: "admin" | "editor"
       }
     }
+    interface PageData {
+      locale: Locale
+    }
   }
 }
 

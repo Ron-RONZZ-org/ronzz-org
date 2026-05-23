@@ -9,6 +9,7 @@ const config = {
     adapter: adapter(),
     prerender: {
       handleHttpError: "warn",
+      handleUnseenRoutes: "warn",
     },
     alias: {
       $ui: "../../packages/@ronzz/ui/src",

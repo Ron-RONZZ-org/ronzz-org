@@ -1,1 +1,8 @@
 export { users, sessions } from "./users"
+export { searchIndex } from "./search"
+export { apiTokens } from "./api-tokens"
+export { resourceTypes } from "./resource-types"
+export { resources } from "./resources"
+export { datasets } from "./datasets"
+export { datapoints } from "./datapoints"
+export { articlesMetadata } from "./articles-metadata"

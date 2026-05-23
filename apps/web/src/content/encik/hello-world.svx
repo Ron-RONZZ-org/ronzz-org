@@ -1,0 +1,17 @@
+---
+slug: hello-world
+title: "Hello World"
+title_fr: "Bonjour le monde"
+description: A first Encik article
+description_fr: Un premier article Encik
+locale: en
+published_at: 2026-05-23
+---
+
+# Hello World
+
+Welcome to RonEncik! This is a sample article written in Markdown.
+
+## Section
+
+Content goes here.

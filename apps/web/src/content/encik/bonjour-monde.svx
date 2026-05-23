@@ -1,0 +1,17 @@
+---
+slug: bonjour-monde
+title: "Bonjour le monde"
+title_en: "Hello World"
+description: Un premier article Encik en français
+description_en: A first Encik article in French
+locale: fr
+published_at: 2026-05-23
+---
+
+# Bonjour le monde
+
+Bienvenue sur RonEncik ! Ceci est un article d'exemple rédigé en Markdown.
+
+## Section
+
+Le contenu se trouve ici.

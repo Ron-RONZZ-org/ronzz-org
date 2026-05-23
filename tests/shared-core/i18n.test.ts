@@ -1,17 +1,25 @@
 import { describe, it, expect } from "vitest"
-import { tr_multi, detectLocale } from "@ronzz/shared-core"
+import { tr_multi, detectLocale, setLocale, getLocale } from "@ronzz/shared-core"
 
 describe("tr_multi", () => {
   it("returns French by default", () => {
+    setLocale("fr")
     expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Bonjour")
   })
 
-  it("returns Esperanto when eo locale is given", () => {
-    expect(tr_multi("Bonjour", "Saluton", "Hello", "eo")).toBe("Saluton")
+  it("returns Esperanto when eo locale is set", () => {
+    setLocale("eo")
+    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Saluton")
   })
 
-  it("returns English when en locale is given", () => {
-    expect(tr_multi("Bonjour", "Saluton", "Hello", "en")).toBe("Hello")
+  it("returns English when en locale is set", () => {
+    setLocale("en")
+    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Hello")
+  })
+
+  it("resets to fr for subsequent calls", () => {
+    setLocale("fr")
+    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Bonjour")
   })
 })
 

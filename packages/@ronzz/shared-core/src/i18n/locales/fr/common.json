@@ -1,0 +1,20 @@
+{
+  "nav.home": "Accueil",
+  "nav.lib": "RonLib",
+  "nav.stats": "RonStats",
+  "nav.encik": "RonEncik",
+  "nav.login": "Connexion",
+  "nav.logout": "Déconnexion",
+  "nav.admin": "Admin",
+  "footer.source": "Code source sous licence AGPL v3",
+  "search.placeholder": "Rechercher…",
+  "search.button": "Rechercher",
+  "pagination.previous": "Précédent",
+  "pagination.next": "Suivant",
+  "pagination.page": "Page {page} sur {total}",
+  "error.notFound": "Page non trouvée",
+  "error.unauthorized": "Non autorisé",
+  "locale.fr": "Français",
+  "locale.eo": "Espéranto",
+  "locale.en": "Anglais"
+}

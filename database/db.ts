@@ -54,6 +54,10 @@ export function getDb() {
 /** Call during shutdown to close DB connections. */
 export async function closeDb(): Promise<void> {
   if (!_db) return
-  // For SQLite, the better-sqlite3 connection is closed via the returned db
+  _db = null
+}
+
+/** Reset the singleton DB connection. Used in test isolation. */
+export function resetDb(): void {
   _db = null
 }

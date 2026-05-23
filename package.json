@@ -14,6 +14,7 @@
     "db:migrate:sqlite": "pnpm --filter database db:migrate:sqlite",
     "db:migrate:pg": "pnpm --filter database db:migrate:pg",
     "db:seed": "pnpm --filter database db:seed",
+    "cli": "pnpm --filter @ronzz/cli start",
     "clean": "pnpm -r exec rm -rf node_modules dist .svelte-kit"
   },
   "engines": {

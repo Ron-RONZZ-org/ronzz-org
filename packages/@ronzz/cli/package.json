@@ -1,0 +1,27 @@
+{
+  "name": "@ronzz/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "bin": {
+    "ronzz": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "yargs": "^17.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,19 +1,32 @@
 <script lang="ts">
+  import type { PageData } from "./$types"
   import { tr_multi } from "@ronzz/shared-core"
-  import { page } from "$app/stores"
-  import type { Locale } from "@ronzz/shared-core"
+  import { Card } from "@ronzz/ui"
 
-  const locale: Locale = $page.data.locale ?? "fr"
+  let { data }: { data: PageData } = $props()
 </script>
 
-<section class="py-12 text-center">
-  <h1 class="mb-4 text-3xl font-bold text-gray-900">RonEncik</h1>
-  <p class="text-lg text-gray-600">
-    {tr_multi(
-      "RonEncik arrive bientôt — une encyclopédie animée des grandes idées.",
-      "RonEncik baldaŭ venos — animita enciklopedio pri grandaj ideoj.",
-      "RonEncik coming soon — an animated encyclopedia of big ideas.",
-      locale,
-    )}
-  </p>
+<section class="py-8">
+  <h1 class="mb-6 text-3xl font-bold text-gray-900">RonEncik</h1>
+
+  {#if data.articles.length === 0}
+    <p class="text-center text-gray-500 py-8">
+      {tr_multi(
+        "Aucun article pour l'instant.",
+        "Neniu artikolo ankoraŭ.",
+        "No articles yet.",
+      )}
+    </p>
+  {:else}
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {#each data.articles as article}
+        <a href="/encik/{article.slug}" class="block no-underline">
+          <Card>
+            <h2 class="text-lg font-semibold text-gray-900">{article.title}</h2>
+            <p class="mt-2 text-sm text-gray-600 line-clamp-3">{article.description}</p>
+          </Card>
+        </a>
+      {/each}
+    </div>
+  {/if}
 </section>

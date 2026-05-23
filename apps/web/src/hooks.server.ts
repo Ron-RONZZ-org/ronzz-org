@@ -1,25 +1,15 @@
-import { randomUUID } from "node:crypto"
 import type { Handle } from "@sveltejs/kit"
-import { logger, requestLogger, checkRateLimit, detectLocale } from "@ronzz/shared-core"
-import type { RateLimitConfig } from "@ronzz/shared-core"
-
-const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
-const apiLimiter: RateLimitConfig = { windowMs: 60_000, max: 60 }
-
-function getClientIp(event: Parameters<Handle>[0]["event"]): string {
-  try {
-    return event.getClientAddress()
-  } catch {
-    return "127.0.0.1"
-  }
-}
+import { logger } from "@ronzz/shared-core"
+import {
+  handleRequestContext,
+  handleRateLimit,
+  handleTokenAuth,
+} from "$lib/server/middleware"
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const requestId = randomUUID().slice(0, 8)
-  const log = requestLogger(requestId)
+  await handleRequestContext(event)
 
-  event.locals.requestId = requestId
-  event.locals.locale = detectLocale(event.request.headers.get("accept-language"))
+  const log = logger.child({ requestId: event.locals.requestId })
 
   log.info(
     {
@@ -30,26 +20,13 @@ export const handle: Handle = async ({ event, resolve }) => {
     "incoming request",
   )
 
-  const ip = getClientIp(event)
+  // Rate limiting
+  const rateLimitResponse = await handleRateLimit(event)
+  if (rateLimitResponse) return rateLimitResponse
 
-  // Rate limiting for login endpoint
-  if (event.url.pathname.startsWith("/lib/login")) {
-    if (!checkRateLimit(`login:${ip}`, loginLimiter)) {
-      log.warn({ ip }, "login rate limit exceeded")
-      return new Response("Trop de tentatives. Réessayez plus tard.", {
-        status: 429,
-        headers: { "Retry-After": "60" },
-      })
-    }
-  }
-
-  // Rate limiting for API routes
-  if (event.url.pathname.startsWith("/stats/api/")) {
-    if (!checkRateLimit(`api:${ip}`, apiLimiter)) {
-      log.warn({ ip }, "API rate limit exceeded")
-      return new Response("Too many requests", { status: 429 })
-    }
-  }
+  // Bearer token auth for /admin/ routes
+  const authResponse = await handleTokenAuth(event)
+  if (authResponse) return authResponse
 
   const response = await resolve(event)
 

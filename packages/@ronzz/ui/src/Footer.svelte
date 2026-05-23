@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { tr_multi } from "@ronzz/shared-core"
   import type { Locale } from "@ronzz/shared-core"
 
   let {
@@ -7,6 +6,11 @@
   }: {
     locale?: Locale
   } = $props()
+
+  function tr(fr: string, eo: string, en: string): string {
+    const map: Record<Locale, string> = { fr, eo, en }
+    return map[locale] ?? fr
+  }
 </script>
 
 <footer class="border-t border-gray-200 bg-gray-50">
@@ -15,11 +19,10 @@
       &copy; {new Date().getFullYear()} Ron &mdash; ronzz.org
     </p>
     <p class="mb-1">
-      {tr_multi(
+      {tr(
         "Ce site est un logiciel libre sous licence AGPL v3.",
         "Ĉi tiu retejo estas libera programaro sub permesilo AGPL v3.",
         "This site is free software under AGPL v3 license.",
-        locale,
       )}
       <a
         href="https://github.com/Ron-RONZZ-org/ronzz-org"
@@ -27,7 +30,7 @@
         target="_blank"
         rel="noopener noreferrer"
       >
-        {tr_multi("Code source", "Fontkodo", "Source code", locale)}
+        {tr("Code source", "Fontkodo", "Source code")}
       </a>
     </p>
   </div>
