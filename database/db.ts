@@ -1,3 +1,5 @@
+import { mkdirSync, existsSync } from "node:fs"
+import { dirname } from "node:path"
 import { drizzle } from "drizzle-orm/better-sqlite3"
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres"
 import Database from "better-sqlite3"
@@ -27,8 +29,14 @@ function createDb() {
     return drizzlePg(pool, { schema: pgSchema })
   }
 
-  const url = process.env.DATABASE_URL ?? "./data/ronzz.db"
+  const url = process.env.DATABASE_URL ?? "./ronzz.db"
   const isMemory = url === ":memory:"
+  if (!isMemory) {
+    const dir = dirname(url)
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true })
+    }
+  }
   const sqlite = new Database(isMemory ? ":memory:" : url)
   if (!isMemory) {
     sqlite.pragma("journal_mode = WAL")

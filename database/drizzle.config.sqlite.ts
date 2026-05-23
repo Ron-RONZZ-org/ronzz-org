@@ -5,6 +5,6 @@ export default defineConfig({
   out: "./migrations/sqlite",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "./data/ronzz.db",
+    url: process.env.DATABASE_URL ?? "./ronzz.db",
   },
 })
