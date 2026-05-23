@@ -46,44 +46,66 @@ If you spot something that shouldn't be and believe that would bother me as well
 | Layer | Choice |
 |---|---|
 | **Framework** | [SvelteKit](https://kit.svelte.dev/) (TypeScript) |
-| **Database** | SQL-based (SQLite dev / PostgreSQL production) via [Drizzle ORM](https://orm.drizzle.team/) |
+| **Database** | SQLite (dev) / PostgreSQL (production) via [Drizzle ORM](https://orm.drizzle.team/) |
 | **Charts** | [D3.js](https://d3js.org/) |
 | **Content** | Markdown via [mdsvex](https://mdsvex.pngwn.io/) |
 | **Package manager** | pnpm (workspaces monorepo) |
-| **CSS** | Tailwind CSS |
-| **Testing** | Vitest + Playwright |
-| **Deployment** | Self-hosted (Ubuntu, 12 GB RAM) |
+| **CSS** | Tailwind CSS v4 |
+| **Linting** | Biome |
+| **Testing** | Vitest |
+| **Deployment** | Self-hosted (Ubuntu, 12 GB RAM) via Docker Compose |
 | **License** | AGPL v3 |
 
 ---
 
-## Architecture
-
-This is a **pnpm monorepo** with the following structure:
+## Project Structure
 
 ```
 ronzz-org/
 ├── apps/
-│   └── web/              # → Main SvelteKit application
-│       └── src/routes/
-│           ├── lib/       # → RonLib pages & API
-│           ├── stats/     # → RonStats pages & API
-│           └── encik/     # → RonEncik pages
+│   └── web/                    # SvelteKit application
+│       └── src/
+│           ├── routes/
+│           │   ├── lib/         # RonLib pages
+│           │   │   ├── login/   # Login form + actions
+│           │   │   └── logout/  # Logout endpoint
+│           │   ├── stats/       # RonStats pages + API
+│           │   │   └── api/v1/  # Versioned API
+│           │   └── encik/       # RonEncik (prerendered)
+│           ├── hooks.server.ts  # Logging, rate limiting, locale
+│           └── app.d.ts         # App types
 ├── packages/
-│   ├── shared-ui/         # Design system (Button, Card, etc.)
-│   └── core-*/            # Domain logic per sub-project
-├── database/              # Drizzle schema, migrations, seeds
-├── scripts/               # Ingestion, backups, utilities
-└── deploy/                # Docker, Caddy/Nginx config
+│   ├── @ronzz/shared-core/      # Result, AppError, logger, rate-limiter, i18n
+│   └── @ronzz/ui/               # Seo, Button, Card, Nav, Footer
+├── database/
+│   ├── schema/
+│   │   ├── sqlite/              # SQLite Drizzle schema
+│   │   └── pg/                  # PostgreSQL Drizzle schema
+│   ├── migrations/              # Auto-generated migrations
+│   ├── seeds/                   # admin-user.ts
+│   ├── db.ts                    # getDb() helper (dual dialect)
+│   └── drizzle.config.*.ts      # Drizzle kit configs
+├── deploy/
+│   ├── Dockerfile               # Multi-stage build
+│   ├── docker-compose.yml       # App + PostgreSQL + Caddy
+│   ├── Caddyfile                # Reverse proxy + security headers
+│   ├── entrypoint.sh            # Wait for PG, migrate, seed, start
+│   └── .env.example
+├── tests/                       # Vitest test suites
+├── .github/workflows/ci.yml     # CI: lint, type-check, test (sqlite + pg), build
+├── biome.json                   # Linter/formatter config
+├── tailwind.config.ts           # Shared Tailwind config
+├── postcss.config.js             # PostCSS with Tailwind + Autoprefixer
+└── vitest.config.ts              # Test runner config
 ```
 
 ### Rendering strategy
 
 | Sub-project | Strategy |
 |---|---|
-| **RonEncik** | Static pre-rendering (prerender) — Markdown → static HTML + client hydration for animations |
-| **RonLib** | Server-side rendering (SSR) — SEO-friendly catalog pages with client-side search |
-| **RonStats** | Server-side rendering (SSR) + API routes — interactive D3.js charts on server-rendered pages |
+| **RonEncik** | Static pre-rendering (`prerender = true`) — Markdown + client hydration |
+| **RonLib** | Server-side rendering (SSR) — SEO-friendly catalog with client search |
+| **RonStats** | Server-side rendering (SSR) + API routes — interactive D3.js charts |
 
 ---
 
@@ -95,15 +117,56 @@ ronzz-org/
 # Install dependencies
 pnpm install
 
+# Run SQLite migration + seed
+pnpm db:migrate:sqlite
+pnpm db:seed
+
 # Start dev server
 pnpm dev
+# → http://localhost:5173
 
 # Run tests
 pnpm test
 
+# Lint & type-check
+pnpm lint
+pnpm check
+
 # Build for production
 pnpm build
 ```
+
+### Docker
+
+```bash
+# Build and start all services
+cd deploy
+docker compose up --build
+# → App: http://localhost:3000
+# → Caddy: http://localhost:80 (with security headers)
+```
+
+---
+
+## Auth
+
+Phase 1 includes a basic session-based auth with:
+- Login at `/lib/login` (seeded admin: `admin@ronzz.org` / `admin123`)
+- Logout at `/lib/logout` (POST)
+- Rate-limited login attempts (5 per minute per IP)
+- Argon2id password hashing
+
+Lucia v3 integration is planned for Phase D refinement.
+
+---
+
+## CI/CD
+
+The CI pipeline (`.github/workflows/ci.yml`) runs on push/PR to `main`:
+1. **lint** — Biome check
+2. **type-check** — svelte-check
+3. **test** — matrix: SQLite + PostgreSQL
+4. **build** — Production build
 
 ---
 

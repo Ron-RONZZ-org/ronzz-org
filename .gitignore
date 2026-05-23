@@ -3,5 +3,6 @@ node_modules/
 dist/
 .svelte-kit/
 database/*.db
+apps/web/build/
 .serena/cache/
 .serena/project.local.yml
