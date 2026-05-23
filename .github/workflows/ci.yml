@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ronzz/web exec svelte-kit sync
+      - run: pnpm --filter @ronzz/web exec svelte-check --tsconfig ./tsconfig.json
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        db: [sqlite, pg]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Test with SQLite
+        if: matrix.db == 'sqlite'
+        run: pnpm test
+
+      - name: Test with PostgreSQL
+        if: matrix.db == 'pg'
+        run: |
+          # Start PostgreSQL service
+          docker run -d --name pg \
+            -e POSTGRES_USER=ronzz \
+            -e POSTGRES_PASSWORD=ronzz \
+            -e POSTGRES_DB=ronzz \
+            -p 5432:5432 \
+            postgres:16-alpine
+          # Wait for PG to be ready
+          sleep 3
+          pg_isready -h localhost -U ronzz -d ronzz || sleep 3
+          DATABASE_URL=postgres://ronzz:ronzz@localhost:5432/ronzz pnpm --filter database db:migrate:pg
+          DATABASE_URL=postgres://ronzz:ronzz@localhost:5432/ronzz pnpm --filter database db:seed
+          DATABASE_URL=postgres://ronzz:ronzz@localhost:5432/ronzz pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ronzz/web build

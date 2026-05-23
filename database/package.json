@@ -1,0 +1,31 @@
+{
+  "name": "database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./db": "./db.ts",
+    "./schema/sqlite/users": "./schema/sqlite/users.ts",
+    "./schema/sqlite/index": "./schema/sqlite/index.ts",
+    "./schema/pg/users": "./schema/pg/users.ts",
+    "./schema/pg/index": "./schema/pg/index.ts"
+  },
+  "scripts": {
+    "db:migrate:sqlite": "drizzle-kit push --config drizzle.config.sqlite.ts",
+    "db:migrate:pg": "drizzle-kit push --config drizzle.config.pg.ts",
+    "db:seed": "tsx seeds/admin-user.ts"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
+    "better-sqlite3": "^11.0.0",
+    "drizzle-orm": "^0.38.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.30.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

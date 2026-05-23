@@ -1,0 +1,8 @@
+node_modules/
+.env
+dist/
+.svelte-kit/
+database/*.db
+apps/web/build/
+.serena/cache/
+.serena/project.local.yml
