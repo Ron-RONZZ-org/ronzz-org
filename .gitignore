@@ -6,3 +6,4 @@ database/*.db
 apps/web/build/
 .serena/cache/
 .serena/project.local.yml
+ronzz-org/
