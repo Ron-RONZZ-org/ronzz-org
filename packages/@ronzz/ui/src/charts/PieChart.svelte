@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte"
   import { pieChart, defaultDimensions } from "@ronzz/ronstats-core/charts"
   import type { Datapoint } from "@ronzz/ronstats-core"
+  import { useContainerWidth } from "./useContainerWidth.svelte.js"
 
   let {
     datapoints,
@@ -13,25 +13,15 @@
     height?: number
   } = $props()
 
-  let container: HTMLDivElement
-  let width = explicitWidth ?? 600
+  let cw = useContainerWidth(explicitWidth)
 
-  onMount(() => {
-    if (explicitWidth) return
-    const ro = new ResizeObserver(([entry]) => {
-      width = entry.contentRect.width
-    })
-    ro.observe(container)
-    return () => ro.disconnect()
-  })
-
-  let dim = $derived(defaultDimensions(width, height))
+  let dim = $derived(defaultDimensions(cw.width, height))
   let result = $derived(pieChart(datapoints, dim))
 
   // Center of the pie
-  let cx = $derived(width / 2)
+  let cx = $derived(cw.width / 2)
   let cy = $derived(height / 2)
-  let radius = $derived(Math.min(width, height) / 2 - 40)
+  let radius = $derived(Math.min(cw.width, height) / 2 - 40)
 
   // Compute SVG arc paths
   let arcs = $derived(
@@ -75,8 +65,8 @@
   ]
 </script>
 
-<div bind:this={container} class="w-full">
-  <svg width={width} height={height} class="overflow-visible">
+<div bind:this={cw.element} class="w-full">
+  <svg width={cw.width} height={height} class="overflow-visible">
     {#each arcs as arc, i}
       <path
         d={arc.path}
@@ -101,7 +91,7 @@
     {/each}
 
     <!-- Legend -->
-    <g transform="translate({Math.max(width - 120, width * 0.75)}, 20)">
+    <g transform="translate({Math.max(cw.width - 120, cw.width * 0.75)}, 20)">
       {#each arcs as arc, i}
         <g transform="translate(0, {i * 20})">
           <rect width="10" height="10" fill={colors[i % colors.length]} rx="2" />
@@ -112,7 +102,7 @@
 
     {#if result.unit}
       <text
-        x={width - 10}
+        x={cw.width - 10}
         y={height - 6}
         text-anchor="end"
         class="fill-gray-400 text-xs"
