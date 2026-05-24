@@ -7,6 +7,7 @@ export const datasetSchema = z.object({
   sourceUrl: z.string().max(1000).default(""),
   license: z.string().max(200).default(""),
   locale: z.enum(["fr", "eo", "en"]).default("fr"),
+  chartType: z.enum(["line", "bar", "pie"]).default("bar"),
   metadata: z.record(z.unknown()).default({}),
 })
 

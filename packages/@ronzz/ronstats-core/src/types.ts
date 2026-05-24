@@ -1,5 +1,7 @@
 import type { Locale } from "@ronzz/shared-core"
 
+export type ChartType = "line" | "bar" | "pie"
+
 export interface Dataset {
   id: string
   title: string
@@ -8,9 +10,11 @@ export interface Dataset {
   sourceUrl: string
   license: string
   locale: Locale
+  chartType: ChartType
   metadata: Record<string, unknown>
   createdAt: string
   updatedAt: string
+  deletedAt: string | null
 }
 
 export interface DatasetInput {
@@ -20,6 +24,7 @@ export interface DatasetInput {
   sourceUrl?: string
   license?: string
   locale?: Locale
+  chartType?: ChartType
   metadata?: Record<string, unknown>
 }
 
