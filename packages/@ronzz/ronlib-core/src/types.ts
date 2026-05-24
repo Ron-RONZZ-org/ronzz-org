@@ -18,6 +18,7 @@ export interface Resource {
   metadata: Record<string, unknown>
   createdAt: string
   updatedAt: string
+  deletedAt: string | null
 }
 
 export interface ResourceInput {

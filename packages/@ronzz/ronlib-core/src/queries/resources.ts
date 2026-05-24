@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
-import { eq, like, or, and, desc, asc } from "drizzle-orm"
+import { eq, like, or, and, desc, asc, isNull, isNotNull } from "drizzle-orm"
 import * as sqliteSchema from "database/schema/sqlite/index"
 import type { Resource, ResourceInput } from "../types"
 
@@ -22,7 +22,7 @@ export function listResources(
   db: BetterSQLite3Database<typeof sqliteSchema>,
   options: ListOptions = {},
 ): { resources: Resource[]; total: number } {
-  const conditions = []
+  const conditions = [isNull(sqliteSchema.resources.deletedAt)]
 
   if (options.typeId) {
     conditions.push(eq(sqliteSchema.resources.typeId, options.typeId))
@@ -76,7 +76,9 @@ export function getResource(
   return db
     .select()
     .from(sqliteSchema.resources)
-    .where(eq(sqliteSchema.resources.id, id))
+    .where(
+      and(eq(sqliteSchema.resources.id, id), isNull(sqliteSchema.resources.deletedAt)),
+    )
     .get() as Resource | undefined
 }
 
@@ -109,10 +111,51 @@ export function createResource(
     metadata: input.metadata ?? {},
     createdAt: now,
     updatedAt: now,
+    deletedAt: null,
   }
 }
 
+/** Soft-delete a resource by setting deletedAt. */
 export function deleteResource(
+  db: BetterSQLite3Database<typeof sqliteSchema>,
+  id: string,
+): boolean {
+  const result = db
+    .update(sqliteSchema.resources)
+    .set({ deletedAt: new Date().toISOString() })
+    .where(
+      and(eq(sqliteSchema.resources.id, id), isNull(sqliteSchema.resources.deletedAt)),
+    )
+    .run()
+  return result.changes > 0
+}
+
+/** List soft-deleted (trashed) resources. */
+export function listTrashResources(
+  db: BetterSQLite3Database<typeof sqliteSchema>,
+): Resource[] {
+  return db
+    .select()
+    .from(sqliteSchema.resources)
+    .where(isNotNull(sqliteSchema.resources.deletedAt))
+    .all() as Resource[]
+}
+
+/** Restore a soft-deleted resource. */
+export function restoreResource(
+  db: BetterSQLite3Database<typeof sqliteSchema>,
+  id: string,
+): boolean {
+  const result = db
+    .update(sqliteSchema.resources)
+    .set({ deletedAt: null })
+    .where(eq(sqliteSchema.resources.id, id))
+    .run()
+  return result.changes > 0
+}
+
+/** Permanently delete a resource. */
+export function hardDeleteResource(
   db: BetterSQLite3Database<typeof sqliteSchema>,
   id: string,
 ): boolean {
