@@ -181,3 +181,20 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 **Source code**: [GitHub](https://github.com/Ron-RONZZ-org/ronzz-org)
+
+---
+
+## Documentation
+
+Inline documentation is available in the `docs/` directory:
+
+| File | Audience | Contents |
+|---|---|---|
+| [`docs/admin-guide.md`](docs/admin-guide.md) | Editors & admins | Deploy, login, content management, CLI, backup, monitoring |
+
+You can read these files directly:
+
+- **In your terminal:** `cat docs/admin-guide.md` or `less docs/admin-guide.md`
+- **In VS Code:** Cmd+P → type the filename
+- **On GitHub:** Browse the [`docs/`](docs/) directory on the repo
+- **Rendered HTML:** Open the raw Markdown on GitHub or use any Markdown viewer (`grip`, `glow`, `marked`)
