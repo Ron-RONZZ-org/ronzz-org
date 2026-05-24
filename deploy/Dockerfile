@@ -35,7 +35,6 @@ RUN chmod +x /entrypoint.sh
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV DATABASE_URL=postgres://ronzz:ronzz@db:5432/ronzz
 
 EXPOSE 3000
 
