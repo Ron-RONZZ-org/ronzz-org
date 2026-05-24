@@ -5,6 +5,7 @@
   import { page } from "$app/stores"
 
   let { data }: { data: PageData } = $props()
+  const locale = data.locale
 
   let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>
@@ -20,7 +21,7 @@
 
 <div class="mx-auto max-w-5xl">
   <a href="/stats" class="text-blue-600 hover:underline mb-4 inline-block">
-    &larr; {tr_multi("Retour aux jeux de données", "Reiri al datumaroj", "Back to datasets")}
+    &larr; {tr_multi(locale, "Retour aux jeux de données", "Reiri al datumaroj", "Back to datasets")}
   </a>
 
   <h1 class="text-3xl font-bold mb-2">{data.dataset.title}</h1>
@@ -28,7 +29,7 @@
 
   {#if data.dataset.source}
     <p class="text-sm text-gray-500 mb-6">
-      {tr_multi("Source", "Fonto", "Source")}: {data.dataset.source}
+      {tr_multi(locale, "Source", "Fonto", "Source")}: {data.dataset.source}
       {#if data.dataset.sourceUrl}
         (<a href={data.dataset.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{data.dataset.sourceUrl}</a>)
       {/if}
@@ -39,7 +40,7 @@
   {#if data.datapoints.length > 0}
     <div class="mb-8 rounded-lg border border-gray-200 bg-white p-4">
       <h2 class="mb-4 text-lg font-semibold text-gray-700">
-        {tr_multi("Visualisation", "Videbligo", "Visualization")}
+        {tr_multi(locale, "Visualisation", "Videbligo", "Visualization")}
       </h2>
       {#if data.dataset.chartType === "line"}
         <LineChart datapoints={data.datapoints} />
@@ -54,22 +55,22 @@
   <!-- Data table -->
   <div class="overflow-x-auto">
     <h2 class="mb-2 text-lg font-semibold text-gray-700">
-      {tr_multi("Données brutes", "Krudaj datenoj", "Raw data")}
+      {tr_multi(locale, "Données brutes", "Krudaj datenoj", "Raw data")}
     </h2>
     <table class="w-full border-collapse border border-gray-300">
       <thead>
         <tr class="bg-gray-100">
           <th class="border border-gray-300 px-4 py-2 text-left">
-            {tr_multi("Dimension", "Dimensio", "Dimension")}
+            {tr_multi(locale, "Dimension", "Dimensio", "Dimension")}
           </th>
           <th class="border border-gray-300 px-4 py-2 text-right">
-            {tr_multi("Valeur", "Valoro", "Value")}
+            {tr_multi(locale, "Valeur", "Valoro", "Value")}
           </th>
           <th class="border border-gray-300 px-4 py-2 text-right">
-            {tr_multi("Unité", "Unuo", "Unit")}
+            {tr_multi(locale, "Unité", "Unuo", "Unit")}
           </th>
           <th class="border border-gray-300 px-4 py-2 text-right">
-            {tr_multi("Année", "Jaro", "Year")}
+            {tr_multi(locale, "Année", "Jaro", "Year")}
           </th>
         </tr>
       </thead>

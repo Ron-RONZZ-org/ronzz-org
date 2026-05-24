@@ -4,6 +4,7 @@
   import { Card } from "@ronzz/ui"
 
   let { data }: { data: PageData } = $props()
+  const locale = data.locale
 </script>
 
 <section class="py-8">
@@ -11,7 +12,7 @@
 
   {#if data.articles.length === 0}
     <p class="text-center text-gray-500 py-8">
-      {tr_multi(
+      {tr_multi(locale,
         "Aucun article pour l'instant.",
         "Neniu artikolo ankoraŭ.",
         "No articles yet.",

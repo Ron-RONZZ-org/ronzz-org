@@ -1,5 +1,6 @@
 import type { RequestHandler } from "./$types"
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
+import { isNull } from "drizzle-orm"
 import { getDb } from "database/db"
 import type * as sqliteSchema from "database/schema/sqlite/index"
 
@@ -23,10 +24,11 @@ export const GET: RequestHandler = async () => {
   try {
     const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
 
-    // Dynamic datasets
+    // Dynamic datasets (exclude soft-deleted)
     const datasets = db
       .select({ id: sqliteSchema.datasets.id, updatedAt: sqliteSchema.datasets.updatedAt })
       .from(sqliteSchema.datasets)
+      .where(isNull(sqliteSchema.datasets.deletedAt))
       .all() as { id: string; updatedAt: string }[]
     for (const ds of datasets) {
       entries.push({

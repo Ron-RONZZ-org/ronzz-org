@@ -3,6 +3,7 @@
   import { tr_multi } from "@ronzz/shared-core"
 
   let { data }: { data: PageData } = $props()
+  const locale = data.locale
 </script>
 
 <svelte:head>
@@ -12,7 +13,7 @@
 
 <div class="mx-auto max-w-3xl">
   <a href="/lib" class="text-blue-600 hover:underline mb-4 inline-block">
-    &larr; {tr_multi("Retour au catalogue", "Reiri al katalogo", "Back to catalog")}
+    &larr; {tr_multi(locale, "Retour au catalogue", "Reiri al katalogo", "Back to catalog")}
   </a>
 
   <h1 class="text-3xl font-bold mb-4">{data.resource.title}</h1>
@@ -25,7 +26,7 @@
       rel="noopener noreferrer"
       class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
     >
-      {tr_multi("Accéder à la ressource", "Aliri la rimedon", "Access resource")}
+      {tr_multi(locale, "Accéder à la ressource", "Aliri la rimedon", "Access resource")}
     </a>
   {/if}
 </div>

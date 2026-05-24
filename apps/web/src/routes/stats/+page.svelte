@@ -4,6 +4,7 @@
   import { Card } from "@ronzz/ui"
 
   let { data }: { data: PageData } = $props()
+  const locale = data.locale
 </script>
 
 <section class="py-8">
@@ -15,18 +16,18 @@
       <input
         type="text"
         name="q"
-        placeholder={tr_multi("Rechercher des jeux de données…", "Serĉi datumarojn…", "Search datasets…")}
+        placeholder={tr_multi(locale, "Rechercher des jeux de données…", "Serĉi datumarojn…", "Search datasets…")}
         class="flex-1 rounded border border-gray-300 px-4 py-2"
       />
       <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-        {tr_multi("Rechercher", "Serĉi", "Search")}
+        {tr_multi(locale, "Rechercher", "Serĉi", "Search")}
       </button>
     </div>
   </form>
 
   {#if data.datasets.length === 0}
     <p class="text-center text-gray-500 py-8">
-      {tr_multi(
+      {tr_multi(locale,
         "Aucun jeu de données trouvé.",
         "Neniu datumararo trovita.",
         "No datasets found.",
@@ -56,18 +57,18 @@
           href="/stats?page={data.page - 1}"
           class="text-sm text-blue-600 hover:underline"
         >
-          &larr; {tr_multi("Précédent", "Antaŭa", "Previous")}
+          &larr; {tr_multi(locale, "Précédent", "Antaŭa", "Previous")}
         </a>
       {/if}
       <span class="text-sm text-gray-500">
-        {tr_multi("pagination.page", { page: data.page, total: data.totalPages })}
+        {tr_multi(locale, "pagination.page", { page: data.page, total: data.totalPages })}
       </span>
       {#if data.page < data.totalPages}
         <a
           href="/stats?page={data.page + 1}"
           class="text-sm text-blue-600 hover:underline"
         >
-          {tr_multi("Suivant", "Sekva", "Next")} &rarr;
+          {tr_multi(locale, "Suivant", "Sekva", "Next")} &rarr;
         </a>
       {/if}
     </div>

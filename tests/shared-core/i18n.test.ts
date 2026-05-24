@@ -1,25 +1,27 @@
 import { describe, it, expect } from "vitest"
-import { tr_multi, detectLocale, setLocale, getLocale } from "@ronzz/shared-core"
+import { tr_multi, detectLocale } from "@ronzz/shared-core"
 
 describe("tr_multi", () => {
-  it("returns French by default", () => {
-    setLocale("fr")
-    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Bonjour")
+  it("returns French when fr locale is passed", () => {
+    expect(tr_multi("fr", "Bonjour", "Saluton", "Hello")).toBe("Bonjour")
   })
 
-  it("returns Esperanto when eo locale is set", () => {
-    setLocale("eo")
-    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Saluton")
+  it("returns Esperanto when eo locale is passed", () => {
+    expect(tr_multi("eo", "Bonjour", "Saluton", "Hello")).toBe("Saluton")
   })
 
-  it("returns English when en locale is set", () => {
-    setLocale("en")
-    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Hello")
+  it("returns English when en locale is passed", () => {
+    expect(tr_multi("en", "Bonjour", "Saluton", "Hello")).toBe("Hello")
   })
 
-  it("resets to fr for subsequent calls", () => {
-    setLocale("fr")
-    expect(tr_multi("Bonjour", "Saluton", "Hello")).toBe("Bonjour")
+  it("supports key-based lookup with locale", () => {
+    expect(tr_multi("en", "nav.home")).toBe("Home")
+  })
+
+  it("supports key-based lookup with template vars", () => {
+    expect(tr_multi("en", "pagination.page", { page: 1, total: 5 })).toBe(
+      "Page 1 of 5",
+    )
   })
 })
 

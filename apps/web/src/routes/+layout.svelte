@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Seo, Nav, Footer } from "@ronzz/ui"
   import type { Locale } from "@ronzz/shared-core"
-  import { setLocale } from "@ronzz/shared-core"
   import "@ronzz/ui/app.css"
   import { page } from "$app/stores"
   import { webSiteSchema } from "@ronzz/shared-core"
@@ -13,11 +12,6 @@
     children?: import("svelte").Snippet
     data: { locale: Locale }
   } = $props()
-
-  // Sync the i18n module locale with the server-detected locale
-  $effect(() => {
-    setLocale(data.locale)
-  })
 
   let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>

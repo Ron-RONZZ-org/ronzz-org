@@ -3,13 +3,19 @@ import type { RequestHandler } from "./$types"
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
 import type * as sqliteSchema from "database/schema/sqlite/index"
-import { listDatapoints, createDatapoint, bulkCreateDatapoints } from "@ronzz/ronstats-core"
+import { listDatapoints, countDatapoints, createDatapoint, bulkCreateDatapoints } from "@ronzz/ronstats-core"
 import { datapointSchema } from "@ronzz/ronstats-core"
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, url }) => {
   const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const datapoints = listDatapoints(db, params.uuid)
-  return json({ datapoints })
+
+  const limit = Math.min(Number(url.searchParams.get("limit")) || 1000, 10000)
+  const offset = Number(url.searchParams.get("offset")) || 0
+
+  const datapoints = await listDatapoints(db, params.uuid, { limit, offset })
+  const total = await countDatapoints(db, params.uuid)
+
+  return json({ datapoints, pagination: { limit, offset, total } })
 }
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {

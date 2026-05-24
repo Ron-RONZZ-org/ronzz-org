@@ -9,7 +9,7 @@ export { logger, requestLogger } from "./logger"
 export { checkRateLimit, resetRateLimit, resetAllRateLimits } from "./rate-limiter"
 export type { RateLimitConfig } from "./rate-limiter"
 
-export { tr_multi, detectLocale, setLocale, getLocale, t } from "./i18n"
+export { tr_multi, detectLocale, t } from "./i18n"
 export type { Locale } from "./i18n"
 
 export { libSchema, statsSchema, encikSchema, webSiteSchema } from "./seo/index"
