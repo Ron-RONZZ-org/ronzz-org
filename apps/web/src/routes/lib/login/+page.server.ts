@@ -30,6 +30,18 @@ export const actions: Actions = {
       return fail(401, { message: "Invalid email or password." })
     }
 
+    // Check if password change is required
+    if (user.passwordChangeRequired) {
+      cookies.set("pw_reset_user", user.id, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 10, // 10 minutes
+      })
+      redirect(303, "/lib/change-password")
+    }
+
     // Basic session: set a cookie with user ID (will be replaced by Lucia in Phase D)
     const sessionId = crypto.randomUUID()
     cookies.set("session", sessionId, {
