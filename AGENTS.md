@@ -72,7 +72,7 @@ ronzz-org/
 │                   ├── +layout.svelte
 │                   └── +page.svelte  # RonEncik placeholder
 ├── packages/
-│   ├── @ronzz/shared-core/     # Result<T,E>, AppError, logger, rate-limiter, i18n, JSON-LD helpers
+│   ├── @ronzz/shared-core/     # Result<T,E>, tryResult(), AppError, logger, rate-limiter, i18n, JSON-LD helpers
 │   ├── @ronzz/ronstats-core/   # Dataset/datapoint queries, validation, D3 chart renderers
 │   ├── @ronzz/ui/              # Seo, Button, Card, Nav, Footer, LineChart, BarChart, PieChart, app.css
 │   ├── @ronzz/cli/             # CLI tool (yargs) — token, user, resource, dataset, article, search + trash/restore/purge
