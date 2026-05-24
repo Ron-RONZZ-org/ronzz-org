@@ -72,7 +72,7 @@ ronzz-org/
 │                   ├── +layout.svelte
 │                   └── +page.svelte  # RonEncik placeholder
 ├── packages/
-│   ├── @ronzz/shared-core/     # Result<T,E>, tryResult(), AppError, logger, rate-limiter (closeRateLimiter), i18n, JSON-LD helpers
+│   ├── @ronzz/shared-core/     # Result<T,E>, tryResult(), AppError, logger, rate-limiter (closeRateLimiter), i18n (toLocale), TtlCache, JSON-LD helpers
 │   ├── @ronzz/ronstats-core/   # Dataset/datapoint queries, validation, D3 chart renderers
 │   ├── @ronzz/ui/              # Seo, Button, Card, Nav, Footer, LineChart, BarChart, PieChart, app.css
 │   ├── @ronzz/cli/             # CLI tool (yargs) — token, user, resource, dataset, article, search + trash/restore/purge
@@ -83,7 +83,8 @@ ronzz-org/
 │   ├── schema/
 │   │   ├── sqlite/             # SQLite dialect (9 tables)
 │   │   └── pg/                 # PostgreSQL dialect (9 tables)
-│   ├── db.ts                   # getDb() — dual-dialect factory
+│   ├── db.ts                   # getDb() — dual-dialect factory (closeDb, resetDb)
+│   ├── db-types.ts             # Database union type (SQLite | PG)
 │   ├── seeds/admin-user.ts     # admin@ronzz.org (ADMIN_PASSWORD env var)
 │   └── drizzle.config.*.ts     # SQLite + PG Drizzle kit configs
 ├── deploy/
@@ -103,7 +104,8 @@ ronzz-org/
 │   ├── auth/
 │   │   └── middleware.test.ts   # Session + token auth validation
 │   ├── shared-core/
-│   │   ├── result.test.ts
+│   │   ├── result.test.ts  
+│   │   ├── result-utils.test.ts
 │   │   ├── i18n.test.ts
 │   │   └── rate-limiter.test.ts
 │   └── database/               # Future DB tests
