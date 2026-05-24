@@ -1,13 +1,20 @@
 <script lang="ts">
   import type { PageData } from "./$types"
-  import { tr_multi } from "@ronzz/shared-core"
+  import { tr_multi, statsSchema } from "@ronzz/shared-core"
+  import { page } from "$app/stores"
 
   let { data }: { data: PageData } = $props()
+
+  let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>
 
 <svelte:head>
   <title>{data.dataset.title} | RonStats</title>
   <meta name="description" content={data.dataset.description} />
+  <link rel="canonical" href={canonical} />
+  <script type="application/ld+json">
+    {JSON.stringify(statsSchema(data.dataset.title, data.dataset.description, canonical))}
+  </script>
 </svelte:head>
 
 <div class="mx-auto max-w-3xl">

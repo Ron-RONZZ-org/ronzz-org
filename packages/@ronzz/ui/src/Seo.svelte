@@ -4,11 +4,15 @@
     description,
     ogImage,
     robots = "index, follow",
+    jsonld,
+    canonical,
   }: {
     title: string
     description: string
     ogImage?: string
     robots?: string
+    jsonld?: Record<string, unknown> | Record<string, unknown>[]
+    canonical?: string
   } = $props()
 </script>
 
@@ -20,5 +24,13 @@
   <meta property="og:description" content={description} />
   {#if ogImage}
     <meta property="og:image" content={ogImage} />
+  {/if}
+  {#if canonical}
+    <link rel="canonical" href={canonical} />
+  {/if}
+  {#if jsonld}
+    <script type="application/ld+json">
+      {JSON.stringify(jsonld)}
+    </script>
   {/if}
 </svelte:head>
