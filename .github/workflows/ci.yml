@@ -18,6 +18,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - name: pnpm audit
+        run: pnpm audit --audit-level=critical
 
   type-check:
     runs-on: ubuntu-latest

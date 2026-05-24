@@ -9,7 +9,9 @@ import { apiTokens as apiTokensTable } from "database/schema/sqlite/api-tokens"
 import { users as usersTable } from "database/schema/sqlite/users"
 
 const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
+const searchLimiter: RateLimitConfig = { windowMs: 60_000, max: 30 }
 const apiLimiter: RateLimitConfig = { windowMs: 60_000, max: 60 }
+const defaultLimiter: RateLimitConfig = { windowMs: 60_000, max: 120 }
 
 function getClientIp(event: Parameters<Handle>[0]["event"]): string {
   try {
@@ -30,7 +32,7 @@ export async function handleRequestContext(
   )
 }
 
-/** Rate-limit login and API endpoints. */
+/** Rate-limit login, search, API, and all unauthenticated endpoints. */
 export async function handleRateLimit(
   event: Parameters<Handle>[0]["event"],
 ): Promise<Response | null> {
@@ -44,12 +46,26 @@ export async function handleRateLimit(
         headers: { "Retry-After": "60" },
       })
     }
+    return null
+  }
+
+  if (path.includes("/search")) {
+    if (!checkRateLimit(`search:${ip}`, searchLimiter)) {
+      return new Response("Too many search requests", { status: 429 })
+    }
+    return null
   }
 
   if (path.startsWith("/stats/api/") || path.startsWith("/api/")) {
     if (!checkRateLimit(`api:${ip}`, apiLimiter)) {
       return new Response("Too many requests", { status: 429 })
     }
+    return null
+  }
+
+  // Catch-all rate limit for unauthenticated browsing
+  if (!checkRateLimit(`default:${ip}`, defaultLimiter)) {
+    return new Response("Too many requests", { status: 429 })
   }
 
   return null
