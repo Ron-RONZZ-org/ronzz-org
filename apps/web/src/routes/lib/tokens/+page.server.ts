@@ -1,45 +1,27 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { eq, and, isNull } from "drizzle-orm"
 import { createHash, randomUUID, randomBytes } from "node:crypto"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import { sessions } from "database/schema/sqlite/users"
-import { apiTokens } from "database/schema/sqlite/api-tokens"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import { schema } from "database/schema/proxy"
 import type { Actions, PageServerLoad } from "./$types"
 
-function getAuthedUserId(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
-  sessionId: string | undefined,
-): string | null {
-  if (!sessionId) return null
-  const session = db
-    .select({ userId: sessions.userId, expiresAt: sessions.expiresAt })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .get()
-  if (!session || session.expiresAt < Date.now()) return null
-  return session.userId
-}
+export const load: PageServerLoad = async ({ locals }) => {
+  if (!locals.user) redirect(303, "/lib/login")
 
-export const load: PageServerLoad = async ({ cookies }) => {
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const userId = getAuthedUserId(db, cookies.get("session"))
-  if (!userId) redirect(303, "/lib/login")
-
-  const tokens = db
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = getDb() as any
+  const tokens = await db
     .select({
-      id: apiTokens.id,
-      name: apiTokens.name,
-      prefix: apiTokens.prefix,
-      createdAt: apiTokens.createdAt,
-      lastUsedAt: apiTokens.lastUsedAt,
-      revokedAt: apiTokens.revokedAt,
+      id: schema.apiTokens.id,
+      name: schema.apiTokens.name,
+      prefix: schema.apiTokens.prefix,
+      createdAt: schema.apiTokens.createdAt,
+      lastUsedAt: schema.apiTokens.lastUsedAt,
+      revokedAt: schema.apiTokens.revokedAt,
     })
-    .from(apiTokens)
-    .where(eq(apiTokens.userId, userId))
-    .orderBy(apiTokens.createdAt)
-    .all()
+    .from(schema.apiTokens)
+    .where(eq(schema.apiTokens.userId, locals.user.id))
+    .orderBy(schema.apiTokens.createdAt)
 
   return { tokens }
 }
@@ -55,11 +37,11 @@ function generatePrefix(): string {
 }
 
 export const actions: Actions = {
-  create: async ({ cookies, request }) => {
-    const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-    const userId = getAuthedUserId(db, cookies.get("session"))
-    if (!userId) return fail(401, { message: "Not authenticated" })
+  create: async ({ locals, request }) => {
+    if (!locals.user) return fail(401, { message: "Not authenticated" })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getDb() as any
     const formData = await request.formData()
     const name = formData.get("name")?.toString().trim()
 
@@ -72,14 +54,14 @@ export const actions: Actions = {
     const prefix = generatePrefix()
 
     const id = randomUUID()
-    db.insert(apiTokens).values({
+    await db.insert(schema.apiTokens).values({
       id,
-      userId,
+      userId: locals.user.id,
       name,
       tokenHash,
       prefix,
       createdAt: new Date().toISOString(),
-    }).run()
+    })
 
     return {
       created: true,
@@ -90,11 +72,11 @@ export const actions: Actions = {
     }
   },
 
-  revoke: async ({ cookies, request }) => {
-    const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-    const userId = getAuthedUserId(db, cookies.get("session"))
-    if (!userId) return fail(401, { message: "Not authenticated" })
+  revoke: async ({ locals, request }) => {
+    if (!locals.user) return fail(401, { message: "Not authenticated" })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getDb() as any
     const formData = await request.formData()
     const tokenId = formData.get("id")?.toString()
 
@@ -103,20 +85,25 @@ export const actions: Actions = {
     }
 
     // Ensure the token belongs to this user
-    const found = db
-      .select({ id: apiTokens.id })
-      .from(apiTokens)
-      .where(and(eq(apiTokens.id, tokenId), eq(apiTokens.userId, userId)))
-      .get()
+    const tokenRows = await db
+      .select({ id: schema.apiTokens.id })
+      .from(schema.apiTokens)
+      .where(
+        and(
+          eq(schema.apiTokens.id, tokenId),
+          eq(schema.apiTokens.userId, locals.user.id),
+        ),
+      )
+    const found = tokenRows[0]
 
     if (!found) {
       return fail(404, { message: "Token not found." })
     }
 
-    db.update(apiTokens)
+    await db
+      .update(schema.apiTokens)
       .set({ revokedAt: new Date().toISOString() })
-      .where(eq(apiTokens.id, tokenId))
-      .run()
+      .where(eq(schema.apiTokens.id, tokenId))
 
     return { revoked: true }
   },

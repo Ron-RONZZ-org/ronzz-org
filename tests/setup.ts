@@ -1,7 +1,8 @@
-import { beforeEach } from "vitest"
+import { beforeEach, afterEach } from "vitest"
 import { tmpdir } from "node:os"
 import { mkdtempSync } from "node:fs"
 import { join } from "node:path"
+import { closeRateLimiter } from "@ronzz/shared-core"
 
 /**
  * Test isolation fixture — runs before each test.
@@ -17,4 +18,9 @@ beforeEach(() => {
   // Redirect config/cache paths
   process.env.XDG_CONFIG_HOME = join(tmpDir, "config")
   process.env.XDG_DATA_HOME = join(tmpDir, "data")
+})
+
+/** Clean up rate limiter interval handle after each test. */
+afterEach(() => {
+  closeRateLimiter()
 })

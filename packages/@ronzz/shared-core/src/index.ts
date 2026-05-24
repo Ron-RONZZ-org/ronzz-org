@@ -7,7 +7,7 @@ export type { ErrorCode } from "./errors"
 
 export { logger, requestLogger } from "./logger"
 
-export { checkRateLimit, resetRateLimit, resetAllRateLimits } from "./rate-limiter"
+export { checkRateLimit, resetRateLimit, resetAllRateLimits, closeRateLimiter } from "./rate-limiter"
 export type { RateLimitConfig } from "./rate-limiter"
 
 export { tr_multi, detectLocale, t } from "./i18n"

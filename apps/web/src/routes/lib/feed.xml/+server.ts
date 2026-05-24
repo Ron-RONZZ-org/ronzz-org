@@ -1,10 +1,17 @@
 import type { RequestHandler } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { eq, desc, isNull } from "drizzle-orm"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import { schema } from "database/schema/proxy"
 
 const BASE = "https://ronzz.org"
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
 
 export const GET: RequestHandler = async () => {
   const items: {
@@ -15,46 +22,36 @@ export const GET: RequestHandler = async () => {
   }[] = []
 
   try {
-    const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-    // Query the resources table using raw SQL to avoid import issues
-    const rows = db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getDb() as any
+    const rows = await db
       .select({
-        title: sqliteSchema.resources.title,
-        description: sqliteSchema.resources.description,
-        url: sqliteSchema.resources.url,
-        typeSlug: sqliteSchema.resourceTypes.slug,
-        createdAt: sqliteSchema.resources.createdAt,
+        title: schema.resources.title,
+        description: schema.resources.description,
+        url: schema.resources.url,
+        typeSlug: schema.resourceTypes.slug,
+        createdAt: schema.resources.createdAt,
       })
-      .from(sqliteSchema.resources)
+      .from(schema.resources)
       .leftJoin(
-        sqliteSchema.resourceTypes,
-        eq(sqliteSchema.resources.typeId, sqliteSchema.resourceTypes.id),
+        schema.resourceTypes,
+        eq(schema.resources.typeId, schema.resourceTypes.id),
       )
-      .where(isNull(sqliteSchema.resources.deletedAt))
-      .orderBy(desc(sqliteSchema.resources.createdAt))
+      .where(isNull(schema.resources.deletedAt))
+      .orderBy(desc(schema.resources.createdAt))
       .limit(50)
-      .all() as {
-      title: string
-      description: string
-      url: string
-      typeSlug: string
-      createdAt: string
-    }[]
 
     for (const row of rows) {
       items.push({
         title: row.title,
         description: row.description,
         url: row.url,
-        createdAt: row.createdAt,
+        createdAt: String(row.createdAt),
       })
     }
   } catch {
     // DB not available — serve empty feed
   }
-
-  const escaped = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -66,10 +63,10 @@ export const GET: RequestHandler = async () => {
     `    <atom:link href="${BASE}/lib/feed.xml" rel="self" type="application/rss+xml"/>`,
     ...items.map(
       (item) => `    <item>
-      <title>${escaped(item.title)}</title>
-      <description>${escaped(item.description)}</description>
-      <link>${escaped(item.url)}</link>
-      <guid>${escaped(item.url)}</guid>
+      <title>${escapeXml(item.title)}</title>
+      <description>${escapeXml(item.description)}</description>
+      <link>${escapeXml(item.url)}</link>
+      <guid>${escapeXml(item.url)}</guid>
       <pubDate>${new Date(item.createdAt).toUTCString()}</pubDate>
     </item>`,
     ),

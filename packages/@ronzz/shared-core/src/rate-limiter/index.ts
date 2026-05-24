@@ -13,7 +13,28 @@ interface RateLimitEntry {
 // If horizontal scaling is needed, replace with a shared store (Redis or DB).
 const stores = new Map<string, RateLimitEntry>()
 
+// Store the interval handle so it can be cleared in tests
+let _cleanupInterval: ReturnType<typeof setInterval> | null = null
+
+/** Start the periodic cleanup interval (called lazily on first checkRateLimit). */
+function ensureCleanup(): void {
+  if (_cleanupInterval !== null) return
+  _cleanupInterval = setInterval(() => {
+    const now = Date.now()
+    for (const [key, entry] of stores) {
+      if (now > entry.resetAt) {
+        stores.delete(key)
+      }
+    }
+  }, 60_000)
+  // Allow the process to exit even if the interval is still running
+  if (_cleanupInterval && typeof _cleanupInterval === "object" && "unref" in _cleanupInterval) {
+    _cleanupInterval.unref()
+  }
+}
+
 export function checkRateLimit(key: string, config: RateLimitConfig): boolean {
+  ensureCleanup()
   const now = Date.now()
   const entry = stores.get(key)
 
@@ -40,12 +61,11 @@ export function resetAllRateLimits(): void {
   stores.clear()
 }
 
-// Periodic cleanup to prevent memory leak
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, entry] of stores) {
-    if (now > entry.resetAt) {
-      stores.delete(key)
-    }
+/** Clear the cleanup interval and all state (useful in tests to allow clean exit). */
+export function closeRateLimiter(): void {
+  if (_cleanupInterval !== null) {
+    clearInterval(_cleanupInterval)
+    _cleanupInterval = null
   }
-}, 60_000)
+  stores.clear()
+}

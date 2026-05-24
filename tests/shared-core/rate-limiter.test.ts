@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { checkRateLimit, resetAllRateLimits } from "@ronzz/shared-core"
+import { checkRateLimit, resetAllRateLimits, closeRateLimiter } from "@ronzz/shared-core"
 
 describe("rate limiter", () => {
   beforeEach(() => {
@@ -30,4 +30,17 @@ describe("rate limiter", () => {
 
     expect(checkRateLimit("expire-key", config)).toBe(true)
   }, 10_000)
+
+  it("closeRateLimiter clears all state and interval", () => {
+    // First make some entries
+    checkRateLimit("close-key", { windowMs: 60_000, max: 3 })
+    checkRateLimit("close-key-2", { windowMs: 60_000, max: 3 })
+
+    // Close the rate limiter
+    expect(() => closeRateLimiter()).not.toThrow()
+
+    // After close, state is reset — new key should be allowed
+    expect(checkRateLimit("close-key", { windowMs: 60_000, max: 1 })).toBe(true)
+    expect(checkRateLimit("close-key", { windowMs: 60_000, max: 1 })).toBe(false)
+  })
 })

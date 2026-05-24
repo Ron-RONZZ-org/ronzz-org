@@ -1,13 +1,12 @@
 import { json } from "@sveltejs/kit"
 import type { RequestHandler } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import type { Database } from "database/db-types"
 import { listDatapoints, countDatapoints, createDatapoint, bulkCreateDatapoints } from "@ronzz/ronstats-core"
 import { datapointSchema } from "@ronzz/ronstats-core"
 
 export const GET: RequestHandler = async ({ params, url }) => {
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
+  const db = getDb() as Database
 
   const limit = Math.min(Number(url.searchParams.get("limit")) || 1000, 10000)
   const offset = Number(url.searchParams.get("offset")) || 0
@@ -21,7 +20,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 export const POST: RequestHandler = async ({ request, params, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
   const body = await request.json()
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
+  const db = getDb() as Database
 
   // Bulk import
   if (Array.isArray(body)) {
@@ -33,10 +32,7 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
       }
       results.push(parsed.data)
     }
-    const created = bulkCreateDatapoints(
-      db as BetterSQLite3Database<typeof sqliteSchema>,
-      results.map((r) => ({ ...r, datasetId: params.uuid })),
-    )
+    const created = bulkCreateDatapoints(db, results.map((r) => ({ ...r, datasetId: params.uuid })))
     return json({ datapoints: created }, { status: 201 })
   }
 
@@ -45,6 +41,6 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
   if (!parsed.success) {
     return json({ error: parsed.error.flatten() }, { status: 400 })
   }
-  const datapoint = createDatapoint(db as BetterSQLite3Database<typeof sqliteSchema>, parsed.data)
+  const datapoint = createDatapoint(db, parsed.data)
   return json({ datapoint }, { status: 201 })
 }

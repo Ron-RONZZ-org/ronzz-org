@@ -4,6 +4,7 @@ import { logger } from "@ronzz/shared-core"
 import {
   handleRequestContext,
   handleRateLimit,
+  handleSessionAuth,
   handleTokenAuth,
 } from "$lib/server/middleware"
 
@@ -25,6 +26,9 @@ export const handle: Handle = async ({ event, resolve }) => {
   const rateLimitResponse = await handleRateLimit(event)
   if (rateLimitResponse) return rateLimitResponse
 
+  // Session cookie auth (populates event.locals.user for logged-in users)
+  await handleSessionAuth(event)
+
   // Bearer token auth for /admin/ routes
   const authResponse = await handleTokenAuth(event)
   if (authResponse) return authResponse
@@ -33,7 +37,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   const nonce = randomUUID().replace(/-/g, "").slice(0, 16)
   event.locals.nonce = nonce
 
-  const response = await resolve(event, { nonce })
+  const response = await resolve(event)
 
   // Set strict CSP header with nonce
   // NOTE: 'unsafe-inline' intentionally omitted — in a nonce-based policy,

@@ -107,7 +107,6 @@ export function createTestDb(): Database {
       "name" text NOT NULL,
       "token_hash" text NOT NULL,
       "prefix" text NOT NULL,
-      "scopes" text NOT NULL DEFAULT '["admin"]',
       "revoked_at" text,
       "created_at" text NOT NULL,
       "last_used_at" text
