@@ -194,7 +194,7 @@ Inline documentation is available in the `docs/` directory:
 
 You can read these files directly:
 
-- **In your terminal:** `cat docs/admin-guide.md` or `less docs/admin-guide.md`
-- **In VS Code:** Cmd+P → type the filename
-- **On GitHub:** Browse the [`docs/`](docs/) directory on the repo
-- **Rendered HTML:** Open the raw Markdown on GitHub or use any Markdown viewer (`grip`, `glow`, `marked`)
+- **As raw markdown in your terminal:** `cat docs/admin-guide.md` or `less docs/admin-guide.md`
+- **As rendered HTML**
+  - GitHub: Browse the [`docs/`](docs/) directory on the repo
+  - use any Markdown viewer (`grip`, `glow`, `marked`)
