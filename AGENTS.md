@@ -18,7 +18,7 @@ Licensed under **GNU AGPL v3**.
 | Framework | **SvelteKit** (TypeScript, adapter-node) |
 | Rendering | Hybrid (SSG for RonEncik, SSR for RonLib/RonStats) |
 | Database | **SQLite** (dev) / **PostgreSQL** (prod) via **Drizzle ORM** |
-| Charts | **D3.js** |
+| Charts | **D3.js** (renderers in `@ronzz/ronstats-core/charts`, components in `@ronzz/ui`) |
 | Content | **Markdown** via mdsvex |
 | Package manager | **pnpm** (workspaces monorepo) |
 | CSS | **Tailwind CSS v4** |
@@ -40,43 +40,64 @@ ronzz-org/
 │       └── src/
 │           ├── app.html
 │           ├── app.d.ts
-│           ├── hooks.server.ts  # Logging, rate limiting, locale detection
+│           ├── hooks.server.ts  # Logging, rate limiting, nonce CSP, locale detection
 │           ├── hooks.client.ts
 │           └── routes/
-│               ├── +layout.svelte     # Root layout (Nav + Footer)
+│               ├── +layout.svelte     # Root layout (Nav + Footer, canonical URLs, JSON-LD)
 │               ├── +layout.ts         # Universal load (locale fallback)
 │               ├── +layout.server.ts  # Server load (locale from headers)
 │               ├── +page.svelte       # Landing page
+│               ├── api/v1/health/     # Health endpoint (top-level)
+│               ├── sitemap.xml/       # Dynamic sitemap
 │               ├── lib/
-│               │   ├── +page.svelte   # RonLib placeholder
+│               │   ├── +page.svelte   # RonLib search/catalog
+│               │   ├── feed.xml/      # RSS feed
 │               │   ├── login/
 │               │   │   ├── +page.svelte     # Login form
 │               │   │   └── +page.server.ts  # Login form action
 │               │   └── logout/
 │               │       └── +server.ts       # POST logout
 │               ├── stats/
-│               │   ├── +page.svelte         # RonStats placeholder
-│               │   └── api/v1/health/
-│               │       └── +server.ts       # Health endpoint
+│               │   ├── +layout.svelte         # RonStats layout
+│               │   ├── +page.svelte           # RonStats search/catalog
+│               │   ├── [uuid]/
+│               │   │   ├── +page.svelte       # Dataset detail + chart
+│               │   │   └── +page.server.ts
+│               │   └── api/v1/
+│               │       ├── health/            # Legacy health endpoint
+│               │       ├── datasets/
+│               │       └── admin/datasets/    # Admin CRUD + trash/restore/purge
 │               └── encik/
 │                   ├── +layout.ts    # export const prerender = true
+│                   ├── +layout.svelte
 │                   └── +page.svelte  # RonEncik placeholder
 ├── packages/
-│   ├── @ronzz/shared-core/     # Result<T,E>, AppError, logger, rate-limiter, i18n
-│   └── @ronzz/ui/              # Seo, Button, Card, Nav, Footer, app.css
+│   ├── @ronzz/shared-core/     # Result<T,E>, AppError, logger, rate-limiter, i18n, JSON-LD helpers
+│   ├── @ronzz/ronstats-core/   # Dataset/datapoint queries, validation, D3 chart renderers
+│   ├── @ronzz/ui/              # Seo, Button, Card, Nav, Footer, LineChart, BarChart, PieChart, app.css
+│   ├── @ronzz/cli/             # CLI tool (yargs) — token, user, resource, dataset, article, search + trash/restore/purge
+│   ├── @ronzz/search-core/     # Search indexing
+│   ├── @ronzz/ronlib-core/     # Resource queries
+│   ├── @ronzz/ronencik-core/   # Article queries
 ├── database/
 │   ├── schema/
-│   │   ├── sqlite/users.ts     # user + session tables
-│   │   └── pg/users.ts         # Same, PG dialect
+│   │   ├── sqlite/             # SQLite dialect (9 tables)
+│   │   └── pg/                 # PostgreSQL dialect (9 tables)
 │   ├── db.ts                   # getDb() — dual-dialect factory
 │   ├── seeds/admin-user.ts     # admin@ronzz.org / admin123
 │   └── drizzle.config.*.ts     # SQLite + PG Drizzle kit configs
 ├── deploy/
 │   ├── Dockerfile              # Multi-stage build
 │   ├── docker-compose.yml      # App + PostgreSQL 16 + Caddy 2
-│   ├── Caddyfile               # Reverse proxy + CSP/security headers
+│   ├── Caddyfile               # Reverse proxy + HSTS + security headers (CSP in SvelteKit)
 │   ├── entrypoint.sh           # Wait for PG, migrate, seed, start
 │   └── .env.example
+├── scripts/
+│   ├── backup.sh               # pg_dump via docker exec
+│   └── monitoring/
+│       ├── alert.sh            # Shared alert logging
+│       ├── health-check.sh     # Curl health endpoint
+│       └── disk-usage.sh       # df alert on >90%
 ├── tests/
 │   ├── setup.ts                # beforeEach isolation fixture
 │   ├── shared-core/
@@ -84,7 +105,9 @@ ronzz-org/
 │   │   ├── i18n.test.ts
 │   │   └── rate-limiter.test.ts
 │   └── database/               # Future DB tests
-├── .github/workflows/ci.yml    # lint, type-check, test (sqlite+pg), build
+├── .github/workflows/
+│   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
+│   └── deploy.yml              # Build Docker → push ghcr.io → SSH deploy on main push
 ├── biome.json                  # Strict, no semicolons, double quotes
 ├── tailwind.config.ts
 ├── postcss.config.js
@@ -109,6 +132,7 @@ ronzz-org/
 
 - **Dual dialect**: Separate schema trees in `database/schema/{sqlite,pg}/`
 - **UUID PKs**: All user-facing tables use `text("id").primaryKey()` with app-generated UUIDs
+- **Soft-delete**: Tables with `deleted_at` (nullable) — resources, datasets, articles_metadata
 - **Migrations**: `pnpm db:migrate:sqlite` / `pnpm db:migrate:pg`
 - **Seeds**: Run via `pnpm db:seed`
 - **Test isolation**: `DATABASE_URL=:memory:` via `beforeEach` fixture
@@ -132,6 +156,7 @@ ronzz-org/
 | `pnpm db:migrate:sqlite` | Apply SQLite migrations |
 | `pnpm db:migrate:pg` | Apply PG migrations |
 | `pnpm db:seed` | Seed admin user |
+| `pnpm cli` | Run CLI tool (resource, dataset, article, token, user, search) |
 
 ## Agent Instructions
 
@@ -143,6 +168,8 @@ ronzz-org/
 6. Use D3.js for all chart visualizations in RonStats
 7. Ensure AGPL v3 compliance — source link in footer of every page
 8. Do NOT use `@apply` in Svelte `<style>` blocks (Tailwind v4 limitation); use inline utility classes instead
+9. CSP is nonce-based, generated in `hooks.server.ts` — do not set CSP in Caddy's static config
+10. Health endpoint lives at `GET /api/v1/health` (top-level), old route at `/stats/api/v1/health` kept for compat
 
 ---
 

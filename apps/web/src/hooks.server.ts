@@ -1,4 +1,5 @@
 import type { Handle } from "@sveltejs/kit"
+import { randomUUID } from "node:crypto"
 import { logger } from "@ronzz/shared-core"
 import {
   handleRequestContext,
@@ -28,7 +29,27 @@ export const handle: Handle = async ({ event, resolve }) => {
   const authResponse = await handleTokenAuth(event)
   if (authResponse) return authResponse
 
-  const response = await resolve(event)
+  // Generate nonce for CSP
+  const nonce = randomUUID().replace(/-/g, "").slice(0, 16)
+  event.locals.nonce = nonce
+
+  const response = await resolve(event, { nonce })
+
+  // Set strict CSP header with nonce
+  response.headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      `style-src 'self' 'nonce-${nonce}'`,
+      "img-src 'self' data:",
+      "font-src 'self'",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "base-uri 'self'",
+    ].join("; "),
+  )
 
   log.info({ status: response.status }, "response")
 

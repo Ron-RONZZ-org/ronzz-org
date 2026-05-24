@@ -10,4 +10,5 @@ export const articlesMetadata = sqliteTable("article_metadata", {
   publishedAt: text("published_at"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
 })

@@ -13,4 +13,5 @@ export const resources = sqliteTable("resource", {
   metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>().default({}),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
 })

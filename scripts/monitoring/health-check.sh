@@ -1,0 +1,16 @@
+#!/bin/sh
+# Health check — curl the application health endpoint and alert on failure.
+set -e
+
+HEALTH_URL="${HEALTH_URL:-http://localhost:3000/api/v1/health}"
+ALERT_SCRIPT="$(dirname "$0")/alert.sh"
+
+HEALTH=$(curl -sf "$HEALTH_URL" 2>/dev/null || echo "FAIL")
+
+if [ "$HEALTH" = "FAIL" ]; then
+  "$ALERT_SCRIPT" "Health check failed: $HEALTH_URL returned FAIL"
+  exit 1
+fi
+
+echo "$(date -Iseconds) health=ok" >> /var/log/ronzz/health.log
+exit 0

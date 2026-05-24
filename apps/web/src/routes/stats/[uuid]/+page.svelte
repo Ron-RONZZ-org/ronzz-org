@@ -1,16 +1,24 @@
 <script lang="ts">
   import type { PageData } from "./$types"
-  import { tr_multi } from "@ronzz/shared-core"
+  import { tr_multi, statsSchema } from "@ronzz/shared-core"
+  import { LineChart, BarChart, PieChart } from "@ronzz/ui"
+  import { page } from "$app/stores"
 
   let { data }: { data: PageData } = $props()
+
+  let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>
 
 <svelte:head>
   <title>{data.dataset.title} | RonStats</title>
   <meta name="description" content={data.dataset.description} />
+  <link rel="canonical" href={canonical} />
+  <script type="application/ld+json">
+    {JSON.stringify(statsSchema(data.dataset.title, data.dataset.description, canonical))}
+  </script>
 </svelte:head>
 
-<div class="mx-auto max-w-3xl">
+<div class="mx-auto max-w-5xl">
   <a href="/stats" class="text-blue-600 hover:underline mb-4 inline-block">
     &larr; {tr_multi("Retour aux jeux de données", "Reiri al datumaroj", "Back to datasets")}
   </a>
@@ -27,7 +35,27 @@
     </p>
   {/if}
 
+  <!-- Chart section -->
+  {#if data.datapoints.length > 0}
+    <div class="mb-8 rounded-lg border border-gray-200 bg-white p-4">
+      <h2 class="mb-4 text-lg font-semibold text-gray-700">
+        {tr_multi("Visualisation", "Videbligo", "Visualization")}
+      </h2>
+      {#if data.dataset.chartType === "line"}
+        <LineChart datapoints={data.datapoints} />
+      {:else if data.dataset.chartType === "bar"}
+        <BarChart datapoints={data.datapoints} />
+      {:else if data.dataset.chartType === "pie"}
+        <PieChart datapoints={data.datapoints} />
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Data table -->
   <div class="overflow-x-auto">
+    <h2 class="mb-2 text-lg font-semibold text-gray-700">
+      {tr_multi("Données brutes", "Krudaj datenoj", "Raw data")}
+    </h2>
     <table class="w-full border-collapse border border-gray-300">
       <thead>
         <tr class="bg-gray-100">

@@ -5,6 +5,7 @@ declare global {
     interface Locals {
       requestId: string
       locale: Locale
+      nonce: string
       user?: {
         id: string
         email: string

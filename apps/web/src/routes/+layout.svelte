@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte"
   import { Seo, Nav, Footer } from "@ronzz/ui"
   import type { Locale } from "@ronzz/shared-core"
   import { setLocale } from "@ronzz/shared-core"
   import "@ronzz/ui/app.css"
   import { page } from "$app/stores"
+  import { webSiteSchema } from "@ronzz/shared-core"
 
   let {
     children,
@@ -18,9 +18,16 @@
   $effect(() => {
     setLocale(data.locale)
   })
+
+  let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>
 
-<Seo title="ronzz.org" description="For everything, but nothing" />
+<Seo
+  title="ronzz.org"
+  description="For everything, but nothing"
+  {canonical}
+  jsonld={webSiteSchema("ronzz.org", "https://ronzz.org")}
+/>
 <Nav locale={data.locale} currentPath={$page.url.pathname} />
 <main class="mx-auto max-w-6xl px-6 py-8">
   {#if children}

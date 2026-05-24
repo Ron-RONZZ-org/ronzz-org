@@ -11,3 +11,6 @@ export type { RateLimitConfig } from "./rate-limiter"
 
 export { tr_multi, detectLocale, setLocale, getLocale, t } from "./i18n"
 export type { Locale } from "./i18n"
+
+export { libSchema, statsSchema, encikSchema, webSiteSchema } from "./seo/index"
+export type { JsonLd } from "./seo/index"

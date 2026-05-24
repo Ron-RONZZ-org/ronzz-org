@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
-import { eq, like, or, and } from "drizzle-orm"
+import { eq, like, or, and, isNull, isNotNull } from "drizzle-orm"
 import * as sqliteSchema from "database/schema/sqlite/index"
 import type { Dataset, DatasetInput } from "../types"
 
@@ -8,6 +8,7 @@ interface ListOptions {
   locale?: string
   limit?: number
   offset?: number
+  includeTrash?: boolean
 }
 
 function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
@@ -19,7 +20,7 @@ export function listDatasets(
   db: BetterSQLite3Database<typeof sqliteSchema>,
   options: ListOptions = {},
 ): { datasets: Dataset[]; total: number } {
-  const conditions = []
+  const conditions = [isNull(sqliteSchema.datasets.deletedAt)]
 
   if (options.search) {
     const term = `%${options.search}%`
@@ -63,7 +64,9 @@ export function getDataset(
   return db
     .select()
     .from(sqliteSchema.datasets)
-    .where(eq(sqliteSchema.datasets.id, id))
+    .where(
+      and(eq(sqliteSchema.datasets.id, id), isNull(sqliteSchema.datasets.deletedAt)),
+    )
     .get() as Dataset | undefined
 }
 
@@ -82,6 +85,7 @@ export function createDataset(
       sourceUrl: input.sourceUrl ?? "",
       license: input.license ?? "",
       locale: input.locale ?? "fr",
+      chartType: input.chartType ?? "bar",
       metadata: (input.metadata ?? {}) as never,
       createdAt: now,
       updatedAt: now,
@@ -95,13 +99,55 @@ export function createDataset(
     sourceUrl: input.sourceUrl ?? "",
     license: input.license ?? "",
     locale: input.locale ?? "fr",
+    chartType: input.chartType ?? "bar",
     metadata: input.metadata ?? {},
     createdAt: now,
     updatedAt: now,
+    deletedAt: null,
   }
 }
 
-export function deleteDataset(
+/** Soft-delete a dataset by setting deleted_at. */
+export function softDeleteDataset(
+  db: BetterSQLite3Database<typeof sqliteSchema>,
+  id: string,
+): boolean {
+  const result = db
+    .update(sqliteSchema.datasets)
+    .set({ deletedAt: new Date().toISOString() })
+    .where(
+      and(eq(sqliteSchema.datasets.id, id), isNull(sqliteSchema.datasets.deletedAt)),
+    )
+    .run()
+  return result.changes > 0
+}
+
+/** List soft-deleted (trashed) datasets. */
+export function listTrashDatasets(
+  db: BetterSQLite3Database<typeof sqliteSchema>,
+): Dataset[] {
+  return db
+    .select()
+    .from(sqliteSchema.datasets)
+    .where(isNotNull(sqliteSchema.datasets.deletedAt))
+    .all() as Dataset[]
+}
+
+/** Restore a soft-deleted dataset. */
+export function restoreDataset(
+  db: BetterSQLite3Database<typeof sqliteSchema>,
+  id: string,
+): boolean {
+  const result = db
+    .update(sqliteSchema.datasets)
+    .set({ deletedAt: null })
+    .where(eq(sqliteSchema.datasets.id, id))
+    .run()
+  return result.changes > 0
+}
+
+/** Permanently delete a dataset. */
+export function hardDeleteDataset(
   db: BetterSQLite3Database<typeof sqliteSchema>,
   id: string,
 ): boolean {
@@ -111,3 +157,6 @@ export function deleteDataset(
     .run()
   return result.changes > 0
 }
+
+/** Legacy alias for soft-delete. */
+export const deleteDataset = softDeleteDataset
