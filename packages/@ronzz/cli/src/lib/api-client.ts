@@ -83,6 +83,24 @@ export class ApiClient {
     }>
   }
 
+  async listTrashResources(): Promise<{ resources: unknown[] }> {
+    return this.request("GET", "/lib/api/v1/admin/resources/trash") as Promise<{
+      resources: unknown[]
+    }>
+  }
+
+  async restoreResource(id: string): Promise<{ restored: boolean }> {
+    return this.request("POST", `/lib/api/v1/admin/resources/${id}/restore`) as Promise<{
+      restored: boolean
+    }>
+  }
+
+  async purgeResource(id: string): Promise<{ purged: boolean }> {
+    return this.request("DELETE", `/lib/api/v1/admin/resources/${id}/purge`) as Promise<{
+      purged: boolean
+    }>
+  }
+
   // Dataset commands
   async listDatasets(
     limit = 50,
@@ -104,6 +122,24 @@ export class ApiClient {
     }>
   }
 
+  async listTrashDatasets(): Promise<{ datasets: unknown[] }> {
+    return this.request("GET", "/stats/api/v1/admin/datasets/trash") as Promise<{
+      datasets: unknown[]
+    }>
+  }
+
+  async restoreDataset(id: string): Promise<{ restored: boolean }> {
+    return this.request("POST", `/stats/api/v1/admin/datasets/${id}/restore`) as Promise<{
+      restored: boolean
+    }>
+  }
+
+  async purgeDataset(id: string): Promise<{ purged: boolean }> {
+    return this.request("DELETE", `/stats/api/v1/admin/datasets/${id}/purge`) as Promise<{
+      purged: boolean
+    }>
+  }
+
   // Article commands
   async listArticles(
     limit = 50,
@@ -122,6 +158,24 @@ export class ApiClient {
   async deleteArticle(id: string): Promise<{ deleted: boolean }> {
     return this.request("DELETE", `/encik/api/v1/admin/articles?id=${id}`) as Promise<{
       deleted: boolean
+    }>
+  }
+
+  async listTrashArticles(): Promise<{ articles: unknown[] }> {
+    return this.request("GET", "/encik/api/v1/admin/articles/trash") as Promise<{
+      articles: unknown[]
+    }>
+  }
+
+  async restoreArticle(id: string): Promise<{ restored: boolean }> {
+    return this.request("POST", `/encik/api/v1/admin/articles/${id}/restore`) as Promise<{
+      restored: boolean
+    }>
+  }
+
+  async purgeArticle(id: string): Promise<{ purged: boolean }> {
+    return this.request("DELETE", `/encik/api/v1/admin/articles/${id}/purge`) as Promise<{
+      purged: boolean
     }>
   }
 

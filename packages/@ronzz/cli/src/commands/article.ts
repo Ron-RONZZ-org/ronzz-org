@@ -20,7 +20,9 @@ export function articleCommand(yargs: Argv, client: ApiClient): Argv {
           description: argv.description ?? "",
           locale: argv.locale,
         })
-        console.log(`Article created/updated: ${(result as { article: { id: string } }).article.id}`)
+        console.log(
+          `Article created/updated: ${(result as { article: { id: string } }).article.id}`,
+        )
       },
     )
     .command("list", "List articles", () => {}, async () => {
@@ -34,5 +36,66 @@ export function articleCommand(yargs: Argv, client: ApiClient): Argv {
       }
       console.log(`Total: ${result.total}`)
     })
-    .demandCommand(1, "Please specify a subcommand: create, list")
+    .command(
+      "delete <id>",
+      "Soft-delete an article (move to trash)",
+      (ygs) => {
+        ygs.positional("id", { type: "string", demandOption: true })
+      },
+      async (argv) => {
+        const result = (await client.deleteArticle(
+          argv.id as string,
+        )) as { deleted: boolean }
+        console.log(result.deleted ? "Article moved to trash." : "Article not found.")
+      },
+    )
+    .command(
+      "trash",
+      "List soft-deleted articles",
+      () => {},
+      async () => {
+        const result = await client.listTrashArticles()
+        if (result.articles.length === 0) {
+          console.log("Trash is empty.")
+          return
+        }
+        for (const a of result.articles as { slug: string; title: string }[]) {
+          console.log(`${a.slug.padEnd(30)} ${a.title}`)
+        }
+      },
+    )
+    .command(
+      "restore <id>",
+      "Restore a soft-deleted article",
+      (ygs) => {
+        ygs.positional("id", { type: "string", demandOption: true })
+      },
+      async (argv) => {
+        const result = (await client.restoreArticle(
+          argv.id as string,
+        )) as { restored: boolean }
+        console.log(
+          result.restored ? "Article restored." : "Article not found in trash.",
+        )
+      },
+    )
+    .command(
+      "purge <id>",
+      "Permanently delete an article",
+      (ygs) => {
+        ygs.positional("id", { type: "string", demandOption: true })
+      },
+      async (argv) => {
+        const result = (await client.purgeArticle(
+          argv.id as string,
+        )) as { purged: boolean }
+        console.log(
+          result.purged ? "Article permanently deleted." : "Article not found.",
+        )
+      },
+    )
+    .demandCommand(
+      1,
+      "Please specify a subcommand: create, list, delete, trash, restore, purge",
+    )
 }
