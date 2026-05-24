@@ -12,7 +12,8 @@
     "./app.css": "./src/app.css"
   },
   "dependencies": {
-    "@ronzz/shared-core": "workspace:*"
+    "@ronzz/shared-core": "workspace:*",
+    "@ronzz/ronstats-core": "workspace:*"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
