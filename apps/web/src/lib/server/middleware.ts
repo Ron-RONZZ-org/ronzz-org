@@ -1,12 +1,10 @@
 import { createHash, randomUUID } from "node:crypto"
 import type { Handle } from "@sveltejs/kit"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { eq, and, isNull } from "drizzle-orm"
 import { requestLogger, checkRateLimit, detectLocale } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import { getDb } from "database/db"
-import { apiTokens as apiTokensTable } from "database/schema/sqlite/api-tokens"
-import { users as usersTable } from "database/schema/sqlite/users"
+import { schema } from "database/schema/proxy"
 
 const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
 const searchLimiter: RateLimitConfig = { windowMs: 60_000, max: 30 }
@@ -88,21 +86,21 @@ export async function handleTokenAuth(
   const tokenHash = createHash("sha256").update(token).digest("hex")
 
   try {
-    const db = getDb() as BetterSQLite3Database<any>
-    const found = db
+    const db = getDb() as any
+    const found = await db
       .select({
-        id: apiTokensTable.id,
-        tokenHash: apiTokensTable.tokenHash,
-        userId: usersTable.id,
-        userEmail: usersTable.email,
-        userRole: usersTable.role,
+        id: schema.apiTokens.id,
+        tokenHash: schema.apiTokens.tokenHash,
+        userId: schema.users.id,
+        userEmail: schema.users.email,
+        userRole: schema.users.role,
       })
-      .from(apiTokensTable)
-      .innerJoin(usersTable, eq(apiTokensTable.userId, usersTable.id))
+      .from(schema.apiTokens)
+      .innerJoin(schema.users, eq(schema.apiTokens.userId, schema.users.id))
       .where(
         and(
-          eq(apiTokensTable.tokenHash, tokenHash),
-          isNull(apiTokensTable.revokedAt),
+          eq(schema.apiTokens.tokenHash, tokenHash),
+          isNull(schema.apiTokens.revokedAt),
         ),
       )
       .get()

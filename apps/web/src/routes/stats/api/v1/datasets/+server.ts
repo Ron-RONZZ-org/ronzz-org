@@ -1,15 +1,14 @@
 import { json } from "@sveltejs/kit"
 import type { RequestHandler } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import type { Database } from "database/db-types"
 import { listDatasets, createDataset } from "@ronzz/ronstats-core"
 import { datasetSchema } from "@ronzz/ronstats-core"
 import { createSearchEngine } from "@ronzz/search-core"
 
 export const GET: RequestHandler = async ({ url }) => {
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const { datasets, total } = listDatasets(db, {
+  const db = getDb() as Database
+  const { datasets, total } = await listDatasets(db, {
     search: url.searchParams.get("q") ?? undefined,
     limit: parseInt(url.searchParams.get("limit") ?? "20", 10),
     offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
@@ -25,8 +24,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const dataset = createDataset(db, parsed.data)
+  const db = getDb() as Database
+  const dataset = await createDataset(db, parsed.data)
 
   const engine = createSearchEngine(db)
   await engine.index({

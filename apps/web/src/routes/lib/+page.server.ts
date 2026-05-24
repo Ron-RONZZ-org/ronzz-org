@@ -1,11 +1,10 @@
 import type { PageServerLoad } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import type { Database } from "database/db-types"
 import { listResources, listResourceTypes } from "@ronzz/ronlib-core"
 
 export const load: PageServerLoad = async ({ url, locals }) => {
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
+  const db = getDb() as Database
   const typeSlug = url.searchParams.get("type") ?? undefined
   const search = url.searchParams.get("q") ?? undefined
   const page = parseInt(url.searchParams.get("page") ?? "1", 10)
@@ -14,11 +13,12 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
   let typeId: string | undefined
   if (typeSlug) {
-    const type = listResourceTypes(db).find((t) => t.slug === typeSlug)
+    const types = await listResourceTypes(db)
+    const type = types.find((t) => t.slug === typeSlug)
     typeId = type?.id
   }
 
-  const { resources, total } = listResources(db, {
+  const { resources, total } = await listResources(db, {
     typeId,
     search,
     locale: locals.locale,
@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     offset,
   })
 
-  const resourceTypes = listResourceTypes(db)
+  const resourceTypes = await listResourceTypes(db)
 
   return {
     resources,

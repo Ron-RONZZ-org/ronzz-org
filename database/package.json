@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     "./db": "./db.ts",
+    "./db-types": "./db-types.ts",
+    "./schema/proxy": "./schema/proxy.ts",
     "./schema/sqlite/users": "./schema/sqlite/users.ts",
     "./schema/sqlite/search": "./schema/sqlite/search.ts",
     "./schema/sqlite/api-tokens": "./schema/sqlite/api-tokens.ts",

@@ -1,6 +1,5 @@
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
-import { eq, like, or, and, desc, asc, isNull, isNotNull } from "drizzle-orm"
-import * as sqliteSchema from "database/schema/sqlite/index"
+import { eq, like, or, and, desc, asc, isNull, isNotNull, sql } from "drizzle-orm"
+import { schema } from "database/schema/proxy"
 import type { Resource, ResourceInput } from "../types"
 
 interface ListOptions {
@@ -18,27 +17,27 @@ function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
   return undefined
 }
 
-export function listResources(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function listResources(
+  db: any,
   options: ListOptions = {},
-): { resources: Resource[]; total: number } {
-  const conditions = [isNull(sqliteSchema.resources.deletedAt)]
+): Promise<{ resources: Resource[]; total: number }> {
+  const conditions = [isNull(schema.resources.deletedAt)]
 
   if (options.typeId) {
-    conditions.push(eq(sqliteSchema.resources.typeId, options.typeId))
+    conditions.push(eq(schema.resources.typeId, options.typeId))
   }
   if (options.search) {
     const term = `%${options.search}%`
     conditions.push(
       or(
-        like(sqliteSchema.resources.title, term),
-        like(sqliteSchema.resources.description, term),
-      ),
+        like(schema.resources.title, term),
+        like(schema.resources.description, term),
+      )!,
     )
   }
   const locale = toLocale(options.locale)
   if (locale) {
-    conditions.push(eq(sqliteSchema.resources.locale, locale))
+    conditions.push(eq(schema.resources.locale, locale))
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
@@ -47,48 +46,50 @@ export function listResources(
 
   const orderColumn =
     options.orderBy === "title"
-      ? sqliteSchema.resources.title
-      : sqliteSchema.resources.createdAt
+      ? schema.resources.title
+      : schema.resources.createdAt
   const orderDir = options.orderDir === "asc" ? asc : desc
 
-  const rows = db
+  const rows = await db
     .select()
-    .from(sqliteSchema.resources)
+    .from(schema.resources)
     .where(where)
     .orderBy(orderDir(orderColumn))
     .limit(limit)
     .offset(offset)
     .all()
 
-  const total = db
-    .select({ count: sqliteSchema.resources.id })
-    .from(sqliteSchema.resources)
+  const countResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.resources)
     .where(where)
-    .all().length
+    .get()
+  const total = countResult?.count ?? 0
 
   return { resources: rows as Resource[], total }
 }
 
-export function getResource(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function getResource(
+  db: any,
   id: string,
-): Resource | undefined {
-  return db
+): Promise<Resource | undefined> {
+  const row = await db
     .select()
-    .from(sqliteSchema.resources)
+    .from(schema.resources)
     .where(
-      and(eq(sqliteSchema.resources.id, id), isNull(sqliteSchema.resources.deletedAt)),
+      and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
     )
-    .get() as Resource | undefined
+    .get()
+  return row as Resource | undefined
 }
 
-export function createResource(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function createResource(
+  db: any,
   input: ResourceInput,
-): Resource {
+): Promise<Resource> {
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
-  db.insert(sqliteSchema.resources)
+  await db.insert(schema.resources)
     .values({
       id,
       typeId: input.typeId,
@@ -116,52 +117,53 @@ export function createResource(
 }
 
 /** Soft-delete a resource by setting deletedAt. */
-export function deleteResource(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function deleteResource(
+  db: any,
   id: string,
-): boolean {
-  const result = db
-    .update(sqliteSchema.resources)
+): Promise<boolean> {
+  const result = await db
+    .update(schema.resources)
     .set({ deletedAt: new Date().toISOString() })
     .where(
-      and(eq(sqliteSchema.resources.id, id), isNull(sqliteSchema.resources.deletedAt)),
+      and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
     )
     .run()
   return result.changes > 0
 }
 
 /** List soft-deleted (trashed) resources. */
-export function listTrashResources(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
-): Resource[] {
-  return db
+export async function listTrashResources(
+  db: any,
+): Promise<Resource[]> {
+  const rows = await db
     .select()
-    .from(sqliteSchema.resources)
-    .where(isNotNull(sqliteSchema.resources.deletedAt))
-    .all() as Resource[]
+    .from(schema.resources)
+    .where(isNotNull(schema.resources.deletedAt))
+    .all()
+  return rows as Resource[]
 }
 
 /** Restore a soft-deleted resource. */
-export function restoreResource(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function restoreResource(
+  db: any,
   id: string,
-): boolean {
-  const result = db
-    .update(sqliteSchema.resources)
+): Promise<boolean> {
+  const result = await db
+    .update(schema.resources)
     .set({ deletedAt: null })
-    .where(eq(sqliteSchema.resources.id, id))
+    .where(eq(schema.resources.id, id))
     .run()
   return result.changes > 0
 }
 
 /** Permanently delete a resource. */
-export function hardDeleteResource(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function hardDeleteResource(
+  db: any,
   id: string,
-): boolean {
-  const result = db
-    .delete(sqliteSchema.resources)
-    .where(eq(sqliteSchema.resources.id, id))
+): Promise<boolean> {
+  const result = await db
+    .delete(schema.resources)
+    .where(eq(schema.resources.id, id))
     .run()
   return result.changes > 0
 }

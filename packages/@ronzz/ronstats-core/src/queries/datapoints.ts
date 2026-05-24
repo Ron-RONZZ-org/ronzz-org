@@ -1,26 +1,26 @@
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { eq } from "drizzle-orm"
-import * as sqliteSchema from "database/schema/sqlite/index"
+import { schema } from "database/schema/proxy"
 import type { Datapoint, DatapointInput } from "../types"
 
-export function listDatapoints(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function listDatapoints(
+  db: any,
   datasetId: string,
-): Datapoint[] {
-  return db
+): Promise<Datapoint[]> {
+  const rows = await db
     .select()
-    .from(sqliteSchema.datapoints)
-    .where(eq(sqliteSchema.datapoints.datasetId, datasetId))
-    .all() as Datapoint[]
+    .from(schema.datapoints)
+    .where(eq(schema.datapoints.datasetId, datasetId))
+    .all()
+  return rows as Datapoint[]
 }
 
-export function createDatapoint(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function createDatapoint(
+  db: any,
   input: DatapointInput,
-): Datapoint {
+): Promise<Datapoint> {
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
-  db.insert(sqliteSchema.datapoints)
+  await db.insert(schema.datapoints)
     .values({
       id,
       datasetId: input.datasetId,
@@ -46,10 +46,10 @@ export function createDatapoint(
   }
 }
 
-export function bulkCreateDatapoints(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function bulkCreateDatapoints(
+  db: any,
   inputs: DatapointInput[],
-): Datapoint[] {
+): Promise<Datapoint[]> {
   const now = new Date().toISOString()
   const values = inputs.map((input) => ({
     id: crypto.randomUUID(),
@@ -62,6 +62,6 @@ export function bulkCreateDatapoints(
     metadata: (input.metadata ?? {}) as never,
     createdAt: now,
   }))
-  db.insert(sqliteSchema.datapoints).values(values).run()
+  await db.insert(schema.datapoints).values(values).run()
   return values as Datapoint[]
 }

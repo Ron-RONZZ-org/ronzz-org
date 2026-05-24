@@ -2,10 +2,8 @@ import { fail, redirect } from "@sveltejs/kit"
 import { eq } from "drizzle-orm"
 import { verify } from "@node-rs/argon2"
 import Database from "better-sqlite3"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import { users } from "database/schema/sqlite/users"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import { schema } from "database/schema/proxy"
 import type { Actions } from "./$types"
 
 export const actions: Actions = {
@@ -18,8 +16,12 @@ export const actions: Actions = {
       return fail(400, { message: "Email and password are required." })
     }
 
-    const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-    const user = db.select().from(users).where(eq(users.email, email)).get()
+    const db = getDb() as any
+    const user = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .get()
 
     if (!user) {
       return fail(401, { message: "Invalid email or password." })

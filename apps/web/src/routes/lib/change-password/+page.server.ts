@@ -1,10 +1,8 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { eq } from "drizzle-orm"
 import { hash, verify } from "@node-rs/argon2"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import { users } from "database/schema/sqlite/users"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import { schema } from "database/schema/proxy"
 import type { Actions } from "./$types"
 
 export const actions: Actions = {
@@ -37,8 +35,12 @@ export const actions: Actions = {
       })
     }
 
-    const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-    const user = db.select().from(users).where(eq(users.id, pwResetUser)).get()
+    const db = getDb() as any
+    const user = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, pwResetUser))
+      .get()
 
     if (!user) {
       cookies.delete("pw_reset_user", { path: "/" })
@@ -57,12 +59,13 @@ export const actions: Actions = {
       parallelism: 1,
     })
 
-    db.update(users)
+    await db
+      .update(schema.users)
       .set({
         passwordHash: newPasswordHash,
         passwordChangeRequired: 0,
       })
-      .where(eq(users.id, user.id))
+      .where(eq(schema.users.id, user.id))
       .run()
 
     cookies.delete("pw_reset_user", { path: "/" })

@@ -1,38 +1,38 @@
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
-import { eq, and, like, or, sql } from "drizzle-orm"
-import * as sqliteSchema from "database/schema/sqlite/index"
+import { eq, and, like, or } from "drizzle-orm"
+import { schema } from "database/schema/proxy"
 import type { SearchEngine, SearchDocument, SearchQuery, SearchResult } from "./types"
 
 export class SqliteSearchEngine implements SearchEngine {
-  constructor(private db: BetterSQLite3Database<typeof sqliteSchema>) {}
+  // biome-ignore lint/suspicious/noExplicitAny: <dialect-agnostic db>
+  constructor(private db: any) {}
 
   async search(query: SearchQuery): Promise<SearchResult[]> {
-    const conditions = []
+    const conditions: any[] = []
 
     if (query.query) {
       const searchTerm = `%${query.query}%`
       conditions.push(
         or(
-          like(sqliteSchema.searchIndex.title, searchTerm),
-          like(sqliteSchema.searchIndex.description, searchTerm),
-          like(sqliteSchema.searchIndex.content, searchTerm),
-        ),
+          like(schema.searchIndex.title, searchTerm),
+          like(schema.searchIndex.description, searchTerm),
+          like(schema.searchIndex.content, searchTerm),
+        )!,
       )
     }
 
     if (query.type) {
-      conditions.push(eq(sqliteSchema.searchIndex.type, query.type))
+      conditions.push(eq(schema.searchIndex.type, query.type))
     }
 
     if (query.locale) {
-      conditions.push(eq(sqliteSchema.searchIndex.locale, query.locale))
+      conditions.push(eq(schema.searchIndex.locale, query.locale))
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
     const rows = await this.db
       .select()
-      .from(sqliteSchema.searchIndex)
+      .from(schema.searchIndex)
       .where(where)
       .limit(query.limit ?? 20)
       .offset(query.offset ?? 0)
@@ -52,7 +52,7 @@ export class SqliteSearchEngine implements SearchEngine {
   async index(doc: SearchDocument): Promise<void> {
     const now = new Date().toISOString()
     await this.db
-      .insert(sqliteSchema.searchIndex)
+      .insert(schema.searchIndex)
       .values({
         id: doc.id,
         type: doc.type,
@@ -66,7 +66,7 @@ export class SqliteSearchEngine implements SearchEngine {
         updatedAt: now,
       })
       .onConflictDoUpdate({
-        target: sqliteSchema.searchIndex.id,
+        target: schema.searchIndex.id,
         set: {
           title: doc.title,
           description: doc.description,
@@ -80,8 +80,8 @@ export class SqliteSearchEngine implements SearchEngine {
 
   async remove(id: string): Promise<void> {
     await this.db
-      .delete(sqliteSchema.searchIndex)
-      .where(eq(sqliteSchema.searchIndex.id, id))
+      .delete(schema.searchIndex)
+      .where(eq(schema.searchIndex.id, id))
       .run()
   }
 
