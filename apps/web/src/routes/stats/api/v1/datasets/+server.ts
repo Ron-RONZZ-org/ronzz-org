@@ -25,7 +25,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   }
 
   const db = getDb() as Database
-  const dataset = await createDataset(db, parsed.data)
+  const result = await createDataset(db, parsed.data)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
+  const dataset = result.value
 
   const engine = createSearchEngine(db)
   await engine.index({

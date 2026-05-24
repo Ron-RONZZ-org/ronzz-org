@@ -25,7 +25,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   }
 
   const db = getDb() as Database
-  const resource = await createResource(db, parsed.data)
+  const result = await createResource(db, parsed.data)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
+  const resource = result.value
 
   // Index in search
   const engine = createSearchEngine(db)
@@ -48,11 +52,14 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
   if (!id) return json({ error: "id required" }, { status: 400 })
 
   const db = getDb() as Database
-  const deleted = await deleteResource(db, id)
+  const result = await deleteResource(db, id)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
 
   // Remove from search index
   const engine = createSearchEngine(db)
   await engine.remove(id)
 
-  return json({ deleted }, deleted ? { status: 200 } : { status: 404 })
+  return json({ deleted: result.value }, result.value ? { status: 200 } : { status: 404 })
 }

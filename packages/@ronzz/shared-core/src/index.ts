@@ -1,5 +1,6 @@
 export { ok, fail } from "./result"
 export type { Result } from "./result"
+export { tryResult } from "./result-utils"
 
 export { AppError, ErrorCodes } from "./errors"
 export type { ErrorCode } from "./errors"
