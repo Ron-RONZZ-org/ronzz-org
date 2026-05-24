@@ -4,7 +4,8 @@ import { AppError } from "./errors/app-error"
 /**
  * Wraps an async function in a try/catch and returns a Result.
  * Catches AppError instances as structured failures; maps unknown errors
- * via the optional errorMapper, falling back to INTERNAL_ERROR.
+ * via the optional errorMapper, falling back to INTERNAL_ERROR with the
+ * original error message preserved.
  */
 export async function tryResult<T>(
   fn: () => Promise<T>,
@@ -15,8 +16,10 @@ export async function tryResult<T>(
     return ok(value)
   } catch (e) {
     if (e instanceof AppError) return fail(e)
+    const message =
+      e instanceof Error ? e.message : "An unknown error occurred"
     return fail(
-      errorMapper?.(e) ?? new AppError("Internal error", "INTERNAL_ERROR", 500),
+      errorMapper?.(e) ?? new AppError(message, "INTERNAL_ERROR", 500),
     )
   }
 }

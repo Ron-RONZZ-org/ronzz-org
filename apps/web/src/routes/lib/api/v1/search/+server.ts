@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ url }) => {
   const db = getDb() as Database
   const engine = createSearchEngine(db)
 
-  const results = await engine.search({
+  const resultSet = await engine.search({
     query: q,
     type: "resource",
     locale: locale ?? undefined,
@@ -22,5 +22,5 @@ export const GET: RequestHandler = async ({ url }) => {
     offset,
   })
 
-  return json({ results, total: results.length })
+  return json({ results: resultSet.results, total: resultSet.total })
 }

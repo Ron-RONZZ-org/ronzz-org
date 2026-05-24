@@ -2,6 +2,7 @@ import type { RequestHandler } from "./$types"
 import { isNull } from "drizzle-orm"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
+import { TtlCache } from "@ronzz/shared-core"
 
 const BASE = "https://ronzz.org"
 
@@ -20,7 +21,19 @@ function escapeXml(s: string): string {
     .replace(/"/g, "&quot;")
 }
 
+// Cache regenerated sitemap for 30 minutes
+const sitemapCache = new TtlCache<string>(30 * 60 * 1000)
+
 export const GET: RequestHandler = async () => {
+  const cached = sitemapCache.get("sitemap")
+  if (cached) {
+    return new Response(cached, {
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8",
+        "Cache-Control": "max-age=3600",
+      },
+    })
+  }
   const entries: SitemapEntry[] = [
     { loc: BASE, priority: 1.0, changefreq: "weekly" },
     { loc: `${BASE}/lib`, priority: 0.9, changefreq: "weekly" },
@@ -63,6 +76,8 @@ export const GET: RequestHandler = async () => {
     ),
     "</urlset>",
   ].join("\n")
+
+  sitemapCache.set("sitemap", xml)
 
   return new Response(xml, {
     headers: {

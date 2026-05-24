@@ -30,8 +30,13 @@ export interface SearchResult {
   score: number
 }
 
+export interface SearchResultSet {
+  results: SearchResult[]
+  total: number
+}
+
 export interface SearchEngine {
-  search(query: SearchQuery): Promise<SearchResult[]>
+  search(query: SearchQuery): Promise<SearchResultSet>
   index(doc: SearchDocument): Promise<void>
   remove(id: string): Promise<void>
   reindex(docs: SearchDocument[]): Promise<void>

@@ -8,8 +8,16 @@ import {
   handleTokenAuth,
 } from "$lib/server/middleware"
 
+const MAX_BODY_SIZE = 1_048_576 // 1 MB
+
 export const handle: Handle = async ({ event, resolve }) => {
   await handleRequestContext(event)
+
+  // Reject oversized request bodies early to avoid memory exhaustion
+  const contentLength = event.request.headers.get("content-length")
+  if (contentLength && Number.parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+    return new Response("Request body too large", { status: 413 })
+  }
 
   const log = logger.child({ requestId: event.locals.requestId })
 

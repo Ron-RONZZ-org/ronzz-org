@@ -88,6 +88,8 @@ export async function bulkCreateDatapoints(
     metadata: (input.metadata ?? {}) as never,
     createdAt: now,
   }))
-  await db.insert(schema.datapoints).values(values).run()
+  await db.transaction(async (tx: any) => {
+    await tx.insert(schema.datapoints).values(values).run()
+  })
   return values as Datapoint[]
 }

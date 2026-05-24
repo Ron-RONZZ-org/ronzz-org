@@ -2,6 +2,7 @@ import type { RequestHandler } from "./$types"
 import { eq, desc, isNull } from "drizzle-orm"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
+import { TtlCache } from "@ronzz/shared-core"
 
 const BASE = "https://ronzz.org"
 
@@ -13,7 +14,19 @@ function escapeXml(s: string): string {
     .replace(/"/g, "&quot;")
 }
 
+// Cache regenerated feed for 15 minutes
+const feedCache = new TtlCache<string>(15 * 60 * 1000)
+
 export const GET: RequestHandler = async () => {
+  const cached = feedCache.get("feed")
+  if (cached) {
+    return new Response(cached, {
+      headers: {
+        "Content-Type": "application/rss+xml; charset=utf-8",
+        "Cache-Control": "max-age=3600",
+      },
+    })
+  }
   const items: {
     title: string
     description: string
@@ -73,6 +86,8 @@ export const GET: RequestHandler = async () => {
     "  </channel>",
     "</rss>",
   ].join("\n")
+
+  feedCache.set("feed", xml)
 
   return new Response(xml, {
     headers: {

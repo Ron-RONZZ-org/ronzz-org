@@ -1,7 +1,7 @@
 import { eq, like, or, and, isNull, isNotNull, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
-import { tryResult, type Result, type AppError } from "@ronzz/shared-core"
+import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
 import type { Dataset, DatasetInput } from "../types"
 
 interface ListOptions {
@@ -10,11 +10,6 @@ interface ListOptions {
   limit?: number
   offset?: number
   includeTrash?: boolean
-}
-
-function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
-  if (locale === "fr" || locale === "eo" || locale === "en") return locale
-  return undefined
 }
 
 export async function listDatasets(
@@ -121,16 +116,35 @@ export async function softDeleteDataset(
   })
 }
 
+interface TrashListOptions {
+  limit?: number
+  offset?: number
+}
+
 /** List soft-deleted (trashed) datasets. */
 export async function listTrashDatasets(
   db: any,
-): Promise<Dataset[]> {
+  options?: TrashListOptions,
+): Promise<{ datasets: Dataset[]; total: number }> {
+  const limit = options?.limit ?? 50
+  const offset = options?.offset ?? 0
+
   const rows = await db
     .select()
     .from(schema.datasets)
     .where(isNotNull(schema.datasets.deletedAt))
+    .limit(limit)
+    .offset(offset)
     .all()
-  return rows as Dataset[]
+
+  const countResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.datasets)
+    .where(isNotNull(schema.datasets.deletedAt))
+    .get()
+  const total = countResult?.count ?? 0
+
+  return { datasets: rows as Dataset[], total }
 }
 
 /** Restore a soft-deleted dataset. */

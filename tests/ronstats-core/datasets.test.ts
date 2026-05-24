@@ -218,8 +218,9 @@ describe("datasets queries", () => {
       await softDeleteDataset(db as any, created2.value.id)
 
       const trash = await listTrashDatasets(db as any)
-      expect(trash).toHaveLength(1)
-      expect(trash[0].title).toBe("To Delete")
+      expect(trash.datasets).toHaveLength(1)
+      expect(trash.total).toBe(1)
+      expect(trash.datasets[0].title).toBe("To Delete")
     })
   })
 

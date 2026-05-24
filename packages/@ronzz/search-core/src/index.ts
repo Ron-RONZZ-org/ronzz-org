@@ -6,5 +6,6 @@ export type {
   SearchDocument,
   SearchQuery,
   SearchResult,
+  SearchResultSet,
   SearchResultType,
 } from "./types"

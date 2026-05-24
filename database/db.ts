@@ -2,10 +2,11 @@ import { mkdirSync, existsSync } from "node:fs"
 import { dirname } from "node:path"
 import { drizzle } from "drizzle-orm/better-sqlite3"
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres"
-import Database from "better-sqlite3"
+import DatabaseImport from "better-sqlite3"
 import { Pool } from "pg"
 import * as sqliteSchema from "./schema/sqlite/index"
 import * as pgSchema from "./schema/pg/index"
+import { resetDialectCache } from "./schema/proxy"
 
 type DbDialect = "sqlite" | "pg"
 
@@ -18,6 +19,7 @@ function detectDialect(): DbDialect {
 }
 
 let _db: ReturnType<typeof createDb> | null = null
+let _dbClient: InstanceType<typeof DatabaseImport> | Pool | null = null
 
 function createDb() {
   const dialect = detectDialect()
@@ -26,6 +28,7 @@ function createDb() {
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
     })
+    _dbClient = pool
     return drizzlePg(pool, { schema: pgSchema })
   }
 
@@ -37,7 +40,8 @@ function createDb() {
       mkdirSync(dir, { recursive: true })
     }
   }
-  const sqlite = new Database(isMemory ? ":memory:" : url)
+  const sqlite = new DatabaseImport(isMemory ? ":memory:" : url)
+  _dbClient = sqlite
   if (!isMemory) {
     sqlite.pragma("journal_mode = WAL")
   }
@@ -54,10 +58,18 @@ export function getDb() {
 /** Call during shutdown to close DB connections. */
 export async function closeDb(): Promise<void> {
   if (!_db) return
+  if (_dbClient instanceof Pool) {
+    await _dbClient.end()
+  } else if (_dbClient instanceof DatabaseImport) {
+    _dbClient.close()
+  }
+  _dbClient = null
   _db = null
 }
 
-/** Reset the singleton DB connection. Used in test isolation. */
+/** Reset the singleton DB connection and dialect cache. Used in test isolation. */
 export function resetDb(): void {
   _db = null
+  _dbClient = null
+  resetDialectCache()
 }
