@@ -1,17 +1,5 @@
-import { scaleOrdinal } from "d3"
 import type { Datapoint } from "../../types"
 import type { PieChartResult, ChartDimensions } from "../types"
-
-const categoryColors = [
-  "#3b82f6",
-  "#ef4444",
-  "#22c55e",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-]
 
 export function pieChart(
   datapoints: Datapoint[],

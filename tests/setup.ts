@@ -3,6 +3,7 @@ import { tmpdir } from "node:os"
 import { mkdtempSync } from "node:fs"
 import { join } from "node:path"
 import { closeRateLimiter } from "@ronzz/shared-core"
+import { closeDb } from "database/db"
 
 /**
  * Test isolation fixture — runs before each test.
@@ -20,7 +21,8 @@ beforeEach(() => {
   process.env.XDG_DATA_HOME = join(tmpDir, "data")
 })
 
-/** Clean up rate limiter interval handle after each test. */
-afterEach(() => {
+/** Clean up rate limiter interval and DB connections after each test. */
+afterEach(async () => {
   closeRateLimiter()
+  await closeDb()
 })

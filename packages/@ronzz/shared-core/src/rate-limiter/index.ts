@@ -12,6 +12,7 @@ interface RateLimitEntry {
 // Current deployment is single-container (see deploy/docker-compose.yml).
 // If horizontal scaling is needed, replace with a shared store (Redis or DB).
 const stores = new Map<string, RateLimitEntry>()
+const MAX_STORE_SIZE = 10_000
 
 // Store the interval handle so it can be cleared in tests
 let _cleanupInterval: ReturnType<typeof setInterval> | null = null
@@ -35,6 +36,22 @@ function ensureCleanup(): void {
 
 export function checkRateLimit(key: string, config: RateLimitConfig): boolean {
   ensureCleanup()
+
+  // Prevent unbounded growth: evict oldest entries if store exceeds limit
+  if (stores.size >= MAX_STORE_SIZE) {
+    const now = Date.now()
+    for (const [k, v] of stores) {
+      if (now > v.resetAt) {
+        stores.delete(k)
+      }
+    }
+    // If still over limit after cleanup, evict the first (oldest) entry
+    if (stores.size >= MAX_STORE_SIZE) {
+      const firstKey = stores.keys().next().value
+      if (firstKey !== undefined) stores.delete(firstKey)
+    }
+  }
+
   const now = Date.now()
   const entry = stores.get(key)
 

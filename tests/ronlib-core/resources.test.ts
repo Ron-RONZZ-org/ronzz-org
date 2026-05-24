@@ -219,8 +219,9 @@ describe("resources queries", () => {
       await deleteResource(db as any, created2.value.id)
 
       const trash = await listTrashResources(db as any)
-      expect(trash).toHaveLength(1)
-      expect(trash[0].title).toBe("To Delete")
+      expect(trash.resources).toHaveLength(1)
+      expect(trash.total).toBe(1)
+      expect(trash.resources[0].title).toBe("To Delete")
     })
   })
 

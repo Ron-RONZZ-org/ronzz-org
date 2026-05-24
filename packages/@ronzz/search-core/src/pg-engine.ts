@@ -1,12 +1,12 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { eq, and, or, like, sql } from "drizzle-orm"
 import * as pgSchema from "database/schema/pg/index"
-import type { SearchEngine, SearchDocument, SearchQuery, SearchResult } from "./types"
+import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
 
 export class PostgresSearchEngine implements SearchEngine {
   constructor(private db: NodePgDatabase<typeof pgSchema>) {}
 
-  async search(query: SearchQuery): Promise<SearchResult[]> {
+  async search(query: SearchQuery): Promise<SearchResultSet> {
     const conditions = []
 
     if (query.query) {
@@ -37,15 +37,24 @@ export class PostgresSearchEngine implements SearchEngine {
       .limit(query.limit ?? 20)
       .offset(query.offset ?? 0)
 
-    return rows.map((row) => ({
-      id: row.id,
-      type: row.type as SearchResult["type"],
-      locale: row.locale as SearchResult["locale"],
-      title: row.title,
-      description: row.description,
-      url: row.url,
-      score: row.score,
-    }))
+    const [countResult] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(pgSchema.searchIndex)
+      .where(where)
+    const total = countResult?.count ?? 0
+
+    return {
+      results: rows.map((row) => ({
+        id: row.id,
+        type: row.type as SearchResult["type"],
+        locale: row.locale as SearchResult["locale"],
+        title: row.title,
+        description: row.description,
+        url: row.url,
+        score: row.score,
+      })),
+      total,
+    }
   }
 
   async index(doc: SearchDocument): Promise<void> {

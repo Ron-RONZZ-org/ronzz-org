@@ -1,7 +1,7 @@
 import { eq, like, or, and, desc, asc, isNull, isNotNull, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
-import { tryResult, type Result, type AppError } from "@ronzz/shared-core"
+import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
 import type { Resource, ResourceInput } from "../types"
 
 interface ListOptions {
@@ -12,11 +12,6 @@ interface ListOptions {
   offset?: number
   orderBy?: "createdAt" | "title"
   orderDir?: "asc" | "desc"
-}
-
-function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
-  if (locale === "fr" || locale === "eo" || locale === "en") return locale
-  return undefined
 }
 
 export async function listResources(
@@ -131,16 +126,35 @@ export async function deleteResource(
   })
 }
 
+interface TrashListOptions {
+  limit?: number
+  offset?: number
+}
+
 /** List soft-deleted (trashed) resources. */
 export async function listTrashResources(
   db: any,
-): Promise<Resource[]> {
+  options?: TrashListOptions,
+): Promise<{ resources: Resource[]; total: number }> {
+  const limit = options?.limit ?? 50
+  const offset = options?.offset ?? 0
+
   const rows = await db
     .select()
     .from(schema.resources)
     .where(isNotNull(schema.resources.deletedAt))
+    .limit(limit)
+    .offset(offset)
     .all()
-  return rows as Resource[]
+
+  const countResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.resources)
+    .where(isNotNull(schema.resources.deletedAt))
+    .get()
+  const total = countResult?.count ?? 0
+
+  return { resources: rows as Resource[], total }
 }
 
 /** Restore a soft-deleted resource. */

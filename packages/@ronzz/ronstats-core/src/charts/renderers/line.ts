@@ -2,6 +2,7 @@ import { scaleLinear, scalePoint, line as d3Line } from "d3"
 import type { Datapoint } from "../../types"
 import type { LineChartResult, ChartDimensions } from "../types"
 import { getInner } from "../types"
+import { formatNumber } from "./format-number"
 
 export function lineChart(
   datapoints: Datapoint[],
@@ -53,8 +54,4 @@ export function lineChart(
   }
 }
 
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-  return Number.isInteger(n) ? n.toString() : n.toFixed(1)
-}
+

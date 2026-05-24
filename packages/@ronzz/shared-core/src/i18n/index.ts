@@ -68,6 +68,15 @@ export function tr_multi(
 }
 
 /**
+ * Normalize a locale string to a valid Locale, or undefined if invalid.
+ * Can be used to filter/sanitize user-provided locale values in queries.
+ */
+export function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
+  if (locale === "fr" || locale === "eo" || locale === "en") return locale
+  return undefined
+}
+
+/**
  * Detect locale from Accept-Language header.
  * Defaults to French if no match.
  */

@@ -1,12 +1,12 @@
-import { eq, and, like, or } from "drizzle-orm"
+import { eq, and, like, or, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
-import type { SearchEngine, SearchDocument, SearchQuery, SearchResult } from "./types"
+import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
 
 export class SqliteSearchEngine implements SearchEngine {
   // biome-ignore lint/suspicious/noExplicitAny: <dialect-agnostic db>
   constructor(private db: any) {}
 
-  async search(query: SearchQuery): Promise<SearchResult[]> {
+  async search(query: SearchQuery): Promise<SearchResultSet> {
     const conditions: any[] = []
 
     if (query.query) {
@@ -38,15 +38,25 @@ export class SqliteSearchEngine implements SearchEngine {
       .offset(query.offset ?? 0)
       .all()
 
-    return rows.map((row) => ({
-      id: row.id,
-      type: row.type as SearchResult["type"],
-      locale: row.locale as SearchResult["locale"],
-      title: row.title,
-      description: row.description,
-      url: row.url,
-      score: row.score,
-    }))
+    const countResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.searchIndex)
+      .where(where)
+      .get()
+    const total = countResult?.count ?? 0
+
+    return {
+      results: rows.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        type: row.type as SearchResult["type"],
+        locale: row.locale as SearchResult["locale"],
+        title: row.title,
+        description: row.description,
+        url: row.url,
+        score: row.score,
+      })),
+      total,
+    }
   }
 
   async index(doc: SearchDocument): Promise<void> {

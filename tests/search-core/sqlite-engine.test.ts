@@ -46,8 +46,9 @@ describe("SqliteSearchEngine", () => {
     it("indexes a document", async () => {
       await engine.index(sampleDoc)
 
-      const results = await engine.search({ query: "Test" })
+      const { results, total } = await engine.search({ query: "Test" })
       expect(results).toHaveLength(1)
+      expect(total).toBe(1)
       expect(results[0].title).toBe("Test Document")
     })
 
@@ -55,7 +56,7 @@ describe("SqliteSearchEngine", () => {
       await engine.index(sampleDoc)
       await engine.index({ ...sampleDoc, title: "Updated Document" })
 
-      const results = await engine.search({ query: "Updated" })
+      const { results } = await engine.search({ query: "Updated" })
       expect(results).toHaveLength(1)
     })
   })
@@ -84,25 +85,29 @@ describe("SqliteSearchEngine", () => {
     })
 
     it("returns empty results for no match", async () => {
-      const results = await engine.search({ query: "zzzznonexistent" })
+      const { results, total } = await engine.search({ query: "zzzznonexistent" })
       expect(results).toEqual([])
+      expect(total).toBe(0)
     })
 
     it("searches by query across title, description, and content", async () => {
-      const results = await engine.search({ query: "English" })
+      const { results, total } = await engine.search({ query: "English" })
       expect(results).toHaveLength(1)
+      expect(total).toBe(1)
       expect(results[0].id).toBe("doc-2")
     })
 
     it("filters by type", async () => {
-      const results = await engine.search({ query: "", type: "dataset" })
+      const { results, total } = await engine.search({ query: "", type: "dataset" })
       expect(results).toHaveLength(1)
+      expect(total).toBe(1)
       expect(results[0].type).toBe("dataset")
     })
 
     it("filters by locale", async () => {
-      const results = await engine.search({ query: "", locale: "eo" })
+      const { results, total } = await engine.search({ query: "", locale: "eo" })
       expect(results).toHaveLength(1)
+      expect(total).toBe(1)
       expect(results[0].locale).toBe("eo")
     })
 
@@ -120,8 +125,9 @@ describe("SqliteSearchEngine", () => {
         })
       }
 
-      const results = await engine.search({ query: "", limit: 2, offset: 1 })
+      const { results, total } = await engine.search({ query: "", limit: 2, offset: 1 })
       expect(results).toHaveLength(2)
+      expect(total).toBe(8) // 3 original + 5 extra
     })
   })
 
@@ -130,7 +136,7 @@ describe("SqliteSearchEngine", () => {
       await engine.index(sampleDoc)
       await engine.remove("doc-1")
 
-      const results = await engine.search({ query: "Test" })
+      const { results } = await engine.search({ query: "Test" })
       expect(results).toHaveLength(0)
     })
 
@@ -154,7 +160,7 @@ describe("SqliteSearchEngine", () => {
         },
       ])
 
-      const results = await engine.search({ query: "Bulk" })
+      const { results } = await engine.search({ query: "Bulk" })
       expect(results).toHaveLength(1)
     })
   })
