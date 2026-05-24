@@ -1,7 +1,11 @@
 <script lang="ts">
   import { Button } from "@ronzz/ui"
   import { tr_multi } from "@ronzz/shared-core"
+  import type { Locale } from "@ronzz/shared-core"
   import { enhance } from "$app/forms"
+
+  let { data }: { data: { locale: Locale } } = $props()
+  const locale = data.locale
 
   let currentPassword = $state("")
   let newPassword = $state("")
@@ -10,10 +14,10 @@
 
 <section class="mx-auto max-w-md py-12">
   <h1 class="mb-2 text-center text-2xl font-bold text-gray-900">
-    {tr_multi("Changement de mot de passe", "Ŝanĝi pasvorton", "Change Password")}
+    {tr_multi(locale, "Changement de mot de passe", "Ŝanĝi pasvorton", "Change Password")}
   </h1>
   <p class="mb-8 text-center text-sm text-gray-600">
-    {tr_multi(
+    {tr_multi(locale,
       "Vous devez changer votre mot de passe avant de continuer.",
       "Vi devas ŝanĝi vian pasvorton antaŭ ol daŭrigi.",
       "You must change your password before continuing.",
@@ -28,7 +32,7 @@
   >
     <div class="flex flex-col gap-1">
       <label for="currentPassword" class="text-sm font-medium text-gray-700">
-        {tr_multi("Mot de passe actuel", "Nuna pasvorto", "Current Password")}
+        {tr_multi(locale, "Mot de passe actuel", "Nuna pasvorto", "Current Password")}
       </label>
       <input
         id="currentPassword"
@@ -42,7 +46,7 @@
 
     <div class="flex flex-col gap-1">
       <label for="newPassword" class="text-sm font-medium text-gray-700">
-        {tr_multi("Nouveau mot de passe", "Nova pasvorto", "New Password")}
+        {tr_multi(locale, "Nouveau mot de passe", "Nova pasvorto", "New Password")}
       </label>
       <input
         id="newPassword"
@@ -57,7 +61,7 @@
 
     <div class="flex flex-col gap-1">
       <label for="confirmPassword" class="text-sm font-medium text-gray-700">
-        {tr_multi("Confirmer le mot de passe", "Konfirmi pasvorton", "Confirm Password")}
+        {tr_multi(locale, "Confirmer le mot de passe", "Konfirmi pasvorton", "Confirm Password")}
       </label>
       <input
         id="confirmPassword"
@@ -71,7 +75,7 @@
     </div>
 
     <Button type="submit" variant="primary">
-      {tr_multi("Changer le mot de passe", "Ŝanĝi pasvorton", "Change Password")}
+      {tr_multi(locale, "Changer le mot de passe", "Ŝanĝi pasvorton", "Change Password")}
     </Button>
   </form>
 </section>

@@ -43,7 +43,7 @@
         href={link.href}
         class="text-sm text-gray-600 transition-colors hover:text-gray-900 {isActive(link.href) ? 'font-semibold text-blue-600' : ''}"
       >
-        {link.label ?? t(link.labelKey)}
+        {link.label ?? t(locale, link.labelKey)}
       </a>
     {/each}
 

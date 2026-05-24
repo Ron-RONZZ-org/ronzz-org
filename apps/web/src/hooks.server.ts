@@ -36,6 +36,10 @@ export const handle: Handle = async ({ event, resolve }) => {
   const response = await resolve(event, { nonce })
 
   // Set strict CSP header with nonce
+  // NOTE: 'unsafe-inline' intentionally omitted — in a nonce-based policy,
+  // adding 'unsafe-inline' would allow all inline scripts in CSP Level 2
+  // browsers (Safari <15.4), defeating XSS protection. 'strict-dynamic' is
+  // safely ignored by those browsers, which fall back to the nonce.
   response.headers.set(
     "Content-Security-Policy",
     [

@@ -4,6 +4,7 @@
   import { Card } from "@ronzz/ui"
 
   let { data }: { data: PageData } = $props()
+  const locale = data.locale
 </script>
 
 <section class="py-8">
@@ -14,24 +15,24 @@
     <input
       type="text"
       name="q"
-      placeholder={tr_multi("Rechercher des ressources…", "Serĉi rimedojn…", "Search resources…")}
+      placeholder={tr_multi(locale, "Rechercher des ressources…", "Serĉi rimedojn…", "Search resources…")}
       class="flex-1 rounded border border-gray-300 px-4 py-2"
     />
     <select name="type" class="rounded border border-gray-300 px-3 py-2">
-      <option value="">{tr_multi("Tous les types", "Ĉiuj tipoj", "All types")}</option>
+      <option value="">{tr_multi(locale, "Tous les types", "Ĉiuj tipoj", "All types")}</option>
       {#each data.resourceTypes as rt}
         <option value={rt.slug}>{rt.nameFr}</option>
       {/each}
     </select>
     <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-      {tr_multi("Rechercher", "Serĉi", "Search")}
+      {tr_multi(locale, "Rechercher", "Serĉi", "Search")}
     </button>
   </form>
 
   <!-- Resource cards -->
   {#if data.resources.length === 0}
     <p class="text-center text-gray-500 py-8">
-      {tr_multi(
+      {tr_multi(locale,
         "Aucune ressource trouvée.",
         "Neniu rimedo trovita.",
         "No resources found.",
@@ -58,18 +59,18 @@
           href="/lib?page={data.page - 1}"
           class="text-sm text-blue-600 hover:underline"
         >
-          &larr; {tr_multi("Précédent", "Antaŭa", "Previous")}
+          &larr; {tr_multi(locale, "Précédent", "Antaŭa", "Previous")}
         </a>
       {/if}
       <span class="text-sm text-gray-500">
-        {tr_multi("pagination.page", { page: data.page, total: data.totalPages })}
+        {tr_multi(locale, "pagination.page", { page: data.page, total: data.totalPages })}
       </span>
       {#if data.page < data.totalPages}
         <a
           href="/lib?page={data.page + 1}"
           class="text-sm text-blue-600 hover:underline"
         >
-          {tr_multi("Suivant", "Sekva", "Next")} &rarr;
+          {tr_multi(locale, "Suivant", "Sekva", "Next")} &rarr;
         </a>
       {/if}
     </div>

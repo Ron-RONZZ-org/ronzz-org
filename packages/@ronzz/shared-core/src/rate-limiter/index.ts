@@ -8,6 +8,9 @@ interface RateLimitEntry {
   resetAt: number
 }
 
+// NOTE: In-memory store — not shared across instances.
+// Current deployment is single-container (see deploy/docker-compose.yml).
+// If horizontal scaling is needed, replace with a shared store (Redis or DB).
 const stores = new Map<string, RateLimitEntry>()
 
 export function checkRateLimit(key: string, config: RateLimitConfig): boolean {

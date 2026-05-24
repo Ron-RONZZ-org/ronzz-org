@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { eq, and, isNull } from "drizzle-orm"
-import { createHash, randomUUID } from "node:crypto"
+import { createHash, randomUUID, randomBytes } from "node:crypto"
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
 import { sessions } from "database/schema/sqlite/users"
@@ -49,6 +49,11 @@ function generateTokenValue(): string {
   return `ronzz_${hex}`
 }
 
+function generatePrefix(): string {
+  // Random 4-byte prefix independent of the token secret
+  return "ronzz_" + randomBytes(4).toString("hex")
+}
+
 export const actions: Actions = {
   create: async ({ cookies, request }) => {
     const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
@@ -64,7 +69,7 @@ export const actions: Actions = {
 
     const token = generateTokenValue()
     const tokenHash = createHash("sha256").update(token).digest("hex")
-    const prefix = token.slice(0, 14) // "ronzz_" + 8 hex chars
+    const prefix = generatePrefix()
 
     const id = randomUUID()
     db.insert(apiTokens).values({

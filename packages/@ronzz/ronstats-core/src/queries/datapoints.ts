@@ -1,17 +1,43 @@
-import { eq } from "drizzle-orm"
+import { eq, count } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Datapoint, DatapointInput } from "../types"
+
+export interface ListDatapointsOptions {
+  limit?: number
+  offset?: number
+}
 
 export async function listDatapoints(
   db: any,
   datasetId: string,
+  options?: ListDatapointsOptions,
 ): Promise<Datapoint[]> {
-  const rows = await db
+  let query = db
     .select()
     .from(schema.datapoints)
     .where(eq(schema.datapoints.datasetId, datasetId))
-    .all()
+
+  if (options?.limit) {
+    query = query.limit(options.limit)
+  }
+  if (options?.offset) {
+    query = query.offset(options.offset)
+  }
+
+  const rows = await query.all()
   return rows as Datapoint[]
+}
+
+export async function countDatapoints(
+  db: any,
+  datasetId: string,
+): Promise<number> {
+  const result = await db
+    .select({ total: count() })
+    .from(schema.datapoints)
+    .where(eq(schema.datapoints.datasetId, datasetId))
+    .get()
+  return result?.total ?? 0
 }
 
 export async function createDatapoint(

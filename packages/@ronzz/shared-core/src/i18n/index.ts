@@ -12,26 +12,16 @@ const bundles: Record<Locale, TranslationBundle> = {
   en: enCommon,
 }
 
-let _currentLocale: Locale = "fr"
-let _currentBundle: TranslationBundle = bundles.fr
-
-/** Set the active locale for key-based lookups. */
-export function setLocale(locale: Locale): void {
-  _currentLocale = locale
-  _currentBundle = bundles[locale]
-}
-
-/** Get the currently active locale. */
-export function getLocale(): Locale {
-  return _currentLocale
-}
-
 /**
- * Translate a key using the current locale's translation bundle.
+ * Translate a key using an explicit locale's translation bundle.
  * Falls back to the key itself if not found.
  */
-export function t(key: string, vars?: Record<string, string | number>): string {
-  let text = _currentBundle[key]
+export function t(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  let text = bundles[locale][key]
   if (!text) {
     // Try English fallback
     text = bundles.en[key]
@@ -47,26 +37,25 @@ export function t(key: string, vars?: Record<string, string | number>): string {
 }
 
 /**
- * Returns the correct translation based on the current locale.
- * Supports two calling conventions:
- *   1) tr_multi("Texte", "Teksto", "Text") — 3 inline strings (uses current locale)
- *   2) tr_multi("nav.home")                — key lookup in translation bundle
- *   3) tr_multi("nav.home", { page: 2 })   — key lookup with template vars
+ * Returns the correct translation based on an explicit locale.
  *
- * Use setLocale() to change the runtime locale.
- * For inline strings with an explicit locale, use t() instead.
+ * Supports three calling conventions:
+ *   1) tr_multi(locale, "Texte", "Teksto", "Text")  — inline triple
+ *   2) tr_multi(locale, "nav.home")                   — key lookup
+ *   3) tr_multi(locale, "pagination.page", { page: 2 }) — key lookup with template vars
  */
 export function tr_multi(
+  locale: Locale,
   frOrKey: string,
   eoOrVars?: string | Record<string, string | number>,
   en?: string,
 ): string {
-  // Key-based lookup: tr_multi("key") or tr_multi("key", { vars })
+  // Key-based lookup: tr_multi(locale, "key") or tr_multi(locale, "key", { vars })
   if (eoOrVars === undefined && en === undefined) {
-    return t(frOrKey)
+    return t(locale, frOrKey)
   }
   if (typeof eoOrVars === "object" && en === undefined) {
-    return t(frOrKey, eoOrVars)
+    return t(locale, frOrKey, eoOrVars)
   }
 
   // Inline triple
@@ -75,7 +64,7 @@ export function tr_multi(
     eo: eoOrVars as string,
     en: en as string,
   }
-  return map[_currentLocale]
+  return map[locale]
 }
 
 /**
