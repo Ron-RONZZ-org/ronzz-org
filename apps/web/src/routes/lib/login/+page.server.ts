@@ -16,12 +16,13 @@ export const actions: Actions = {
       return fail(400, { message: "Email and password are required." })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getDb() as any
-    const user = await db
+    const userRows = await db
       .select()
       .from(schema.users)
       .where(eq(schema.users.email, email))
-      .get()
+    const user = userRows[0]
 
     if (!user) {
       return fail(401, { message: "Invalid email or password." })
@@ -48,14 +49,11 @@ export const actions: Actions = {
     const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
 
-    await db
-      .insert(schema.sessions)
-      .values({
-        id: sessionHash,
-        userId: user.id,
-        expiresAt: Date.now() + 60 * 60 * 24 * 7 * 1000,
-      })
-      .run()
+    await db.insert(schema.sessions).values({
+      id: sessionHash,
+      userId: user.id,
+      expiresAt: Date.now() + 60 * 60 * 24 * 7 * 1000,
+    })
 
     cookies.set("session", sessionId, {
       path: "/",

@@ -1,8 +1,7 @@
 import type { RequestHandler } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { isNull } from "drizzle-orm"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import { schema } from "database/schema/proxy"
 
 const BASE = "https://ronzz.org"
 
@@ -11,6 +10,14 @@ interface SitemapEntry {
   lastmod?: string
   changefreq?: string
   priority?: number
+}
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
 }
 
 export const GET: RequestHandler = async () => {
@@ -22,18 +29,19 @@ export const GET: RequestHandler = async () => {
   ]
 
   try {
-    const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getDb() as any
 
-    // Dynamic datasets (exclude soft-deleted)
-    const datasets = db
-      .select({ id: sqliteSchema.datasets.id, updatedAt: sqliteSchema.datasets.updatedAt })
-      .from(sqliteSchema.datasets)
-      .where(isNull(sqliteSchema.datasets.deletedAt))
-      .all() as { id: string; updatedAt: string }[]
+    // Dynamic datasets (exclude soft-deleted) — dialect-agnostic query
+    const datasets = await db
+      .select({ id: schema.datasets.id, updatedAt: schema.datasets.updatedAt })
+      .from(schema.datasets)
+      .where(isNull(schema.datasets.deletedAt))
+
     for (const ds of datasets) {
       entries.push({
         loc: `${BASE}/stats/${ds.id}`,
-        lastmod: ds.updatedAt,
+        lastmod: String(ds.updatedAt),
         changefreq: "monthly",
         priority: 0.6,
       })
@@ -62,8 +70,4 @@ export const GET: RequestHandler = async () => {
       "Cache-Control": "max-age=3600",
     },
   })
-}
-
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto"
 import type { Handle } from "@sveltejs/kit"
-import { eq, and, isNull } from "drizzle-orm"
+import { eq, and, isNull, gt } from "drizzle-orm"
 import { requestLogger, checkRateLimit, detectLocale } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import { getDb } from "database/db"
@@ -69,6 +69,47 @@ export async function handleRateLimit(
   return null
 }
 
+/** Validate session cookie and populate event.locals.user. */
+export async function handleSessionAuth(
+  event: Parameters<Handle>[0]["event"],
+): Promise<void> {
+  const sessionId = event.cookies.get("session")
+  if (!sessionId) return
+
+  const sessionHash = createHash("sha256").update(sessionId).digest("hex")
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getDb() as any
+    const rows = await db
+      .select({
+        userId: schema.users.id,
+        userEmail: schema.users.email,
+        userRole: schema.users.role,
+      })
+      .from(schema.sessions)
+      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
+      .where(
+        and(
+          eq(schema.sessions.id, sessionHash),
+          gt(schema.sessions.expiresAt, Date.now()),
+        ),
+      )
+
+    // Both dialects return an array; pick the first if present
+    const found = rows?.[0]
+    if (!found) return
+
+    event.locals.user = {
+      id: found.userId,
+      email: found.userEmail,
+      role: found.userRole as "admin" | "editor",
+    }
+  } catch {
+    // Silently ignore — session validation failure is not fatal
+  }
+}
+
 /** Authenticate Bearer tokens on /admin/ routes. */
 export async function handleTokenAuth(
   event: Parameters<Handle>[0]["event"],
@@ -86,8 +127,9 @@ export async function handleTokenAuth(
   const tokenHash = createHash("sha256").update(token).digest("hex")
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getDb() as any
-    const found = await db
+    const rows = await db
       .select({
         id: schema.apiTokens.id,
         tokenHash: schema.apiTokens.tokenHash,
@@ -103,8 +145,8 @@ export async function handleTokenAuth(
           isNull(schema.apiTokens.revokedAt),
         ),
       )
-      .get()
 
+    const found = rows?.[0]
     if (!found) {
       return new Response("Invalid token", { status: 401 })
     }
@@ -114,7 +156,7 @@ export async function handleTokenAuth(
       email: found.userEmail,
       role: found.userRole as "admin" | "editor",
     }
-  } catch (err) {
+  } catch {
     return new Response("Authentication error", { status: 500 })
   }
 

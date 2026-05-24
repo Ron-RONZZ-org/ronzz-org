@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tr_multi, t } from "@ronzz/shared-core"
   import type { Locale } from "@ronzz/shared-core"
+  import { goto } from "$app/navigation"
 
   let {
     locale = "fr" as Locale,
@@ -30,7 +31,7 @@
 
   function switchLocale(newLocale: Locale) {
     document.cookie = `locale=${newLocale}; path=/; max-age=31536000`
-    window.location.reload()
+    goto(currentPath)
   }
 </script>
 

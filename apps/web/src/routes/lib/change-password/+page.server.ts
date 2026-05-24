@@ -35,12 +35,13 @@ export const actions: Actions = {
       })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getDb() as any
-    const user = await db
+    const userRows = await db
       .select()
       .from(schema.users)
       .where(eq(schema.users.id, pwResetUser))
-      .get()
+    const user = userRows[0]
 
     if (!user) {
       cookies.delete("pw_reset_user", { path: "/" })
@@ -66,7 +67,6 @@ export const actions: Actions = {
         passwordChangeRequired: 0,
       })
       .where(eq(schema.users.id, user.id))
-      .run()
 
     cookies.delete("pw_reset_user", { path: "/" })
 

@@ -1,10 +1,9 @@
 import { json } from "@sveltejs/kit"
 import type { RequestHandler } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
 import { createSearchEngine } from "@ronzz/search-core"
 import type { SearchDocument } from "@ronzz/search-core"
+import type { Database } from "database/db-types"
 
 export const POST: RequestHandler = async ({ request, locals }) => {
   if (!locals.user) {
@@ -18,7 +17,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: "documents array required" }, { status: 400 })
   }
 
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
+  const db = getDb() as Database
   const engine = createSearchEngine(db)
 
   await engine.reindex(docs)
