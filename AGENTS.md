@@ -40,7 +40,7 @@ ronzz-org/
 │       └── src/
 │           ├── app.html
 │           ├── app.d.ts
-│           ├── hooks.server.ts  # Logging, rate limiting, nonce CSP, locale detection
+│   ├── hooks.server.ts  # Logging, rate limiting, session + token auth, nonce CSP, locale detection
 │           ├── hooks.client.ts
 │           └── routes/
 │               ├── +layout.svelte     # Root layout (Nav + Footer, canonical URLs, JSON-LD)
@@ -72,7 +72,7 @@ ronzz-org/
 │                   ├── +layout.svelte
 │                   └── +page.svelte  # RonEncik placeholder
 ├── packages/
-│   ├── @ronzz/shared-core/     # Result<T,E>, tryResult(), AppError, logger, rate-limiter, i18n, JSON-LD helpers
+│   ├── @ronzz/shared-core/     # Result<T,E>, tryResult(), AppError, logger, rate-limiter (closeRateLimiter), i18n, JSON-LD helpers
 │   ├── @ronzz/ronstats-core/   # Dataset/datapoint queries, validation, D3 chart renderers
 │   ├── @ronzz/ui/              # Seo, Button, Card, Nav, Footer, LineChart, BarChart, PieChart, app.css
 │   ├── @ronzz/cli/             # CLI tool (yargs) — token, user, resource, dataset, article, search + trash/restore/purge
@@ -84,7 +84,7 @@ ronzz-org/
 │   │   ├── sqlite/             # SQLite dialect (9 tables)
 │   │   └── pg/                 # PostgreSQL dialect (9 tables)
 │   ├── db.ts                   # getDb() — dual-dialect factory
-│   ├── seeds/admin-user.ts     # admin@ronzz.org / admin123
+│   ├── seeds/admin-user.ts     # admin@ronzz.org (ADMIN_PASSWORD env var)
 │   └── drizzle.config.*.ts     # SQLite + PG Drizzle kit configs
 ├── deploy/
 │   ├── Dockerfile              # Multi-stage build
@@ -100,6 +100,8 @@ ronzz-org/
 │       └── disk-usage.sh       # df alert on >90%
 ├── tests/
 │   ├── setup.ts                # beforeEach isolation fixture
+│   ├── auth/
+│   │   └── middleware.test.ts   # Session + token auth validation
 │   ├── shared-core/
 │   │   ├── result.test.ts
 │   │   ├── i18n.test.ts
