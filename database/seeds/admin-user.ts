@@ -31,10 +31,14 @@ async function seedAdminUser() {
       email: ADMIN_EMAIL,
       passwordHash,
       role: "admin",
+      passwordChangeRequired: true,
       createdAt: new Date().toISOString(),
     })
     .run()
 
+  console.warn("\n⚠️  DEFAULT ADMIN PASSWORD DETECTED")
+  console.warn("   The admin account uses password 'admin123'.")
+  console.warn("   Change it immediately after first login.\n")
   console.log(`Admin user created: ${ADMIN_EMAIL}`)
 }
 

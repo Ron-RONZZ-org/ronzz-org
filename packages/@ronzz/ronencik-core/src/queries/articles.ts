@@ -1,8 +1,7 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs"
 import { join, extname } from "node:path"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
-import { eq, like, and } from "drizzle-orm"
-import * as sqliteSchema from "database/schema/sqlite/index"
+import { eq, like, and, sql } from "drizzle-orm"
+import { schema } from "database/schema/proxy"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
 function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
@@ -16,57 +15,59 @@ interface ListOptions {
   offset?: number
 }
 
-export function listArticles(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function listArticles(
+  db: any,
   options: ListOptions = {},
-): { articles: ArticleMetadata[]; total: number } {
-  const conditions = []
+): Promise<{ articles: ArticleMetadata[]; total: number }> {
+  const conditions: any[] = []
   const locale = toLocale(options.locale)
   if (locale) {
-    conditions.push(eq(sqliteSchema.articlesMetadata.locale, locale))
+    conditions.push(eq(schema.articlesMetadata.locale, locale))
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
   const limit = options.limit ?? 50
   const offset = options.offset ?? 0
 
-  const rows = db
+  const rows = await db
     .select()
-    .from(sqliteSchema.articlesMetadata)
+    .from(schema.articlesMetadata)
     .where(where)
     .limit(limit)
     .offset(offset)
     .all()
 
-  const total = db
-    .select({ count: sqliteSchema.articlesMetadata.id })
-    .from(sqliteSchema.articlesMetadata)
+  const countResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.articlesMetadata)
     .where(where)
-    .all().length
+    .get()
+  const total = countResult?.count ?? 0
 
   return { articles: rows as ArticleMetadata[], total }
 }
 
-export function getArticleBySlug(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function getArticleBySlug(
+  db: any,
   slug: string,
-): ArticleMetadata | undefined {
-  return db
+): Promise<ArticleMetadata | undefined> {
+  const row = await db
     .select()
-    .from(sqliteSchema.articlesMetadata)
-    .where(eq(sqliteSchema.articlesMetadata.slug, slug))
-    .get() as ArticleMetadata | undefined
+    .from(schema.articlesMetadata)
+    .where(eq(schema.articlesMetadata.slug, slug))
+    .get()
+  return row as ArticleMetadata | undefined
 }
 
-export function upsertArticleMetadata(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function upsertArticleMetadata(
+  db: any,
   input: ArticleMetadataInput,
-): ArticleMetadata {
-  const existing = getArticleBySlug(db, input.slug)
+): Promise<ArticleMetadata> {
+  const existing = await getArticleBySlug(db, input.slug)
   const now = new Date().toISOString()
 
   if (existing) {
-    db.update(sqliteSchema.articlesMetadata)
+    await db.update(schema.articlesMetadata)
       .set({
         title: input.title,
         description: input.description ?? existing.description,
@@ -75,13 +76,13 @@ export function upsertArticleMetadata(
         publishedAt: input.publishedAt ?? existing.publishedAt,
         updatedAt: now,
       })
-      .where(eq(sqliteSchema.articlesMetadata.id, existing.id))
+      .where(eq(schema.articlesMetadata.id, existing.id))
       .run()
     return { ...existing, ...input, updatedAt: now }
   }
 
   const id = crypto.randomUUID()
-  db.insert(sqliteSchema.articlesMetadata)
+  await db.insert(schema.articlesMetadata)
     .values({
       id,
       slug: input.slug,
@@ -107,13 +108,13 @@ export function upsertArticleMetadata(
   }
 }
 
-export function deleteArticle(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function deleteArticle(
+  db: any,
   id: string,
-): boolean {
-  const result = db
-    .delete(sqliteSchema.articlesMetadata)
-    .where(eq(sqliteSchema.articlesMetadata.id, id))
+): Promise<boolean> {
+  const result = await db
+    .delete(schema.articlesMetadata)
+    .where(eq(schema.articlesMetadata.id, id))
     .run()
   return result.changes > 0
 }
@@ -145,10 +146,10 @@ export function extractSvxFrontmatter(filePath: string): Record<string, unknown>
 }
 
 /** Scan the encik content directory and upsert all .svx metadata. */
-export function syncEncikArticles(
-  db: BetterSQLite3Database<typeof sqliteSchema>,
+export async function syncEncikArticles(
+  db: any,
   contentDir: string,
-): number {
+): Promise<number> {
   let count = 0
   if (!existsSync(contentDir)) return 0
 
@@ -163,7 +164,7 @@ export function syncEncikArticles(
     const description = (fm.description as string) ?? ""
     const locale = (fm.locale as string) ?? "fr"
 
-    upsertArticleMetadata(db, {
+    await upsertArticleMetadata(db, {
       slug,
       title,
       description,

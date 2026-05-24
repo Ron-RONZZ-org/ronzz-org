@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core"
 
 export const users = pgTable("user", {
   id: text("id").primaryKey(),
@@ -7,6 +7,7 @@ export const users = pgTable("user", {
   role: text("role", { enum: ["admin", "editor"] })
     .notNull()
     .default("editor"),
+  passwordChangeRequired: boolean("password_change_required").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

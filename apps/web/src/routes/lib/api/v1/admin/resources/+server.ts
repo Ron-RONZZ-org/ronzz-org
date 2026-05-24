@@ -1,16 +1,15 @@
 import { json } from "@sveltejs/kit"
 import type { RequestHandler } from "./$types"
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { getDb } from "database/db"
-import type * as sqliteSchema from "database/schema/sqlite/index"
+import type { Database } from "database/db-types"
 import { listResources, createResource, deleteResource } from "@ronzz/ronlib-core"
 import { resourceSchema } from "@ronzz/ronlib-core"
 import { createSearchEngine } from "@ronzz/search-core"
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const { resources, total } = listResources(db, {
+  const db = getDb() as Database
+  const { resources, total } = await listResources(db, {
     limit: parseInt(url.searchParams.get("limit") ?? "50", 10),
     offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
   })
@@ -25,8 +24,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const resource = createResource(db, parsed.data)
+  const db = getDb() as Database
+  const resource = await createResource(db, parsed.data)
 
   // Index in search
   const engine = createSearchEngine(db)
@@ -48,8 +47,8 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
   const id = url.searchParams.get("id")
   if (!id) return json({ error: "id required" }, { status: 400 })
 
-  const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const deleted = deleteResource(db, id)
+  const db = getDb() as Database
+  const deleted = await deleteResource(db, id)
 
   // Remove from search index
   const engine = createSearchEngine(db)

@@ -3,6 +3,9 @@ export {
   getResource,
   createResource,
   deleteResource,
+  listTrashResources,
+  restoreResource,
+  hardDeleteResource,
 } from "./queries/resources"
 export { listResourceTypes, getResourceTypeBySlug, createResourceType } from "./queries/resource-types"
 export { resourceSchema, resourceTypeSchema } from "./validation"
