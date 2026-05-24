@@ -23,7 +23,7 @@ WORKDIR /app
 # Install PostgreSQL client for migration scripts
 RUN apk add --no-cache postgresql-client
 
-COPY --from=builder /app/build build/
+COPY --from=builder /app/apps/web/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/packages packages/
