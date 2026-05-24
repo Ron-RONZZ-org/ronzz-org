@@ -8,6 +8,9 @@ import { hardDeleteDataset } from "@ronzz/ronstats-core"
 export const DELETE: RequestHandler = async ({ params, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
   const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const purged = hardDeleteDataset(db, params.id)
-  return json({ purged }, purged ? { status: 200 } : { status: 404 })
+  const result = await hardDeleteDataset(db, params.id)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
+  return json({ purged: result.value }, result.value ? { status: 200 } : { status: 404 })
 }

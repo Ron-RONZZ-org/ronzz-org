@@ -1,5 +1,7 @@
 import { eq, like, or, and, desc, asc, isNull, isNotNull, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
+import type { Database } from "database/db-types"
+import { tryResult, type Result, type AppError } from "@ronzz/shared-core"
 import type { Resource, ResourceInput } from "../types"
 
 interface ListOptions {
@@ -84,51 +86,49 @@ export async function getResource(
 }
 
 export async function createResource(
-  db: any,
+  db: Database,
   input: ResourceInput,
-): Promise<Resource> {
-  const id = crypto.randomUUID()
-  const now = new Date().toISOString()
-  await db.insert(schema.resources)
-    .values({
-      id,
-      typeId: input.typeId,
-      title: input.title,
-      description: input.description ?? "",
-      url: input.url,
-      locale: input.locale ?? "fr",
-      metadata: (input.metadata ?? {}) as never,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .run()
-  return {
-    id,
-    typeId: input.typeId,
-    title: input.title,
-    description: input.description ?? "",
-    url: input.url,
-    locale: input.locale ?? "fr",
-    metadata: input.metadata ?? {},
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-  }
+): Promise<Result<Resource, AppError>> {
+  return tryResult(async () => {
+    const id = crypto.randomUUID()
+    const now = new Date().toISOString()
+    const [resource] = await (db as any)
+      .insert(schema.resources)
+      .values({
+        id,
+        typeId: input.typeId,
+        title: input.title,
+        description: input.description ?? "",
+        url: input.url,
+        locale: input.locale ?? "fr",
+        metadata: (input.metadata ?? {}) as never,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+      .all()
+    return {
+      ...resource,
+      deletedAt: resource.deletedAt ?? null,
+    } as Resource
+  })
 }
 
 /** Soft-delete a resource by setting deletedAt. */
 export async function deleteResource(
-  db: any,
+  db: Database,
   id: string,
-): Promise<boolean> {
-  const result = await db
-    .update(schema.resources)
-    .set({ deletedAt: new Date().toISOString() })
-    .where(
-      and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
-    )
-    .run()
-  return result.changes > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await (db as any)
+      .update(schema.resources)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(
+        and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
+      )
+      .run()
+    return (result as { changes: number }).changes > 0
+  })
 }
 
 /** List soft-deleted (trashed) resources. */
@@ -145,25 +145,29 @@ export async function listTrashResources(
 
 /** Restore a soft-deleted resource. */
 export async function restoreResource(
-  db: any,
+  db: Database,
   id: string,
-): Promise<boolean> {
-  const result = await db
-    .update(schema.resources)
-    .set({ deletedAt: null })
-    .where(eq(schema.resources.id, id))
-    .run()
-  return result.changes > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await (db as any)
+      .update(schema.resources)
+      .set({ deletedAt: null })
+      .where(eq(schema.resources.id, id))
+      .run()
+    return (result as { changes: number }).changes > 0
+  })
 }
 
 /** Permanently delete a resource. */
 export async function hardDeleteResource(
-  db: any,
+  db: Database,
   id: string,
-): Promise<boolean> {
-  const result = await db
-    .delete(schema.resources)
-    .where(eq(schema.resources.id, id))
-    .run()
-  return result.changes > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await (db as any)
+      .delete(schema.resources)
+      .where(eq(schema.resources.id, id))
+      .run()
+    return (result as { changes: number }).changes > 0
+  })
 }

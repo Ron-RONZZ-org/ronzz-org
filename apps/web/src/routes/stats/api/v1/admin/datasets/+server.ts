@@ -23,8 +23,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: parsed.error.flatten() }, { status: 400 })
   }
   const db = getDb() as Database
-  const dataset = await createDataset(db, parsed.data)
-  return json({ dataset }, { status: 201 })
+  const result = await createDataset(db, parsed.data)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
+  return json({ dataset: result.value }, { status: 201 })
 }
 
 export const DELETE: RequestHandler = async ({ url, locals }) => {
@@ -32,6 +35,9 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
   const id = url.searchParams.get("id")
   if (!id) return json({ error: "id required" }, { status: 400 })
   const db = getDb() as Database
-  const deleted = await deleteDataset(db, id)
-  return json({ deleted }, deleted ? { status: 200 } : { status: 404 })
+  const result = await deleteDataset(db, id)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
+  return json({ deleted: result.value }, result.value ? { status: 200 } : { status: 404 })
 }

@@ -67,15 +67,17 @@ describe("resources queries", () => {
   describe("createResource", () => {
     it("creates a resource with all fields", async () => {
       const result = await createResource(db as any, sampleInput)
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
 
-      expect(result.id).toBeTruthy()
-      expect(result.title).toBe("Test Resource")
-      expect(result.description).toBe("A test resource")
-      expect(result.url).toBe("https://example.com/book")
-      expect(result.typeId).toBe(typeId)
-      expect(result.locale).toBe("fr")
-      expect(result.metadata).toEqual({ author: "Test Author" })
-      expect(result.deletedAt).toBeNull()
+      expect(result.value.id).toBeTruthy()
+      expect(result.value.title).toBe("Test Resource")
+      expect(result.value.description).toBe("A test resource")
+      expect(result.value.url).toBe("https://example.com/book")
+      expect(result.value.typeId).toBe(typeId)
+      expect(result.value.locale).toBe("fr")
+      expect(result.value.metadata).toEqual({ author: "Test Author" })
+      expect(result.value.deletedAt).toBeNull()
     })
 
     it("uses defaults for optional fields", async () => {
@@ -84,10 +86,12 @@ describe("resources queries", () => {
         title: "Minimal",
         url: "https://example.com/minimal",
       })
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
 
-      expect(result.description).toBe("")
-      expect(result.locale).toBe("fr")
-      expect(result.metadata).toEqual({})
+      expect(result.value.description).toBe("")
+      expect(result.value.locale).toBe("fr")
+      expect(result.value.metadata).toEqual({})
     })
   })
 
@@ -99,8 +103,10 @@ describe("resources queries", () => {
     })
 
     it("lists all non-deleted resources", async () => {
-      await createResource(db as any, sampleInput)
-      await createResource(db as any, { ...sampleInput, title: "Second" })
+      const r1 = await createResource(db as any, sampleInput)
+      expect(r1.ok).toBe(true)
+      const r2 = await createResource(db as any, { ...sampleInput, title: "Second" })
+      expect(r2.ok).toBe(true)
 
       const { resources, total } = await listResources(db as any)
       expect(total).toBe(2)
@@ -109,7 +115,8 @@ describe("resources queries", () => {
 
     it("respects limit and offset", async () => {
       for (let i = 0; i < 5; i++) {
-        await createResource(db as any, { ...sampleInput, title: `Resource ${i}` })
+        const r = await createResource(db as any, { ...sampleInput, title: `Resource ${i}` })
+        expect(r.ok).toBe(true)
       }
 
       const { resources, total } = await listResources(db as any, { limit: 2, offset: 1 })
@@ -118,9 +125,12 @@ describe("resources queries", () => {
     })
 
     it("filters by search term", async () => {
-      await createResource(db as any, { ...sampleInput, title: "Alpha" })
-      await createResource(db as any, { ...sampleInput, title: "Beta" })
-      await createResource(db as any, { ...sampleInput, title: "Alpha Prime" })
+      const r1 = await createResource(db as any, { ...sampleInput, title: "Alpha" })
+      expect(r1.ok).toBe(true)
+      const r2 = await createResource(db as any, { ...sampleInput, title: "Beta" })
+      expect(r2.ok).toBe(true)
+      const r3 = await createResource(db as any, { ...sampleInput, title: "Alpha Prime" })
+      expect(r3.ok).toBe(true)
 
       const { resources, total } = await listResources(db as any, { search: "Alpha" })
       expect(total).toBe(2)
@@ -128,9 +138,11 @@ describe("resources queries", () => {
     })
 
     it("filters by locale", async () => {
-      await createResource(db as any, { ...sampleInput, locale: "fr" })
-      await createResource(db as any, { ...sampleInput, locale: "en" })
-      await createResource(db as any, { ...sampleInput, locale: "eo" })
+      const r1 = await createResource(db as any, { ...sampleInput, locale: "fr" })
+      expect(r1.ok).toBe(true)
+      const r2 = await createResource(db as any, { ...sampleInput, locale: "en" })
+      expect(r2.ok).toBe(true)
+      const r3 = await createResource(db as any, { ...sampleInput, locale: "eo" })
 
       const { resources, total } = await listResources(db as any, { locale: "fr" })
       expect(total).toBe(1)
@@ -146,16 +158,22 @@ describe("resources queries", () => {
 
     it("returns a resource by id", async () => {
       const created = await createResource(db as any, sampleInput)
-      const result = await getResource(db as any, created.id)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
+
+      const result = await getResource(db as any, created.value.id)
       expect(result).toBeTruthy()
       expect(result!.title).toBe("Test Resource")
     })
 
     it("returns undefined for soft-deleted resource", async () => {
       const created = await createResource(db as any, sampleInput)
-      await deleteResource(db as any, created.id)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
 
-      const result = await getResource(db as any, created.id)
+      await deleteResource(db as any, created.value.id)
+
+      const result = await getResource(db as any, created.value.id)
       expect(result).toBeUndefined()
     })
   })
@@ -163,31 +181,42 @@ describe("resources queries", () => {
   describe("deleteResource (soft-delete)", () => {
     it("soft-deletes a resource", async () => {
       const created = await createResource(db as any, sampleInput)
-      const deleted = await deleteResource(db as any, created.id)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
 
-      expect(deleted).toBe(true)
+      const deleted = await deleteResource(db as any, created.value.id)
+      expect(deleted).toMatchObject({ ok: true, value: true })
+
       const { resources, total } = await listResources(db as any)
       expect(total).toBe(0)
     })
 
     it("returns false for already deleted resource", async () => {
       const created = await createResource(db as any, sampleInput)
-      await deleteResource(db as any, created.id)
-      const result = await deleteResource(db as any, created.id)
-      expect(result).toBe(false)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
+
+      await deleteResource(db as any, created.value.id)
+      const result = await deleteResource(db as any, created.value.id)
+      expect(result).toMatchObject({ ok: true, value: false })
     })
 
     it("returns false for non-existent resource", async () => {
       const result = await deleteResource(db as any, "non-existent")
-      expect(result).toBe(false)
+      expect(result).toMatchObject({ ok: true, value: false })
     })
   })
 
   describe("listTrashResources", () => {
     it("lists soft-deleted resources", async () => {
-      await createResource(db as any, sampleInput)
+      const r1 = await createResource(db as any, sampleInput)
+      expect(r1.ok).toBe(true)
+
       const created2 = await createResource(db as any, { ...sampleInput, title: "To Delete" })
-      await deleteResource(db as any, created2.id)
+      expect(created2.ok).toBe(true)
+      if (!created2.ok) return
+
+      await deleteResource(db as any, created2.value.id)
 
       const trash = await listTrashResources(db as any)
       expect(trash).toHaveLength(1)
@@ -198,10 +227,13 @@ describe("resources queries", () => {
   describe("restoreResource", () => {
     it("restores a soft-deleted resource", async () => {
       const created = await createResource(db as any, sampleInput)
-      await deleteResource(db as any, created.id)
-      const restored = await restoreResource(db as any, created.id)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
 
-      expect(restored).toBe(true)
+      await deleteResource(db as any, created.value.id)
+      const restored = await restoreResource(db as any, created.value.id)
+      expect(restored).toMatchObject({ ok: true, value: true })
+
       const { resources, total } = await listResources(db as any)
       expect(total).toBe(1)
     })
@@ -210,9 +242,12 @@ describe("resources queries", () => {
   describe("hardDeleteResource", () => {
     it("permanently deletes a resource", async () => {
       const created = await createResource(db as any, sampleInput)
-      const deleted = await hardDeleteResource(db as any, created.id)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
 
-      expect(deleted).toBe(true)
+      const deleted = await hardDeleteResource(db as any, created.value.id)
+      expect(deleted).toMatchObject({ ok: true, value: true })
+
       const { resources, total } = await listResources(db as any)
       expect(total).toBe(0)
     })

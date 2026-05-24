@@ -8,6 +8,9 @@ import { restoreDataset } from "@ronzz/ronstats-core"
 export const POST: RequestHandler = async ({ params, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
   const db = getDb() as BetterSQLite3Database<typeof sqliteSchema>
-  const restored = restoreDataset(db, params.id)
-  return json({ restored }, restored ? { status: 200 } : { status: 404 })
+  const result = await restoreDataset(db, params.id)
+  if (!result.ok) {
+    return json({ error: result.error.message }, { status: result.error.statusCode })
+  }
+  return json({ restored: result.value }, result.value ? { status: 200 } : { status: 404 })
 }

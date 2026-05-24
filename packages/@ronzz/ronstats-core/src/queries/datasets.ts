@@ -1,5 +1,7 @@
 import { eq, like, or, and, isNull, isNotNull, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
+import type { Database } from "database/db-types"
+import { tryResult, type Result, type AppError } from "@ronzz/shared-core"
 import type { Dataset, DatasetInput } from "../types"
 
 interface ListOptions {
@@ -72,55 +74,51 @@ export async function getDataset(
 }
 
 export async function createDataset(
-  db: any,
+  db: Database,
   input: DatasetInput,
-): Promise<Dataset> {
-  const id = crypto.randomUUID()
-  const now = new Date().toISOString()
-  await db.insert(schema.datasets)
-    .values({
-      id,
-      title: input.title,
-      description: input.description ?? "",
-      source: input.source ?? "",
-      sourceUrl: input.sourceUrl ?? "",
-      license: input.license ?? "",
-      locale: input.locale ?? "fr",
-      chartType: input.chartType ?? "bar",
-      metadata: (input.metadata ?? {}) as never,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .run()
-  return {
-    id,
-    title: input.title,
-    description: input.description ?? "",
-    source: input.source ?? "",
-    sourceUrl: input.sourceUrl ?? "",
-    license: input.license ?? "",
-    locale: input.locale ?? "fr",
-    chartType: input.chartType ?? "bar",
-    metadata: input.metadata ?? {},
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-  }
+): Promise<Result<Dataset, AppError>> {
+  return tryResult(async () => {
+    const id = crypto.randomUUID()
+    const now = new Date().toISOString()
+    const [dataset] = await (db as any)
+      .insert(schema.datasets)
+      .values({
+        id,
+        title: input.title,
+        description: input.description ?? "",
+        source: input.source ?? "",
+        sourceUrl: input.sourceUrl ?? "",
+        license: input.license ?? "",
+        locale: input.locale ?? "fr",
+        chartType: input.chartType ?? "bar",
+        metadata: (input.metadata ?? {}) as never,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+      .all()
+    return {
+      ...dataset,
+      deletedAt: dataset.deletedAt ?? null,
+    } as Dataset
+  })
 }
 
 /** Soft-delete a dataset by setting deleted_at. */
 export async function softDeleteDataset(
-  db: any,
+  db: Database,
   id: string,
-): Promise<boolean> {
-  const result = await db
-    .update(schema.datasets)
-    .set({ deletedAt: new Date().toISOString() })
-    .where(
-      and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
-    )
-    .run()
-  return result.changes > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await (db as any)
+      .update(schema.datasets)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(
+        and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
+      )
+      .run()
+    return (result as { changes: number }).changes > 0
+  })
 }
 
 /** List soft-deleted (trashed) datasets. */
@@ -137,27 +135,31 @@ export async function listTrashDatasets(
 
 /** Restore a soft-deleted dataset. */
 export async function restoreDataset(
-  db: any,
+  db: Database,
   id: string,
-): Promise<boolean> {
-  const result = await db
-    .update(schema.datasets)
-    .set({ deletedAt: null })
-    .where(eq(schema.datasets.id, id))
-    .run()
-  return result.changes > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await (db as any)
+      .update(schema.datasets)
+      .set({ deletedAt: null })
+      .where(eq(schema.datasets.id, id))
+      .run()
+    return (result as { changes: number }).changes > 0
+  })
 }
 
 /** Permanently delete a dataset. */
 export async function hardDeleteDataset(
-  db: any,
+  db: Database,
   id: string,
-): Promise<boolean> {
-  const result = await db
-    .delete(schema.datasets)
-    .where(eq(schema.datasets.id, id))
-    .run()
-  return result.changes > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await (db as any)
+      .delete(schema.datasets)
+      .where(eq(schema.datasets.id, id))
+      .run()
+    return (result as { changes: number }).changes > 0
+  })
 }
 
 /** Legacy alias for soft-delete. */

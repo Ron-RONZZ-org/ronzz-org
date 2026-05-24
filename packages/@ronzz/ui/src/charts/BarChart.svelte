@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte"
   import { barChart, defaultDimensions } from "@ronzz/ronstats-core/charts"
   import type { Datapoint } from "@ronzz/ronstats-core"
+  import { useContainerWidth } from "./useContainerWidth.svelte.js"
 
   let {
     datapoints,
@@ -13,26 +13,16 @@
     height?: number
   } = $props()
 
-  let container: HTMLDivElement
-  let width = explicitWidth ?? 600
+  let cw = useContainerWidth(explicitWidth)
 
-  onMount(() => {
-    if (explicitWidth) return
-    const ro = new ResizeObserver(([entry]) => {
-      width = entry.contentRect.width
-    })
-    ro.observe(container)
-    return () => ro.disconnect()
-  })
-
-  let dim = $derived(defaultDimensions(width, height))
+  let dim = $derived(defaultDimensions(cw.width, height))
   let result = $derived(barChart(datapoints, dim))
 
   let innerH = $derived(dim.height - dim.margin.top - dim.margin.bottom)
 </script>
 
-<div bind:this={container} class="w-full">
-  <svg width={width} height={height} class="overflow-visible">
+<div bind:this={cw.element} class="w-full">
+  <svg width={cw.width} height={height} class="overflow-visible">
     <!-- Y axis grid + labels -->
     <g transform="translate({dim.margin.left}, {dim.margin.top})">
       {#each result.yTicks as tick}
@@ -86,7 +76,7 @@
 
     {#if result.unit}
       <text
-        x={width - 10}
+        x={cw.width - 10}
         y={14}
         text-anchor="end"
         class="fill-gray-400 text-xs"
