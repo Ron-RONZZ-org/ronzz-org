@@ -17,9 +17,10 @@
     "cli": "pnpm --filter @ronzz/cli start",
     "clean": "pnpm -r exec rm -rf node_modules dist .svelte-kit"
   },
-  "engines": {
-    "node": ">=20"
-  },
+  "packageManager": "pnpm@10.6.5",
+    "engines": {
+        "node": ">=20"
+    },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@node-rs/argon2",
