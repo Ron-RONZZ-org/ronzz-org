@@ -42,7 +42,10 @@ pnpm check                      # svelte-check
 # Production build
 pnpm build
 
-# CLI (requires RONZZ_TOKEN)
+# Web admin (login first)
+# Go to http://localhost:5173/lib/login → /lib/tokens
+
+# CLI (requires RONZZ_TOKEN — generate one via web first)
 pnpm cli -- --help
 
 # Docker
@@ -160,11 +163,16 @@ Navigate to `https://ronzz.org/lib/login` and sign in with the admin account.
 
 ### API tokens
 
-For CLI and programmatic access, generate API tokens:
+For CLI and programmatic access, generate API tokens via the web interface:
 
-**Via web:** Log in → generate token from admin panel (future feature).
+**Via web (recommended):**
 
-**Via CLI:** Requires an existing token first:
+1. Log in at `https://ronzz.org/lib/login` with your admin credentials
+2. Navigate to `https://ronzz.org/lib/tokens`
+3. Enter a name (e.g., `"dev-machine"`) and click **Generate**
+4. **Copy the token immediately** — it will not be shown again
+
+**Via CLI:** Once you have at least one token, you can manage others from the CLI:
 
 ```bash
 # Set initial token
