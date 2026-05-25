@@ -40,7 +40,7 @@ ronzz-org/
 │       └── src/
 │           ├── app.html
 │           ├── app.d.ts
-│   ├── hooks.server.ts  # Logging, rate limiting, session + token auth, nonce CSP, locale detection
+│   ├── hooks.server.ts  # Logging, rate limiting, CSRF, session + token auth, nonce CSP, locale detection
 │           ├── hooks.client.ts
 │           └── routes/
 │               ├── +layout.svelte     # Root layout (Nav + Footer, canonical URLs, JSON-LD)
@@ -85,7 +85,8 @@ ronzz-org/
 │   ├── schema/
 │   │   ├── sqlite/             # SQLite dialect (9 tables)
 │   │   └── pg/                 # PostgreSQL dialect (9 tables)
-│   ├── db.ts                   # getDb() — dual-dialect factory (closeDb, resetDb)
+│   ├── db.ts                   # getDb() — dual-dialect factory (closeDb, resetDb); uses detectDialect from proxy.ts
+│   ├── schema/proxy.ts         # Lazy schema resolution via Proxy — getSchema(), schema (lazy), resetDialectCache(), detectDialect()
 │   ├── db-types.ts             # Database union type (SQLite | PG)
 │   ├── seeds/admin-user.ts     # admin@ronzz.org (ADMIN_PASSWORD env var, required — no fallback)
 │   └── drizzle.config.*.ts     # SQLite + PG Drizzle kit configs
@@ -119,7 +120,8 @@ ronzz-org/
 │   │   ├── bar.test.ts
 │   │   ├── line.test.ts
 │   │   └── pie.test.ts
-│   └── database/               # Future DB tests
+│   ├── database/
+│   │   └── schema-proxy.test.ts # Schema proxy lazy resolution tests (detectDialect, getSchema, resetDialectCache)
 ├── .github/workflows/
 │   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
 │   └── deploy.yml              # Build Docker → push ghcr.io → SSH deploy on main push
@@ -186,7 +188,9 @@ ronzz-org/
 7. Ensure AGPL v3 compliance — source link in footer of every page
 8. Do NOT use `@apply` in Svelte `<style>` blocks (Tailwind v4 limitation); use inline utility classes instead
 9. CSP is nonce-based, generated in `hooks.server.ts` — do not set CSP in Caddy's static config
-10. Health endpoint lives at `GET /api/v1/health` (top-level), old route at `/stats/api/v1/health` kept for compat
+10. CSRF protection is applied in `hooks.server.ts` — state-changing requests without matching Origin/Referer are rejected; Bearer-authenticated API calls bypass this check
+11. Health endpoint lives at `GET /api/v1/health` (top-level), old route at `/stats/api/v1/health` kept for compat
+12. Schema proxy in `database/schema/proxy.ts` uses lazy evaluation via Proxy — `resetDialectCache()` forces re-evaluation on next access, critical for test isolation
 
 ---
 
