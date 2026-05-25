@@ -2,23 +2,15 @@ import type { RequestHandler } from "./$types"
 import { isNull } from "drizzle-orm"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
-import { TtlCache } from "@ronzz/shared-core"
+import { TtlCache, escapeXml } from "@ronzz/shared-core"
 
-const BASE = "https://ronzz.org"
+const BASE = process.env.ORIGIN || "https://ronzz.org"
 
 interface SitemapEntry {
   loc: string
   lastmod?: string
   changefreq?: string
   priority?: number
-}
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
 }
 
 // Cache regenerated sitemap for 30 minutes

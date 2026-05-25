@@ -4,21 +4,17 @@ import { getDb } from "database/db"
 import { createSearchEngine } from "@ronzz/search-core"
 import type { SearchDocument, SearchResultType } from "@ronzz/search-core"
 import type { Database } from "database/db-types"
-import { logger } from "@ronzz/shared-core"
+import { logger, toLocale } from "@ronzz/shared-core"
 import { apiHandler } from "$lib/server/middleware"
 
 const VALID_TYPES = new Set<SearchResultType>(["resource", "dataset", "article"])
-
-function isValidLocale(locale: string): boolean {
-  return locale === "fr" || locale === "en" || locale === "eo"
-}
 
 function isValidSearchDocument(doc: unknown): doc is SearchDocument {
   if (typeof doc !== "object" || doc === null) return false
   const d = doc as Record<string, unknown>
   if (typeof d.id !== "string" || !d.id) return false
   if (!VALID_TYPES.has(d.type as SearchResultType)) return false
-  if (!isValidLocale(String(d.locale))) return false
+  if (!toLocale(String(d.locale))) return false
   if (typeof d.title !== "string" || !d.title) return false
   if (typeof d.description !== "string") return false
   if (typeof d.content !== "string") return false
