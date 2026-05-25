@@ -10,7 +10,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     return { dataset: null, datapoints: [] }
   }
 
-  const datapoints = await listDatapoints(db, params.uuid)
+  // Cap datapoints loaded for a page view to prevent memory exhaustion on large datasets
+  const datapoints = await listDatapoints(db, params.uuid, { limit: 1000 })
 
   return { dataset, datapoints }
 }

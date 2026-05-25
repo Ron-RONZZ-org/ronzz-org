@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { eq, and, isNull } from "drizzle-orm"
-import { createHash, randomBytes } from "node:crypto"
+import { createHash } from "node:crypto"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
 import type { Actions, PageServerLoad } from "./$types"
@@ -31,9 +31,9 @@ function generateTokenValue(): string {
   return `ronzz_${hex}`
 }
 
-function generatePrefix(): string {
-  // Random 4-byte prefix independent of the token secret
-  return "ronzz_" + randomBytes(4).toString("hex")
+function derivePrefix(tokenValue: string): string {
+  // Derive prefix from the start of the actual token so the prefix is visually identifiable
+  return tokenValue.slice(0, 12)
 }
 
 export const actions: Actions = {
@@ -51,7 +51,7 @@ export const actions: Actions = {
 
     const token = generateTokenValue()
     const tokenHash = createHash("sha256").update(token).digest("hex")
-    const prefix = generatePrefix()
+    const prefix = derivePrefix(token)
 
     const id = crypto.randomUUID()
     await db.insert(schema.apiTokens).values({

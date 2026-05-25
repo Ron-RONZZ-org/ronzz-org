@@ -1,75 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { resetDb, getDb } from "database/db"
 import type { Database } from "database/db-types"
-
-/**
- * Minimal SvelteKit RequestEvent-like object for handler testing.
- */
-function mockEvent(overrides?: {
-  url?: string
-  method?: string
-  body?: unknown
-  headers?: Record<string, string>
-  user?: { id: string; email: string; role: "admin" | "editor" } | null
-  params?: Record<string, string>
-}): any {
-  const url = new URL(overrides?.url ?? "http://localhost:5173/")
-  const body = overrides?.body !== undefined ? JSON.stringify(overrides.body) : null
-  return {
-    request: new Request(url, {
-      method: overrides?.method ?? "GET",
-      headers: overrides?.headers ?? {},
-      body,
-    }),
-    url,
-    params: overrides?.params ?? {},
-    locals: {
-      user: overrides?.user ?? null,
-      locale: "fr",
-      requestId: "test",
-      nonce: "test-nonce",
-    },
-    cookies: {
-      get: () => undefined,
-      set: () => {},
-      delete: () => {},
-    },
-  }
-}
-
-function createTestTables(db: Database): void {
-  // biome-ignore lint/suspicious/noExplicitAny: need access to underlying SQLite connection
-  const sqlite = (db as any).session?.client as any
-  if (sqlite?.exec) {
-    sqlite.exec(`
-      CREATE TABLE "dataset" (
-        "id" text PRIMARY KEY NOT NULL,
-        "title" text NOT NULL,
-        "description" text NOT NULL DEFAULT '',
-        "source" text NOT NULL DEFAULT '',
-        "source_url" text NOT NULL DEFAULT '',
-        "license" text NOT NULL DEFAULT '',
-        "locale" text NOT NULL DEFAULT 'fr',
-        "chart_type" text NOT NULL DEFAULT 'bar',
-        "metadata" text DEFAULT '{}',
-        "created_at" text NOT NULL,
-        "updated_at" text NOT NULL,
-        "deleted_at" text
-      );
-      CREATE TABLE "datapoint" (
-        "id" text PRIMARY KEY NOT NULL,
-        "dataset_id" text NOT NULL,
-        "dimension_key" text NOT NULL DEFAULT '',
-        "dimension_value" text NOT NULL DEFAULT '',
-        "value" real NOT NULL DEFAULT 0,
-        "unit" text NOT NULL DEFAULT '',
-        "year" text NOT NULL DEFAULT '',
-        "metadata" text DEFAULT '{}',
-        "created_at" text NOT NULL
-      );
-    `)
-  }
-}
+import { createTestTables } from "../helpers/create-test-tables"
+import { mockEvent } from "../helpers/mock-event"
 
 describe("Datapoints API", () => {
   let datasetId: string

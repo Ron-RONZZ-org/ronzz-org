@@ -4,37 +4,7 @@ import { resetDb, getDb } from "database/db"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
 import { eq, and, gt, isNull } from "drizzle-orm"
-
-function createTables(db: Database): void {
-  const sqlite = (db as any).session?.client as any
-  if (sqlite?.exec) {
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS "user" (
-        "id" text PRIMARY KEY NOT NULL,
-        "email" text NOT NULL UNIQUE,
-        "password_hash" text NOT NULL,
-        "role" text NOT NULL DEFAULT 'editor',
-        "password_change_required" integer NOT NULL DEFAULT 0,
-        "created_at" text NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS "session" (
-        "id" text PRIMARY KEY NOT NULL,
-        "user_id" text NOT NULL REFERENCES "user"("id"),
-        "expires_at" integer NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS "api_token" (
-        "id" text PRIMARY KEY NOT NULL,
-        "user_id" text NOT NULL REFERENCES "user"("id"),
-        "name" text NOT NULL,
-        "token_hash" text NOT NULL,
-        "prefix" text NOT NULL,
-        "revoked_at" text,
-        "created_at" text NOT NULL,
-        "last_used_at" text
-      );
-    `)
-  }
-}
+import { createTestTables } from "../helpers/create-test-tables"
 
 // NOTE: SQLite expects numbers for integer columns (not booleans).
 // This is a known driver constraint — the proxy schema types differ per dialect.
@@ -45,7 +15,7 @@ describe("session auth logic", () => {
     resetDb()
     process.env.DATABASE_URL = ":memory:"
     const db = getDb() as Database
-    createTables(db)
+    createTestTables(db)
   })
 
   it("validates a valid session", async () => {
@@ -137,7 +107,7 @@ describe("token auth logic", () => {
     resetDb()
     process.env.DATABASE_URL = ":memory:"
     const db = getDb() as Database
-    createTables(db)
+    createTestTables(db)
   })
 
   it("validates a valid bearer token", async () => {

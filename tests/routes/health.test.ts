@@ -1,39 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { resetDb, closeDb } from "database/db"
-
-/**
- * Minimal SvelteKit RequestEvent-like object for handler testing.
- * Only includes fields used by the handlers under test.
- */
-function mockEvent(overrides?: {
-  url?: string
-  method?: string
-  body?: unknown
-  headers?: Record<string, string>
-}): any {
-  const url = new URL(overrides?.url ?? "http://localhost:5173/")
-  const body = overrides?.body !== undefined ? JSON.stringify(overrides.body) : null
-  return {
-    request: new Request(url, {
-      method: overrides?.method ?? "GET",
-      headers: overrides?.headers ?? {},
-      body,
-    }),
-    url,
-    params: {},
-    locals: {
-      user: null,
-      locale: "fr",
-      requestId: "test",
-      nonce: "test-nonce",
-    },
-    cookies: {
-      get: () => undefined,
-      set: () => {},
-      delete: () => {},
-    },
-  }
-}
+import { mockEvent } from "../helpers/mock-event"
 
 describe("Health endpoint", () => {
   beforeEach(() => {

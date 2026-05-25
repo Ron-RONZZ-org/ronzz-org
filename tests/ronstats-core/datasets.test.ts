@@ -11,40 +11,7 @@ import {
   hardDeleteDataset,
 } from "@ronzz/ronstats-core"
 import type { DatasetInput } from "@ronzz/ronstats-core"
-
-function createTestTables(db: Database): void {
-  // biome-ignore lint/suspicious/noExplicitAny: need access to underlying SQLite connection
-  const sqlite = (db as any).session?.client as any
-  if (sqlite?.exec) {
-    sqlite.exec(`
-      CREATE TABLE "dataset" (
-        "id" text PRIMARY KEY NOT NULL,
-        "title" text NOT NULL,
-        "description" text NOT NULL DEFAULT '',
-        "source" text NOT NULL DEFAULT '',
-        "source_url" text NOT NULL DEFAULT '',
-        "license" text NOT NULL DEFAULT '',
-        "locale" text NOT NULL DEFAULT 'fr',
-        "chart_type" text NOT NULL DEFAULT 'bar',
-        "metadata" text DEFAULT '{}',
-        "created_at" text NOT NULL,
-        "updated_at" text NOT NULL,
-        "deleted_at" text
-      );
-      CREATE TABLE "datapoint" (
-        "id" text PRIMARY KEY NOT NULL,
-        "dataset_id" text NOT NULL REFERENCES "dataset"("id"),
-        "dimension_key" text NOT NULL DEFAULT '',
-        "dimension_value" text NOT NULL DEFAULT '',
-        "value" real NOT NULL DEFAULT 0,
-        "unit" text NOT NULL DEFAULT '',
-        "year" text NOT NULL DEFAULT '',
-        "metadata" text DEFAULT '{}',
-        "created_at" text NOT NULL
-      );
-    `)
-  }
-}
+import { createTestTables } from "../helpers/create-test-tables"
 
 const sampleInput: DatasetInput = {
   title: "Test Dataset",
