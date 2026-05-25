@@ -2,15 +2,16 @@ import { readdirSync, readFileSync, existsSync } from "node:fs"
 import { join, extname } from "node:path"
 import { eq, like, and, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
-import { toLocale, logger } from "@ronzz/shared-core"
+import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { toLocale, logger, tryResult, type Result, type AppError } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
-/** Cast the dual-dialect DB union for dialect-specific methods. */
-// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
-function dbAny(db: Database): any {
-  return db
-}
+/** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
+// biome-ignore lint/suspicious/noExplicitAny: Drizzle union type incompatibility between PG and SQLite builders
+const d = (db: Database): any => db
+
+const DEFAULT_PAGE_SIZE = 50
 
 interface ListOptions {
   locale?: string
@@ -22,7 +23,6 @@ export async function listArticles(
   db: Database,
   options: ListOptions = {},
 ): Promise<{ articles: ArticleMetadata[]; total: number }> {
-  const d = dbAny(db)
   const conditions: any[] = []
   const locale = toLocale(options.locale)
   if (locale) {
@@ -33,20 +33,22 @@ export async function listArticles(
   const limit = options.limit ?? DEFAULT_PAGE_SIZE
   const offset = options.offset ?? 0
 
-  const rows = await d
-    .select()
-    .from(schema.articlesMetadata)
-    .where(where)
-    .orderBy(desc(schema.articlesMetadata.createdAt))
-    .limit(limit)
-    .offset(offset)
-    .all()
+  const rows = await queryAll<ArticleMetadata>(
+    d(db)
+      .select()
+      .from(schema.articlesMetadata)
+      .where(where)
+      .orderBy(desc(schema.articlesMetadata.createdAt))
+      .limit(limit)
+      .offset(offset),
+  )
 
-  const countResult = await d
-    .select({ count: sql<number>`count(*)` })
-    .from(schema.articlesMetadata)
-    .where(where)
-    .get()
+  const countResult = await queryGet<{ count: number }>(
+    d(db)
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.articlesMetadata)
+      .where(where),
+  )
   const total = countResult?.count ?? 0
 
   return { articles: rows as ArticleMetadata[], total }
@@ -56,76 +58,82 @@ export async function getArticleBySlug(
   db: Database,
   slug: string,
 ): Promise<ArticleMetadata | undefined> {
-  const d = dbAny(db)
-  const row = await d
-    .select()
-    .from(schema.articlesMetadata)
-    .where(eq(schema.articlesMetadata.slug, slug))
-    .get()
+  const row = await queryGet<ArticleMetadata>(
+    d(db)
+      .select()
+      .from(schema.articlesMetadata)
+      .where(eq(schema.articlesMetadata.slug, slug)),
+  )
   return row as ArticleMetadata | undefined
 }
 
 export async function upsertArticleMetadata(
   db: Database,
   input: ArticleMetadataInput,
-): Promise<ArticleMetadata> {
-  const d = dbAny(db)
-  const existing = await getArticleBySlug(db, input.slug)
-  const now = new Date().toISOString()
+): Promise<Result<ArticleMetadata, AppError>> {
+  return tryResult(async () => {
+    const existing = await getArticleBySlug(db, input.slug)
+    const now = new Date().toISOString()
 
-  if (existing) {
-    await d.update(schema.articlesMetadata)
-      .set({
-        title: input.title,
-        description: input.description ?? existing.description,
-        locale: input.locale ?? existing.locale,
-        metadata: (input.metadata ?? existing.metadata) as never,
-        publishedAt: input.publishedAt ?? existing.publishedAt,
-        updatedAt: now,
-      })
-      .where(eq(schema.articlesMetadata.id, existing.id))
-      .run()
-    return { ...existing, ...input, updatedAt: now }
-  }
+    if (existing) {
+      await queryRun(
+        d(db)
+          .update(schema.articlesMetadata)
+          .set({
+            title: input.title,
+            description: input.description ?? existing.description,
+            locale: input.locale ?? existing.locale,
+            metadata: (input.metadata ?? existing.metadata) as never,
+            publishedAt: input.publishedAt ?? existing.publishedAt,
+            updatedAt: now,
+          })
+          .where(eq(schema.articlesMetadata.id, existing.id)),
+      )
+      return { ...existing, ...input, updatedAt: now }
+    }
 
-  const id = crypto.randomUUID()
-  await d.insert(schema.articlesMetadata)
-    .values({
+    const id = crypto.randomUUID()
+    await queryRun(
+      d(db)
+        .insert(schema.articlesMetadata)
+        .values({
+          id,
+          slug: input.slug,
+          title: input.title,
+          description: input.description ?? "",
+          locale: input.locale ?? "fr",
+          metadata: (input.metadata ?? {}) as never,
+          publishedAt: input.publishedAt ?? null,
+          createdAt: now,
+          updatedAt: now,
+        }),
+    )
+    return {
       id,
       slug: input.slug,
       title: input.title,
       description: input.description ?? "",
       locale: input.locale ?? "fr",
-      metadata: (input.metadata ?? {}) as never,
+      metadata: input.metadata ?? {},
       publishedAt: input.publishedAt ?? null,
       createdAt: now,
       updatedAt: now,
-    })
-    .run()
-  return {
-    id,
-    slug: input.slug,
-    title: input.title,
-    description: input.description ?? "",
-    locale: input.locale ?? "fr",
-    metadata: input.metadata ?? {},
-    publishedAt: input.publishedAt ?? null,
-    createdAt: now,
-    updatedAt: now,
-  }
+    }
+  })
 }
 
 export async function deleteArticle(
   db: Database,
   id: string,
-): Promise<boolean> {
-  const d = dbAny(db)
-  const result = await d
-    .delete(schema.articlesMetadata)
-    .where(eq(schema.articlesMetadata.id, id))
-    .run()
-  // SQLite returns { changes }, PG returns { rowCount }
-  return (result.changes ?? result.rowCount ?? 0) > 0
+): Promise<Result<boolean, AppError>> {
+  return tryResult(async () => {
+    const result = await queryRun(
+      d(db)
+        .delete(schema.articlesMetadata)
+        .where(eq(schema.articlesMetadata.id, id)),
+    )
+    return (result.changes ?? result.rowCount ?? 0) > 0
+  })
 }
 
 /** Extract frontmatter from a .svx file and return metadata. */
@@ -174,20 +182,20 @@ export async function syncEncikArticles(
       const description = (fm.description as string) ?? ""
       const locale = (fm.locale as string) ?? "fr"
 
-      await upsertArticleMetadata(db, {
+      const result = await upsertArticleMetadata(db, {
         slug,
         title,
         description,
         locale: locale as ArticleMetadataInput["locale"],
         metadata: fm,
       })
+      if (!result.ok) {
+        logger.error({ error: result.error, file }, "Failed to upsert article metadata")
+      }
       count++
     } catch (err) {
       logger.error({ err, file }, "Failed to sync article")
-      // Continue processing remaining files
     }
   }
   return count
 }
-
-const DEFAULT_PAGE_SIZE = 50

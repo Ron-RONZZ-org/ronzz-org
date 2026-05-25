@@ -99,7 +99,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   // Reject oversized request bodies early to avoid memory exhaustion
   const contentLength = event.request.headers.get("content-length")
-  if (contentLength && Number.parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+  const parsedSize = contentLength ? Number.parseInt(contentLength, 10) : NaN
+  if (!Number.isNaN(parsedSize) && parsedSize > MAX_BODY_SIZE) {
     return new Response("Request body too large", { status: 413 })
   }
 
@@ -115,7 +116,12 @@ export const handle: Handle = async ({ event, resolve }) => {
   )
 
   // Rate limiting
-  const rateLimitResponse = await handleRateLimit(event)
+  let rateLimitResponse: Response | null = null
+  try {
+    rateLimitResponse = await handleRateLimit(event)
+  } catch (err) {
+    log.error({ err }, "Rate limiter threw unexpectedly — allowing request through")
+  }
   if (rateLimitResponse) return rateLimitResponse
 
   // Session cookie auth (populates event.locals.user for logged-in users)

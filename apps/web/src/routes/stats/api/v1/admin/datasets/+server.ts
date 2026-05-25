@@ -4,6 +4,7 @@ import { getDb } from "database/db"
 import type { Database } from "database/db-types"
 import { listDatasets, createDataset, deleteDataset } from "@ronzz/ronstats-core"
 import { datasetSchema } from "@ronzz/ronstats-core"
+import { createSearchEngine } from "@ronzz/search-core"
 import { requireAdmin, apiHandler } from "$lib/server/middleware"
 
 const MAX_LIMIT = 200
@@ -32,7 +33,21 @@ export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
   if (!result.ok) {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
-  return json({ dataset: result.value }, { status: 201 })
+  const dataset = result.value
+
+  // Index in search engine so admin-created datasets appear in search results
+  const engine = createSearchEngine(db)
+  await engine.index({
+    id: dataset.id,
+    type: "dataset",
+    locale: dataset.locale,
+    title: dataset.title,
+    description: dataset.description,
+    content: dataset.description,
+    url: `/stats/${dataset.id}`,
+  })
+
+  return json({ dataset }, { status: 201 })
 })
 
 // NOTE: DELETE uses query param for backward compatibility.

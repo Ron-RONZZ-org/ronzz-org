@@ -24,11 +24,23 @@ export class TtlCache<T> {
   }
 
   set(key: string, value: T): void {
-    // Evict oldest expired entry if at capacity
     if (this.store.size >= this.maxSize) {
-      const oldest = this.store.entries().next().value
-      if (oldest) {
-        this.store.delete(oldest[0])
+      // Prefer evicting an expired entry over the oldest entry
+      const now = Date.now()
+      let evicted = false
+      for (const [k, v] of this.store) {
+        if (now > v.expiresAt) {
+          this.store.delete(k)
+          evicted = true
+          break
+        }
+      }
+      if (!evicted) {
+        // No expired entries — evict the oldest (first inserted)
+        const oldest = this.store.entries().next().value
+        if (oldest) {
+          this.store.delete(oldest[0])
+        }
       }
     }
     this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs })

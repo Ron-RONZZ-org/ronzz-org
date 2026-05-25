@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { ApiClient } from "./lib/api-client"
@@ -9,13 +9,13 @@ import { datasetCommand } from "./commands/dataset"
 import { articleCommand } from "./commands/article"
 import { searchCommand } from "./commands/search"
 
-function main() {
+async function main() {
   const api = process.env.RONZZ_API ?? "http://localhost:5173"
   const token = process.env.RONZZ_TOKEN ?? ""
 
   const client = new ApiClient({ api, token })
 
-  yargs(hideBin(process.argv))
+  await yargs(hideBin(process.argv))
     .option("api", {
       type: "string",
       description: "API base URL",
@@ -44,4 +44,7 @@ function main() {
     .parse()
 }
 
-main()
+main().catch((err) => {
+  console.error("Fatal error:", err)
+  process.exit(1)
+})

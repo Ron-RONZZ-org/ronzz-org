@@ -30,7 +30,7 @@ export function t(
 
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
-      text = text.replace(`{${k}}`, String(v))
+      text = text.replaceAll(`{${k}}`, String(v))
     }
   }
   return text

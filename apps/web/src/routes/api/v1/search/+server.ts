@@ -3,9 +3,10 @@ import type { RequestHandler } from "./$types"
 import { getDb } from "database/db"
 import { createSearchEngine, type SearchQuery } from "@ronzz/search-core"
 import type { Database } from "database/db-types"
+import { apiHandler } from "$lib/server/middleware"
 
 /** Unscoped search endpoint. */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = apiHandler(async ({ url }) => {
   const q = url.searchParams.get("q") ?? ""
   const locale = url.searchParams.get("locale") as SearchQuery["locale"] | null
   const type = url.searchParams.get("type") as SearchQuery["type"] | null
@@ -24,4 +25,4 @@ export const GET: RequestHandler = async ({ url }) => {
   })
 
   return json({ results: resultSet.results, total: resultSet.total })
-}
+})

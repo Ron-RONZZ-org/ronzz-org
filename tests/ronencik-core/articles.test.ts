@@ -49,25 +49,33 @@ describe("articles queries", () => {
     it("creates a new article metadata entry", async () => {
       const result = await upsertArticleMetadata(db as any, sampleInput)
 
-      expect(result.id).toBeTruthy()
-      expect(result.slug).toBe("test-article")
-      expect(result.title).toBe("Test Article")
-      expect(result.description).toBe("A test article description")
-      expect(result.locale).toBe("fr")
-      expect(result.metadata).toEqual({ tags: ["test"] })
-      expect(result.publishedAt).toBe("2025-01-01T00:00:00Z")
-      expect(result.createdAt).toBeTruthy()
-      expect(result.updatedAt).toBeTruthy()
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.value.id).toBeTruthy()
+      expect(result.value.slug).toBe("test-article")
+      expect(result.value.title).toBe("Test Article")
+      expect(result.value.description).toBe("A test article description")
+      expect(result.value.locale).toBe("fr")
+      expect(result.value.metadata).toEqual({ tags: ["test"] })
+      expect(result.value.publishedAt).toBe("2025-01-01T00:00:00Z")
+      expect(result.value.createdAt).toBeTruthy()
+      expect(result.value.updatedAt).toBeTruthy()
     })
 
     it("updates existing article by slug", async () => {
-      const created = await upsertArticleMetadata(db as any, sampleInput)
+      const createdResult = await upsertArticleMetadata(db as any, sampleInput)
+      expect(createdResult.ok).toBe(true)
+      if (!createdResult.ok) return
+      const created = createdResult.value
 
-      const updated = await upsertArticleMetadata(db as any, {
+      const updatedResult = await upsertArticleMetadata(db as any, {
         slug: "test-article",
         title: "Updated Article",
         description: "Updated description",
       })
+      expect(updatedResult.ok).toBe(true)
+      if (!updatedResult.ok) return
+      const updated = updatedResult.value
 
       expect(updated.id).toBe(created.id)
       expect(updated.title).toBe("Updated Article")
@@ -82,11 +90,13 @@ describe("articles queries", () => {
         slug: "minimal",
         title: "Minimal",
       })
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
 
-      expect(result.description).toBe("")
-      expect(result.locale).toBe("fr")
-      expect(result.metadata).toEqual({})
-      expect(result.publishedAt).toBeNull()
+      expect(result.value.description).toBe("")
+      expect(result.value.locale).toBe("fr")
+      expect(result.value.metadata).toEqual({})
+      expect(result.value.publishedAt).toBeNull()
     })
   })
 
@@ -146,17 +156,24 @@ describe("articles queries", () => {
 
   describe("deleteArticle", () => {
     it("deletes an article by id", async () => {
-      const created = await upsertArticleMetadata(db as any, sampleInput)
-      const deleted = await deleteArticle(db as any, created.id)
+      const createdResult = await upsertArticleMetadata(db as any, sampleInput)
+      expect(createdResult.ok).toBe(true)
+      if (!createdResult.ok) return
 
-      expect(deleted).toBe(true)
+      const deleted = await deleteArticle(db as any, createdResult.value.id)
+      expect(deleted.ok).toBe(true)
+      if (!deleted.ok) return
+      expect(deleted.value).toBe(true)
+
       const { articles, total } = await listArticles(db as any)
       expect(total).toBe(0)
     })
 
     it("returns false for non-existent article", async () => {
       const result = await deleteArticle(db as any, "non-existent")
-      expect(result).toBe(false)
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.value).toBe(false)
     })
   })
 })
