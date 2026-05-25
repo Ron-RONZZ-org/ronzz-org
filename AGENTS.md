@@ -128,6 +128,9 @@ ronzz-org/
 │   ├── ronstats-core/
 │   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge
 │   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination
+│   ├── helpers/
+│   │   ├── create-test-tables.ts # Shared SQLite table creation for test isolation
+│   │   └── mock-event.ts        # Shared SvelteKit RequestEvent factory for route handler tests
 ├── .github/workflows/
 │   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
 │   └── deploy.yml              # Build Docker → push ghcr.io → SSH deploy on main push
@@ -230,6 +233,7 @@ ronzz-org/
 43. Login form actions MUST wrap DB operations in try/catch and return `fail(500, { message })` on error — unhandled exceptions return HTML 500 pages instead of JSON
 44. Request body size limits MUST handle chunked transfer encoding (`transfer-encoding: chunked`) by buffering the body stream and replacing `event.request` with a new `Request` containing the buffered body — otherwise downstream parsers lose access to the body
 45. Critical env vars (`ORIGIN`, `ADMIN_PASSWORD`) MUST be validated at startup via `validateEnv()` called at module load in `hooks.server.ts` — warn on missing values in production
+46. Shared test helpers in `tests/helpers/` (`create-test-tables.ts`, `mock-event.ts`) MUST be used by test files instead of duplicating table creation or mock event logic — ensures consistency and reduces maintenance burden
 
 ---
 
