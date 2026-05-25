@@ -4,7 +4,7 @@ import { eq, and, isNull, gt } from "drizzle-orm"
 import { requestLogger, checkRateLimit, detectLocale, logger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import { getDb } from "database/db"
-import { schema } from "database/schema/proxy"
+import { schema, detectDialect } from "database/schema/proxy"
 
 const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
 const searchLimiter: RateLimitConfig = { windowMs: 60_000, max: 30 }
@@ -28,6 +28,25 @@ export async function handleRequestContext(
   event.locals.locale = detectLocale(
     event.request.headers.get("accept-language"),
   )
+}
+
+/** Require admin role — returns a 403 JSON response if the user is not an admin. */
+export function requireAdmin(
+  locals: App.Locals,
+): Response | null {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  if (locals.user.role !== "admin") {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  return null
 }
 
 /** Rate-limit login, search, API, and all unauthenticated endpoints. */
@@ -85,8 +104,7 @@ export async function handleSessionAuth(
   try {
     // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
-    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
-    const now = isPg ? new Date() : Date.now()
+    const now = detectDialect() === "pg" ? new Date() : Date.now()
     const rows = await db
       .select({
         userId: schema.users.id,
@@ -116,11 +134,15 @@ export async function handleSessionAuth(
   }
 }
 
-/** Authenticate Bearer tokens on /admin/ routes. */
+/** Authenticate Bearer tokens on admin routes. */
 export async function handleTokenAuth(
   event: Parameters<Handle>[0]["event"],
 ): Promise<Response | null> {
-  if (!event.url.pathname.startsWith("/admin/")) {
+  const path = event.url.pathname
+  if (
+    !path.startsWith("/admin/") &&
+    !path.startsWith("/stats/api/v1/admin/")
+  ) {
     return null
   }
 

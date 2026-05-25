@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { verify } from "@node-rs/argon2"
 import { getDb } from "database/db"
-import { schema } from "database/schema/proxy"
+import { schema, detectDialect } from "database/schema/proxy"
 import type { Actions } from "./$types"
 
 export const actions: Actions = {
@@ -37,13 +37,12 @@ export const actions: Actions = {
     const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
 
-    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
     const SESSION_TTL_MS = 60 * 60 * 24 * 7 * 1000
 
     await db.insert(schema.sessions).values({
       id: sessionHash,
       userId: user.id,
-      expiresAt: isPg ? new Date(Date.now() + SESSION_TTL_MS) : Date.now() + SESSION_TTL_MS,
+      expiresAt: detectDialect() === "pg" ? new Date(Date.now() + SESSION_TTL_MS) : Date.now() + SESSION_TTL_MS,
     })
 
     cookies.set("session", sessionId, {

@@ -14,6 +14,11 @@
   } = $props()
 
   let canonical = $derived($page.url.origin + $page.url.pathname)
+
+  // Sync <html lang> dynamically from page locale data
+  $effect(() => {
+    document.documentElement.lang = data.locale
+  })
 </script>
 
 <Seo

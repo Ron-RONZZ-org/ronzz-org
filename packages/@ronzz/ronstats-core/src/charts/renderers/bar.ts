@@ -23,7 +23,7 @@ export function barChart(
     .padding(0.2)
 
   const yMin = 0
-  const yMax = Math.max(...data.map((d) => d.value), 1) * 1.1
+  const yMax = data.reduce((max, d) => Math.max(max, d.value), 1) * 1.1
   const yScale = scaleLinear()
     .domain([yMin, yMax])
     .range([inner.height, 0])

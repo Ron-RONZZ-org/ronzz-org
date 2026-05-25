@@ -17,9 +17,28 @@ function getAllowedOrigins(): string[] {
   if (envOrigin) {
     origins.push(envOrigin.replace(/\/+$/, ""))
   }
-  // Allow localhost in development
-  origins.push("http://localhost:5173", "http://127.0.0.1:5173")
+  // Allow localhost only in development
+  if (process.env.NODE_ENV !== "production") {
+    origins.push("http://localhost:5173", "http://127.0.0.1:5173")
+  }
   return origins
+}
+
+/** Match an origin/referer URL against allowed origins by comparing host (hostname:port). */
+function isOriginAllowed(value: string, allowedOrigins: string[]): boolean {
+  try {
+    const url = new URL(value)
+    const host = url.host
+    return allowedOrigins.some((o) => {
+      try {
+        return new URL(o).host === host
+      } catch {
+        return false
+      }
+    })
+  } catch {
+    return false
+  }
 }
 
 /** CSRF protection — reject state-changing requests without a matching Origin/Referer. */
@@ -38,13 +57,13 @@ function csrfCheck(event: Parameters<Handle>[0]["event"]): Response | null {
   const origin = event.request.headers.get("origin")
   const referer = event.request.headers.get("referer")
 
-  // Check Origin header first
-  if (origin && allowedOrigins.some((o) => origin.startsWith(o))) {
+  // Check Origin header first — compare by host (hostname:port) to prevent subdomain bypass
+  if (origin && isOriginAllowed(origin, allowedOrigins)) {
     return null
   }
 
   // Fall back to Referer header
-  if (referer && allowedOrigins.some((o) => referer.startsWith(o))) {
+  if (referer && isOriginAllowed(referer, allowedOrigins)) {
     return null
   }
 
@@ -102,7 +121,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   // Session cookie auth (populates event.locals.user for logged-in users)
   await handleSessionAuth(event)
 
-  // Bearer token auth for /admin/ routes
+  // Bearer token auth for admin routes
   const authResponse = await handleTokenAuth(event)
   if (authResponse) return authResponse
 
