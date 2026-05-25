@@ -8,7 +8,7 @@ import type { Actions, PageServerLoad } from "./$types"
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) redirect(303, "/lib/login")
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
   const db = getDb() as any
   const tokens = await db
     .select({
@@ -40,7 +40,7 @@ export const actions: Actions = {
   create: async ({ locals, request }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
     const formData = await request.formData()
     const name = formData.get("name")?.toString().trim()
@@ -75,7 +75,7 @@ export const actions: Actions = {
   revoke: async ({ locals, request }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
     const formData = await request.formData()
     const tokenId = formData.get("id")?.toString()

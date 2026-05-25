@@ -16,7 +16,7 @@ export const actions: Actions = {
       return fail(400, { message: "Email and password are required." })
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
     const userRows = await db
       .select()

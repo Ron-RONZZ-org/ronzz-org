@@ -1,3 +1,4 @@
+import { detectDialect } from "database/schema/proxy"
 import type { SearchEngine } from "./types"
 import { SqliteSearchEngine } from "./sqlite-engine"
 import { PostgresSearchEngine } from "./pg-engine"
@@ -12,14 +13,4 @@ export function createSearchEngine(db: unknown): SearchEngine {
       ? new PostgresSearchEngine(db as never)
       : new SqliteSearchEngine(db as never)
   return _engine
-}
-
-let _dialect: "sqlite" | "pg" | null = null
-
-function detectDialect(): "sqlite" | "pg" {
-  if (_dialect) return _dialect
-  const url = process.env.DATABASE_URL ?? ""
-  _dialect =
-    url.startsWith("postgres") || url.startsWith("postgresql") ? "pg" : "sqlite"
-  return _dialect
 }

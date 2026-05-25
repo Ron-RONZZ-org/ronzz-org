@@ -1,4 +1,4 @@
-import { eq, count } from "drizzle-orm"
+import { eq, count, desc } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Datapoint, DatapointInput } from "../types"
 
@@ -16,6 +16,7 @@ export async function listDatapoints(
     .select()
     .from(schema.datapoints)
     .where(eq(schema.datapoints.datasetId, datasetId))
+    .orderBy(desc(schema.datapoints.createdAt))
 
   if (options?.limit) {
     query = query.limit(options.limit)
@@ -88,8 +89,6 @@ export async function bulkCreateDatapoints(
     metadata: (input.metadata ?? {}) as never,
     createdAt: now,
   }))
-  await db.transaction(async (tx: any) => {
-    await tx.insert(schema.datapoints).values(values).run()
-  })
+  await db.insert(schema.datapoints).values(values).run()
   return values as Datapoint[]
 }

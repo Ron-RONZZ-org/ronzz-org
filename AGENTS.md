@@ -122,6 +122,12 @@ ronzz-org/
 │   │   └── pie.test.ts
 │   ├── database/
 │   │   └── schema-proxy.test.ts # Schema proxy lazy resolution tests (detectDialect, getSchema, resetDialectCache)
+│   ├── search-core/
+│   │   ├── sqlite-engine.test.ts # SQLite search engine tests
+│   │   └── pg-engine.test.ts    # PostgreSQL search engine tests (mocked)
+│   ├── ronstats-core/
+│   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge
+│   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination
 ├── .github/workflows/
 │   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
 │   └── deploy.yml              # Build Docker → push ghcr.io → SSH deploy on main push
@@ -187,10 +193,15 @@ ronzz-org/
 6. Use D3.js for all chart visualizations in RonStats
 7. Ensure AGPL v3 compliance — source link in footer of every page
 8. Do NOT use `@apply` in Svelte `<style>` blocks (Tailwind v4 limitation); use inline utility classes instead
-9. CSP is nonce-based, generated in `hooks.server.ts` — do not set CSP in Caddy's static config
-10. CSRF protection is applied in `hooks.server.ts` — state-changing requests without matching Origin/Referer are rejected; Bearer-authenticated API calls bypass this check
+9. CSP is nonce-based, generated in `hooks.server.ts` — do not set CSP in Caddy's static config; nonce uses 128-bit entropy via `randomBytes(16).toString("hex")`
+10. CSRF protection is applied in `hooks.server.ts` — state-changing requests without matching Origin/Referer are rejected; Bearer-authenticated API calls bypass this check; requests with session cookies MUST have Origin or Referer
 11. Health endpoint lives at `GET /api/v1/health` (top-level), old route at `/stats/api/v1/health` kept for compat
 12. Schema proxy in `database/schema/proxy.ts` uses lazy evaluation via Proxy — `resetDialectCache()` forces re-evaluation on next access, critical for test isolation
+13. `detectDialect()` from `database/schema/proxy.ts` is the single source of truth for dialect detection — do not reimplement it elsewhere (search-core already imports it)
+14. Logout deletes the session server-side from the DB in addition to clearing the cookie
+15. Change-password endpoint is rate-limited (5 attempts/min per pw_reset hash + IP)
+16. Datapoints are returned in descending order by `createdAt` for deterministic chart rendering
+17. Use `biome-ignore` comments (not `eslint-disable`) for intentional suppressions
 
 ---
 

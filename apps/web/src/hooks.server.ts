@@ -1,5 +1,5 @@
 import type { Handle } from "@sveltejs/kit"
-import { randomUUID } from "node:crypto"
+import { randomBytes } from "node:crypto"
 import { logger } from "@ronzz/shared-core"
 import {
   handleRequestContext,
@@ -48,9 +48,19 @@ function csrfCheck(event: Parameters<Handle>[0]["event"]): Response | null {
     return null
   }
 
-  // Allow requests with neither Origin nor Referer (e.g. curl, mobile apps) if not authenticated
-  // This is a best-effort check; authenticated API calls use Bearer tokens which skip above.
+  // Require Origin or Referer if a session cookie is present (defense against CSRF
+  // in older browsers or network configs where headers are stripped). Unauthenticated
+  // requests without Origin/Referer (e.g. curl, mobile apps, Bearer-token API calls)
+  // are still allowed through; Bearer token requests already skip above.
   if (!origin && !referer) {
+    const sessionCookie = event.cookies.get("session")
+    if (sessionCookie) {
+      logger.warn(
+        { path: event.url.pathname },
+        "CSRF check failed — state-changing request with session cookie but no Origin/Referer",
+      )
+      return new Response("Forbidden", { status: 403 })
+    }
     return null
   }
 
@@ -96,8 +106,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   const authResponse = await handleTokenAuth(event)
   if (authResponse) return authResponse
 
-  // Generate nonce for CSP
-  const nonce = randomUUID().replace(/-/g, "").slice(0, 16)
+  // Generate nonce for CSP — 128 bits of entropy per CSP recommendation
+  const nonce = randomBytes(16).toString("hex")
   event.locals.nonce = nonce
 
   const response = await resolve(event)
