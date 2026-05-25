@@ -4,9 +4,9 @@
   import type { Locale } from "@ronzz/shared-core"
 
   let { data }: { data: { locale: Locale } } = $props()
-  const locale = data.locale
+  let locale = $derived(data.locale)
 
-  const projects = [
+  let projects = $derived([
     {
       href: "/lib",
       title: "RonLib",
@@ -37,7 +37,7 @@
         "An animated encyclopedia of big ideas.",
       ),
     },
-  ]
+  ])
 </script>
 
 <section class="text-center">

@@ -5,7 +5,7 @@
   import { enhance } from "$app/forms"
 
   let { data }: { data: { locale: Locale } } = $props()
-  const locale = data.locale
+  let locale = $derived(data.locale)
 
   let currentPassword = $state("")
   let newPassword = $state("")

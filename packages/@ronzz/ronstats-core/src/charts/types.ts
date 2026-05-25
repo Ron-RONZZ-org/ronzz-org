@@ -28,10 +28,10 @@ export interface PieChartResult {
   unit: string
 }
 
-export function defaultDimensions(width = 600): ChartDimensions {
+export function defaultDimensions(width = 600, height = 400): ChartDimensions {
   return {
     width,
-    height: 400,
+    height,
     margin: { top: 20, right: 20, bottom: 40, left: 60 },
   }
 }

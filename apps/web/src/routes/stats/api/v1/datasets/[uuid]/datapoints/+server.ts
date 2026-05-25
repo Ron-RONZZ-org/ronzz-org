@@ -13,8 +13,8 @@ const DATAPOINT_BULK_MAX = 5000
 export const GET: RequestHandler = apiHandler(async ({ params, url }) => {
   const db = getDb() as Database
 
-  const limit = Math.min(Number(url.searchParams.get("limit")) || DEFAULT_DATAPOINT_LIMIT, DATAPOINT_LIMIT_MAX)
-  const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0)
+  const limit = Math.min(parseInt(url.searchParams.get("limit") ?? String(DEFAULT_DATAPOINT_LIMIT), 10), DATAPOINT_LIMIT_MAX)
+  const offset = Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10))
 
   const datapoints = await listDatapoints(db, params.uuid, { limit, offset })
   const total = await countDatapoints(db, params.uuid)

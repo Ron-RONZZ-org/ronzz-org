@@ -29,7 +29,6 @@
     <link rel="canonical" href={canonical} />
   {/if}
   {#if jsonld}
-    <!-- svelte-ignore a11y_no_svg_title: JSON-LD structured data is not visual content -->
     <script type="application/ld+json">
       {@html JSON.stringify(jsonld)}
     </script>

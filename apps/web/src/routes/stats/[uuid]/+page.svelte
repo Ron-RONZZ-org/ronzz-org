@@ -5,7 +5,7 @@
   import { page } from "$app/stores"
 
   let { data }: { data: PageData } = $props()
-  const locale = data.locale
+  let locale = $derived(data.locale)
 
   let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>

@@ -1,11 +1,15 @@
-import { onMount } from "svelte"
-
-export function useContainerWidth(explicitWidth?: number) {
+export function useContainerWidth(explicitWidth?: number | (() => number | undefined)) {
   let _element = $state<HTMLDivElement | null>(null)
-  let _width = $state(explicitWidth ?? 600)
+  let _width = $state(
+    typeof explicitWidth === "function" ? explicitWidth() ?? 600 : explicitWidth ?? 600,
+  )
 
   $effect(() => {
-    if (explicitWidth != null) return
+    const w = typeof explicitWidth === "function" ? explicitWidth() : explicitWidth
+    if (w != null) {
+      _width = w
+      return
+    }
     if (!_element) return
     const ro = new ResizeObserver(([entry]) => {
       _width = entry.contentRect.width

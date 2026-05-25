@@ -4,7 +4,7 @@
   import { Card } from "@ronzz/ui"
 
   let { data }: { data: PageData } = $props()
-  const locale = data.locale
+  let locale = $derived(data.locale)
 </script>
 
 <section class="py-8">
