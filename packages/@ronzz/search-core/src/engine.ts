@@ -14,3 +14,8 @@ export function createSearchEngine(db: unknown): SearchEngine {
       : new SqliteSearchEngine(db as never)
   return _engine
 }
+
+/** Reset the engine singleton. Used for test isolation. */
+export function resetSearchEngine(): void {
+  _engine = null
+}
