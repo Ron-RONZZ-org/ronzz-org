@@ -85,7 +85,7 @@ ronzz-org/
 │   ├── schema/
 │   │   ├── sqlite/             # SQLite dialect (9 tables)
 │   │   └── pg/                 # PostgreSQL dialect (9 tables)
-│   ├── db.ts                   # getDb() — dual-dialect factory (closeDb, resetDb); uses detectDialect from proxy.ts
+│   ├── dialect-query.ts        # Dialect-agnostic query helpers — queryAll(), queryGet(), queryRun()
 │   ├── schema/proxy.ts         # Lazy schema resolution via Proxy — getSchema(), schema (lazy), resetDialectCache(), detectDialect()
 │   ├── db-types.ts             # Database union type (SQLite | PG)
 │   ├── seeds/admin-user.ts     # admin@ronzz.org (ADMIN_PASSWORD env var, required — no fallback)
@@ -212,6 +212,17 @@ ronzz-org/
 25. Successful DELETE endpoints return `204 No Content`, not `200 { deleted: true }`; 404 for not-found
 26. Monitoring scripts MUST use POSIX-compatible `date -u +"%Y-%m-%dT%H:%M:%S%z"` instead of GNU-only `date -Iseconds` for Alpine/BusyBox compatibility
 27. Test code MUST use `vi.useFakeTimers()` / `vi.advanceTimersByTime()` instead of real `setTimeout()` to avoid flakiness
+28. Pie chart label keys MUST use composite keys (`dimensionKey:::dimensionValue`) via `.filter(Boolean).join(":::")` to prevent incorrect grouping when the same value appears under different dimensions
+29. `apiHandler()` in production (`NODE_ENV === "production"`) MUST return a generic `"Internal server error"` message instead of leaking error details to clients
+30. Trash listing queries (soft-deleted records) MUST include `id` as a tiebreaker in `ORDER BY` (e.g., `orderBy(desc(deletedAt), desc(id))`) for deterministic pagination
+31. Dialect detection MUST always use `detectDialect()` from `database/schema/proxy` — never reimplement it with raw `process.env.DATABASE_URL` checks
+32. Core query files MUST use `queryAll<T>()`, `queryGet<T>()`, `queryRun()` from `database/dialect-query` instead of SQLite-specific `.all()`, `.get()`, `.run()` — these helpers abstract the dialect difference and work on both SQLite and PostgreSQL
+33. User-provided search terms MUST be escaped with `escapeLike()` (escape `%` and `_` with backslash) before using in SQL LIKE patterns to prevent LIKE wildcard injection
+34. JSON-LD in Svelte `<script type="application/ld+json">` MUST use `{@html JSON.stringify(jsonld)}` — `{JSON.stringify()}` produces HTML-escaped output (`&quot;`) that breaks structured data
+35. `t()` template variable replacement MUST use `.replaceAll()` not `.replace()` — `String.replace()` with a string argument only replaces the first occurrence
+36. TTL cache eviction MUST scan for expired entries before evicting the oldest (first-inserted) entry when at capacity
+37. CLI `bin` entries MUST use `#!/usr/bin/env tsx` shebang when pointing to `.ts` files, and `tsx` MUST be a runtime `dependency` (not `devDependency`)
+38. Docker build stage MUST run `pnpm install` without `--prod` (devDependencies needed for build), then prune with `pnpm prune --prod` after build
 
 ---
 
