@@ -65,7 +65,7 @@ describe("datasets queries", () => {
 
   describe("createDataset", () => {
     it("creates a dataset with all fields", async () => {
-      const result = await createDataset(db as any, sampleInput)
+      const result = await createDataset(db, sampleInput)
       expect(result.ok).toBe(true)
       if (!result.ok) return
       const ds = result.value
@@ -83,7 +83,7 @@ describe("datasets queries", () => {
     })
 
     it("uses defaults for optional fields", async () => {
-      const result = await createDataset(db as any, { title: "Minimal" })
+      const result = await createDataset(db, { title: "Minimal" })
       expect(result.ok).toBe(true)
       if (!result.ok) return
 
@@ -97,71 +97,71 @@ describe("datasets queries", () => {
 
   describe("listDatasets", () => {
     it("returns empty list when no datasets exist", async () => {
-      const { datasets, total } = await listDatasets(db as any)
+      const { datasets, total } = await listDatasets(db)
       expect(datasets).toEqual([])
       expect(total).toBe(0)
     })
 
     it("lists all non-deleted datasets", async () => {
-      const r1 = await createDataset(db as any, sampleInput)
+      const r1 = await createDataset(db, sampleInput)
       expect(r1.ok).toBe(true)
-      const r2 = await createDataset(db as any, { ...sampleInput, title: "Second" })
+      const r2 = await createDataset(db, { ...sampleInput, title: "Second" })
       expect(r2.ok).toBe(true)
 
-      const { datasets, total } = await listDatasets(db as any)
+      const { datasets, total } = await listDatasets(db)
       expect(total).toBe(2)
       expect(datasets).toHaveLength(2)
     })
 
     it("respects limit and offset", async () => {
       for (let i = 0; i < 5; i++) {
-        const r = await createDataset(db as any, { ...sampleInput, title: `Dataset ${i}` })
+        const r = await createDataset(db, { ...sampleInput, title: `Dataset ${i}` })
         expect(r.ok).toBe(true)
       }
 
-      const { datasets, total } = await listDatasets(db as any, { limit: 2, offset: 1 })
+      const { datasets, total } = await listDatasets(db, { limit: 2, offset: 1 })
       expect(total).toBe(5)
       expect(datasets).toHaveLength(2)
     })
 
     it("filters by search term", async () => {
-      const r1 = await createDataset(db as any, { ...sampleInput, title: "Alpha" })
+      const r1 = await createDataset(db, { ...sampleInput, title: "Alpha" })
       expect(r1.ok).toBe(true)
-      const r2 = await createDataset(db as any, { ...sampleInput, title: "Beta" })
+      const r2 = await createDataset(db, { ...sampleInput, title: "Beta" })
       expect(r2.ok).toBe(true)
-      const r3 = await createDataset(db as any, { ...sampleInput, title: "Alpha Prime" })
+      const r3 = await createDataset(db, { ...sampleInput, title: "Alpha Prime" })
       expect(r3.ok).toBe(true)
 
-      const { datasets, total } = await listDatasets(db as any, { search: "Alpha" })
+      const { datasets, total } = await listDatasets(db, { search: "Alpha" })
       expect(total).toBe(2)
       expect(datasets.map((d) => d.title).sort()).toEqual(["Alpha", "Alpha Prime"])
     })
 
     it("filters by locale", async () => {
-      const r1 = await createDataset(db as any, { ...sampleInput, locale: "fr" })
+      const r1 = await createDataset(db, { ...sampleInput, locale: "fr" })
       expect(r1.ok).toBe(true)
-      const r2 = await createDataset(db as any, { ...sampleInput, locale: "en" })
+      const r2 = await createDataset(db, { ...sampleInput, locale: "en" })
       expect(r2.ok).toBe(true)
-      const r3 = await createDataset(db as any, { ...sampleInput, locale: "eo" })
+      const r3 = await createDataset(db, { ...sampleInput, locale: "eo" })
 
-      const { datasets, total } = await listDatasets(db as any, { locale: "fr" })
+      const { datasets, total } = await listDatasets(db, { locale: "fr" })
       expect(total).toBe(1)
       expect(datasets[0].locale).toBe("fr")
     })
 
     it("includes soft-deleted datasets when includeTrash is true", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      await softDeleteDataset(db as any, created.value.id)
+      await softDeleteDataset(db, created.value.id)
 
       // Default: trash excluded
-      const { total: totalActive } = await listDatasets(db as any)
+      const { total: totalActive } = await listDatasets(db)
       expect(totalActive).toBe(0)
 
       // With includeTrash: trash included
-      const { datasets, total } = await listDatasets(db as any, { includeTrash: true })
+      const { datasets, total } = await listDatasets(db, { includeTrash: true })
       expect(total).toBe(1)
       expect(datasets[0].title).toBe("Test Dataset")
     })
@@ -169,72 +169,72 @@ describe("datasets queries", () => {
 
   describe("getDataset", () => {
     it("returns undefined for non-existent dataset", async () => {
-      const result = await getDataset(db as any, "non-existent")
+      const result = await getDataset(db, "non-existent")
       expect(result).toBeUndefined()
     })
 
     it("returns a dataset by id", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      const result = await getDataset(db as any, created.value.id)
+      const result = await getDataset(db, created.value.id)
       expect(result).toBeTruthy()
       expect(result!.title).toBe("Test Dataset")
     })
 
     it("returns undefined for soft-deleted dataset", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      await softDeleteDataset(db as any, created.value.id)
+      await softDeleteDataset(db, created.value.id)
 
-      const result = await getDataset(db as any, created.value.id)
+      const result = await getDataset(db, created.value.id)
       expect(result).toBeUndefined()
     })
   })
 
   describe("softDeleteDataset", () => {
     it("soft-deletes a dataset", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      const deleted = await softDeleteDataset(db as any, created.value.id)
+      const deleted = await softDeleteDataset(db, created.value.id)
       expect(deleted).toMatchObject({ ok: true, value: true })
 
-      const { datasets, total } = await listDatasets(db as any)
+      const { datasets, total } = await listDatasets(db)
       expect(total).toBe(0)
     })
 
     it("returns false for already deleted dataset", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      await softDeleteDataset(db as any, created.value.id)
-      const result = await softDeleteDataset(db as any, created.value.id)
+      await softDeleteDataset(db, created.value.id)
+      const result = await softDeleteDataset(db, created.value.id)
       expect(result).toMatchObject({ ok: true, value: false })
     })
 
     it("returns false for non-existent dataset", async () => {
-      const result = await softDeleteDataset(db as any, "non-existent")
+      const result = await softDeleteDataset(db, "non-existent")
       expect(result).toMatchObject({ ok: true, value: false })
     })
   })
 
   describe("listTrashDatasets", () => {
     it("lists soft-deleted datasets", async () => {
-      await createDataset(db as any, sampleInput)
+      await createDataset(db, sampleInput)
 
-      const created2 = await createDataset(db as any, { ...sampleInput, title: "To Delete" })
+      const created2 = await createDataset(db, { ...sampleInput, title: "To Delete" })
       expect(created2.ok).toBe(true)
       if (!created2.ok) return
 
-      await softDeleteDataset(db as any, created2.value.id)
+      await softDeleteDataset(db, created2.value.id)
 
-      const trash = await listTrashDatasets(db as any)
+      const trash = await listTrashDatasets(db)
       expect(trash.datasets).toHaveLength(1)
       expect(trash.total).toBe(1)
       expect(trash.datasets[0].title).toBe("To Delete")
@@ -243,29 +243,29 @@ describe("datasets queries", () => {
 
   describe("restoreDataset", () => {
     it("restores a soft-deleted dataset", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      await softDeleteDataset(db as any, created.value.id)
-      const restored = await restoreDataset(db as any, created.value.id)
+      await softDeleteDataset(db, created.value.id)
+      const restored = await restoreDataset(db, created.value.id)
       expect(restored).toMatchObject({ ok: true, value: true })
 
-      const { datasets, total } = await listDatasets(db as any)
+      const { datasets, total } = await listDatasets(db)
       expect(total).toBe(1)
     })
   })
 
   describe("hardDeleteDataset", () => {
     it("permanently deletes a dataset", async () => {
-      const created = await createDataset(db as any, sampleInput)
+      const created = await createDataset(db, sampleInput)
       expect(created.ok).toBe(true)
       if (!created.ok) return
 
-      const deleted = await hardDeleteDataset(db as any, created.value.id)
+      const deleted = await hardDeleteDataset(db, created.value.id)
       expect(deleted).toMatchObject({ ok: true, value: true })
 
-      const { datasets, total } = await listDatasets(db as any)
+      const { datasets, total } = await listDatasets(db)
       expect(total).toBe(0)
     })
   })

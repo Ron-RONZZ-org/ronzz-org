@@ -1,6 +1,14 @@
 import { eq, count, desc } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
+import type { Database } from "database/db-types"
+import { tryResult, type Result, type AppError } from "@ronzz/shared-core"
 import type { Datapoint, DatapointInput } from "../types"
+
+/** Cast the dual-dialect DB union for dialect-specific methods. */
+// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
+function dbAny(db: Database): any {
+  return db
+}
 
 export interface ListDatapointsOptions {
   limit?: number
@@ -8,11 +16,12 @@ export interface ListDatapointsOptions {
 }
 
 export async function listDatapoints(
-  db: any,
+  db: Database,
   datasetId: string,
   options?: ListDatapointsOptions,
 ): Promise<Datapoint[]> {
-  let query = db
+  const d = dbAny(db)
+  let query = d
     .select()
     .from(schema.datapoints)
     .where(eq(schema.datapoints.datasetId, datasetId))
@@ -30,10 +39,11 @@ export async function listDatapoints(
 }
 
 export async function countDatapoints(
-  db: any,
+  db: Database,
   datasetId: string,
 ): Promise<number> {
-  const result = await db
+  const d = dbAny(db)
+  const result = await d
     .select({ total: count() })
     .from(schema.datapoints)
     .where(eq(schema.datapoints.datasetId, datasetId))
@@ -42,14 +52,49 @@ export async function countDatapoints(
 }
 
 export async function createDatapoint(
-  db: any,
+  db: Database,
   input: DatapointInput,
-): Promise<Datapoint> {
-  const id = crypto.randomUUID()
-  const now = new Date().toISOString()
-  await db.insert(schema.datapoints)
-    .values({
+): Promise<Result<Datapoint, AppError>> {
+  return tryResult(async () => {
+    const d = dbAny(db)
+    const id = crypto.randomUUID()
+    const now = new Date().toISOString()
+    await d.insert(schema.datapoints)
+      .values({
+        id,
+        datasetId: input.datasetId,
+        dimensionKey: input.dimensionKey ?? "",
+        dimensionValue: input.dimensionValue ?? "",
+        value: input.value,
+        unit: input.unit ?? "",
+        year: input.year ?? "",
+        metadata: (input.metadata ?? {}) as never,
+        createdAt: now,
+      })
+      .run()
+    return {
       id,
+      datasetId: input.datasetId,
+      dimensionKey: input.dimensionKey ?? "",
+      dimensionValue: input.dimensionValue ?? "",
+      value: input.value,
+      unit: input.unit ?? "",
+      year: input.year ?? "",
+      metadata: input.metadata ?? {},
+      createdAt: now,
+    }
+  })
+}
+
+export async function bulkCreateDatapoints(
+  db: Database,
+  inputs: DatapointInput[],
+): Promise<Result<Datapoint[], AppError>> {
+  return tryResult(async () => {
+    const d = dbAny(db)
+    const now = new Date().toISOString()
+    const values = inputs.map((input) => ({
+      id: crypto.randomUUID(),
       datasetId: input.datasetId,
       dimensionKey: input.dimensionKey ?? "",
       dimensionValue: input.dimensionValue ?? "",
@@ -58,37 +103,8 @@ export async function createDatapoint(
       year: input.year ?? "",
       metadata: (input.metadata ?? {}) as never,
       createdAt: now,
-    })
-    .run()
-  return {
-    id,
-    datasetId: input.datasetId,
-    dimensionKey: input.dimensionKey ?? "",
-    dimensionValue: input.dimensionValue ?? "",
-    value: input.value,
-    unit: input.unit ?? "",
-    year: input.year ?? "",
-    metadata: input.metadata ?? {},
-    createdAt: now,
-  }
-}
-
-export async function bulkCreateDatapoints(
-  db: any,
-  inputs: DatapointInput[],
-): Promise<Datapoint[]> {
-  const now = new Date().toISOString()
-  const values = inputs.map((input) => ({
-    id: crypto.randomUUID(),
-    datasetId: input.datasetId,
-    dimensionKey: input.dimensionKey ?? "",
-    dimensionValue: input.dimensionValue ?? "",
-    value: input.value,
-    unit: input.unit ?? "",
-    year: input.year ?? "",
-    metadata: (input.metadata ?? {}) as never,
-    createdAt: now,
-  }))
-  await db.insert(schema.datapoints).values(values).run()
-  return values as Datapoint[]
+    }))
+    await d.insert(schema.datapoints).values(values).run()
+    return values as Datapoint[]
+  })
 }

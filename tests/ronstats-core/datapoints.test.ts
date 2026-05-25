@@ -39,6 +39,11 @@ const sampleInput: DatapointInput = {
   metadata: { source: "test" },
 }
 
+function unwrap<T>(result: { ok: boolean; value?: T }): T {
+  if (!result.ok) throw new Error("Expected ok result")
+  return result.value!
+}
+
 describe("datapoints queries", () => {
   let db: ReturnType<typeof drizzle>
 
@@ -48,7 +53,7 @@ describe("datapoints queries", () => {
 
   describe("createDatapoint", () => {
     it("creates a datapoint with all fields", async () => {
-      const dp = await createDatapoint(db as never, sampleInput)
+      const dp = unwrap(await createDatapoint(db as never, sampleInput))
 
       expect(dp.id).toBeTruthy()
       expect(dp.datasetId).toBe("ds-1")
@@ -62,10 +67,10 @@ describe("datapoints queries", () => {
     })
 
     it("uses defaults for optional fields", async () => {
-      const dp = await createDatapoint(db as never, {
+      const dp = unwrap(await createDatapoint(db as never, {
         datasetId: "ds-1",
         value: 10,
-      })
+      }))
 
       expect(dp.dimensionKey).toBe("")
       expect(dp.dimensionValue).toBe("")
@@ -159,7 +164,7 @@ describe("datapoints queries", () => {
         { datasetId: "ds-1", value: 30 },
       ]
 
-      const results = await bulkCreateDatapoints(db as never, inputs)
+      const results = unwrap(await bulkCreateDatapoints(db as never, inputs))
       expect(results).toHaveLength(3)
       expect(results[0].datasetId).toBe("ds-1")
       expect(results[1].value).toBe(20)
