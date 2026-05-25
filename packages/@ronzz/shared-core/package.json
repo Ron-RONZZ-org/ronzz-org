@@ -27,6 +27,10 @@
     "./escape-like": {
       "types": "./src/escape-like.ts",
       "default": "./src/escape-like.ts"
+    },
+    "./escape-xml": {
+      "types": "./src/escape-xml.ts",
+      "default": "./src/escape-xml.ts"
     }
   },
   "dependencies": {
