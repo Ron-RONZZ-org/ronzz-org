@@ -224,11 +224,12 @@ ronzz-org/
 37. CLI `bin` entries MUST use `#!/usr/bin/env tsx` shebang when pointing to `.ts` files, and `tsx` MUST be a runtime `dependency` (not `devDependency`)
 38. Docker build stage MUST run `pnpm install` without `--prod` (devDependencies needed for build), then prune with `pnpm prune --prod` after build
 39. `escapeLike()` MUST be imported from `@ronzz/shared-core` (`import { escapeLike } from "@ronzz/shared-core"`) — do not duplicate the function in individual query files
-40. `queryGet()` from `database/dialect-query` MUST extract `[0]` from PG array results (`const rows = await (q as Promise<T[]>); return rows[0]`) since PG `SELECT` queries return arrays, not single rows
-41. Search engine singleton (`_engine` in `engine.ts`) MUST track the dialect via `_engineDialect` and re-initialize when `detectDialect()` returns a different value (handles DB reset/reconnect)
-42. Login form actions MUST wrap DB operations in try/catch and return `fail(500, { message })` on error — unhandled exceptions return HTML 500 pages instead of JSON
-43. Request body size limits MUST handle chunked transfer encoding (`transfer-encoding: chunked`) by buffering the body stream and replacing `event.request` with a new `Request` containing the buffered body — otherwise downstream parsers lose access to the body
-44. Critical env vars (`ORIGIN`, `ADMIN_PASSWORD`) MUST be validated at startup via `validateEnv()` called at module load in `hooks.server.ts` — warn on missing values in production
+40. `escapeXml()` MUST be imported from `@ronzz/shared-core` (`import { escapeXml } from "@ronzz/shared-core"`) — do not duplicate the function in feed/sitemap or other files producing XML output
+41. `queryGet()` from `database/dialect-query` MUST extract `[0]` from PG array results (`const rows = await (q as Promise<T[]>); return rows[0]`) since PG `SELECT` queries return arrays, not single rows
+42. Search engine singleton (`_engine` in `engine.ts`) MUST track the dialect via `_engineDialect` and re-initialize when `detectDialect()` returns a different value (handles DB reset/reconnect)
+43. Login form actions MUST wrap DB operations in try/catch and return `fail(500, { message })` on error — unhandled exceptions return HTML 500 pages instead of JSON
+44. Request body size limits MUST handle chunked transfer encoding (`transfer-encoding: chunked`) by buffering the body stream and replacing `event.request` with a new `Request` containing the buffered body — otherwise downstream parsers lose access to the body
+45. Critical env vars (`ORIGIN`, `ADMIN_PASSWORD`) MUST be validated at startup via `validateEnv()` called at module load in `hooks.server.ts` — warn on missing values in production
 
 ---
 
