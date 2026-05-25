@@ -38,7 +38,7 @@ export async function listArticles(
       .select()
       .from(schema.articlesMetadata)
       .where(where)
-      .orderBy(desc(schema.articlesMetadata.createdAt))
+      .orderBy(desc(schema.articlesMetadata.createdAt), desc(schema.articlesMetadata.slug))
       .limit(limit)
       .offset(offset),
   )

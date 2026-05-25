@@ -14,7 +14,7 @@
   <meta name="description" content={data.resource.description} />
   <link rel="canonical" href={canonical} />
   <script type="application/ld+json">
-    {JSON.stringify(libSchema(data.resource.title, data.resource.description, canonical))}
+    {@html JSON.stringify(libSchema(data.resource.title, data.resource.description, canonical))}
   </script>
 </svelte:head>
 

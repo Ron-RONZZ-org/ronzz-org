@@ -14,7 +14,7 @@
   <meta name="description" content={data.article.description} />
   <link rel="canonical" href={canonical} />
   <script type="application/ld+json">
-    {JSON.stringify(encikSchema(data.article.title, data.article.description, canonical))}
+    {@html JSON.stringify(encikSchema(data.article.title, data.article.description, canonical))}
   </script>
 </svelte:head>
 

@@ -15,7 +15,7 @@
   <meta name="description" content={data.dataset.description} />
   <link rel="canonical" href={canonical} />
   <script type="application/ld+json">
-    {JSON.stringify(statsSchema(data.dataset.title, data.dataset.description, canonical))}
+    {@html JSON.stringify(statsSchema(data.dataset.title, data.dataset.description, canonical))}
   </script>
 </svelte:head>
 
