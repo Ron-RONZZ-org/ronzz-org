@@ -2,7 +2,12 @@
 set -e
 
 echo "Waiting for PostgreSQL..."
-until pg_isready -h "$(echo "$DATABASE_URL" | sed 's/.*@\(.*\):.*/\1/')" -U ronzz -d ronzz 2>/dev/null; do
+DB_HOST="$(node -e "
+  const url = require('url');
+  const u = new URL(process.env.DATABASE_URL);
+  console.log(u.hostname);
+")"
+until pg_isready -h "$DB_HOST" -U ronzz -d ronzz 2>/dev/null; do
   sleep 1
 done
 echo "PostgreSQL is ready."

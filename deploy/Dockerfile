@@ -11,9 +11,11 @@ COPY packages/ packages/
 COPY apps/ apps/
 COPY database/ database/
 
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
 RUN pnpm --filter database build 2>/dev/null || true
+# Remove devDependencies after build for smaller image size
+RUN pnpm prune --prod 2>/dev/null || true
 RUN pnpm build
 
 # ---- Production stage ----

@@ -1,17 +1,16 @@
 import { eq, like, or, and, isNull, isNotNull, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
+import { queryAll, queryGet, queryRun } from "database/dialect-query"
 import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
 import type { Dataset, DatasetInput } from "../types"
 
-/**
- * Cast the dual-dialect DB union to a minimal "any" for dialect-specific methods
- * (.all(), .run(), .get()) that the union type cannot express.
- */
-// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
-function dbAny(db: Database): any {
-  return db
-}
+/** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
+// biome-ignore lint/suspicious/noExplicitAny: Drizzle union type incompatibility between PG and SQLite builders
+const d = (db: Database): any => db
+
+const DEFAULT_PAGE_SIZE = 20
+const DEFAULT_TRASH_PAGE_SIZE = 50
 
 interface ListOptions {
   search?: string
@@ -21,11 +20,18 @@ interface ListOptions {
   includeTrash?: boolean
 }
 
+/**
+ * Escape LIKE wildcards so user-provided search strings do not match
+ * unintended rows. Replaces `%` → `\%` and `_` → `\_`.
+ */
+function escapeLike(term: string): string {
+  return term.replace(/[%_]/g, "\\$&")
+}
+
 export async function listDatasets(
   db: Database,
   options: ListOptions = {},
 ): Promise<{ datasets: Dataset[]; total: number }> {
-  const d = dbAny(db)
   const conditions: any[] = []
 
   if (!options.includeTrash) {
@@ -33,7 +39,7 @@ export async function listDatasets(
   }
 
   if (options.search) {
-    const term = `%${options.search}%`
+    const term = `%${escapeLike(options.search)}%`
     conditions.push(
       or(
         like(schema.datasets.title, term),
@@ -50,19 +56,21 @@ export async function listDatasets(
   const limit = options.limit ?? DEFAULT_PAGE_SIZE
   const offset = options.offset ?? 0
 
-  const rows = await d
-    .select()
-    .from(schema.datasets)
-    .where(where)
-    .limit(limit)
-    .offset(offset)
-    .all()
+  const rows = await queryAll<Dataset>(
+    d(db)
+      .select()
+      .from(schema.datasets)
+      .where(where)
+      .limit(limit)
+      .offset(offset),
+  )
 
-  const countResult = await d
-    .select({ count: sql<number>`count(*)` })
-    .from(schema.datasets)
-    .where(where)
-    .get()
+  const countResult = await queryGet<{ count: number }>(
+    d(db)
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.datasets)
+      .where(where),
+  )
   const total = countResult?.count ?? 0
 
   return { datasets: rows as Dataset[], total }
@@ -72,14 +80,14 @@ export async function getDataset(
   db: Database,
   id: string,
 ): Promise<Dataset | undefined> {
-  const d = dbAny(db)
-  const row = await d
-    .select()
-    .from(schema.datasets)
-    .where(
-      and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
-    )
-    .get()
+  const row = await queryGet<Dataset>(
+    d(db)
+      .select()
+      .from(schema.datasets)
+      .where(
+        and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
+      ),
+  )
   return row as Dataset | undefined
 }
 
@@ -88,25 +96,25 @@ export async function createDataset(
   input: DatasetInput,
 ): Promise<Result<Dataset, AppError>> {
   return tryResult(async () => {
-    const d = dbAny(db)
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
-    await d
-      .insert(schema.datasets)
-      .values({
-        id,
-        title: input.title,
-        description: input.description ?? "",
-        source: input.source ?? "",
-        sourceUrl: input.sourceUrl ?? "",
-        license: input.license ?? "",
-        locale: input.locale ?? "fr",
-        chartType: input.chartType ?? "bar",
-        metadata: (input.metadata ?? {}) as never,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .run()
+    await queryRun(
+      d(db)
+        .insert(schema.datasets)
+        .values({
+          id,
+          title: input.title,
+          description: input.description ?? "",
+          source: input.source ?? "",
+          sourceUrl: input.sourceUrl ?? "",
+          license: input.license ?? "",
+          locale: input.locale ?? "fr",
+          chartType: input.chartType ?? "bar",
+          metadata: (input.metadata ?? {}) as never,
+          createdAt: now,
+          updatedAt: now,
+        }),
+    )
     return {
       id,
       title: input.title,
@@ -130,14 +138,14 @@ export async function softDeleteDataset(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
-    const d = dbAny(db)
-    const result = await d
-      .update(schema.datasets)
-      .set({ deletedAt: new Date().toISOString() })
-      .where(
-        and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
-      )
-      .run()
+    const result = await queryRun(
+      d(db)
+        .update(schema.datasets)
+        .set({ deletedAt: new Date().toISOString() })
+        .where(
+          and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
+        ),
+    )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
@@ -152,24 +160,25 @@ export async function listTrashDatasets(
   db: Database,
   options?: TrashListOptions,
 ): Promise<{ datasets: Dataset[]; total: number }> {
-  const d = dbAny(db)
   const limit = options?.limit ?? DEFAULT_TRASH_PAGE_SIZE
   const offset = options?.offset ?? 0
 
-  const rows = await d
-    .select()
-    .from(schema.datasets)
-    .where(isNotNull(schema.datasets.deletedAt))
-    .orderBy(desc(schema.datasets.deletedAt), desc(schema.datasets.id))
-    .limit(limit)
-    .offset(offset)
-    .all()
+  const rows = await queryAll<Dataset>(
+    d(db)
+      .select()
+      .from(schema.datasets)
+      .where(isNotNull(schema.datasets.deletedAt))
+      .orderBy(desc(schema.datasets.deletedAt), desc(schema.datasets.id))
+      .limit(limit)
+      .offset(offset),
+  )
 
-  const countResult = await d
-    .select({ count: sql<number>`count(*)` })
-    .from(schema.datasets)
-    .where(isNotNull(schema.datasets.deletedAt))
-    .get()
+  const countResult = await queryGet<{ count: number }>(
+    d(db)
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.datasets)
+      .where(isNotNull(schema.datasets.deletedAt)),
+  )
   const total = countResult?.count ?? 0
 
   return { datasets: rows as Dataset[], total }
@@ -181,14 +190,14 @@ export async function restoreDataset(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
-    const d = dbAny(db)
-    const result = await d
-      .update(schema.datasets)
-      .set({ deletedAt: null })
-      .where(
-        and(eq(schema.datasets.id, id), isNotNull(schema.datasets.deletedAt)),
-      )
-      .run()
+    const result = await queryRun(
+      d(db)
+        .update(schema.datasets)
+        .set({ deletedAt: null })
+        .where(
+          and(eq(schema.datasets.id, id), isNotNull(schema.datasets.deletedAt)),
+        ),
+    )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
@@ -199,22 +208,20 @@ export async function hardDeleteDataset(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
-    const d = dbAny(db)
     // Delete datapoints first to avoid FK violation on PG
-    await d
-      .delete(schema.datapoints)
-      .where(eq(schema.datapoints.datasetId, id))
-      .run()
-    const result = await d
-      .delete(schema.datasets)
-      .where(eq(schema.datasets.id, id))
-      .run()
+    await queryRun(
+      d(db)
+        .delete(schema.datapoints)
+        .where(eq(schema.datapoints.datasetId, id)),
+    )
+    const result = await queryRun(
+      d(db)
+        .delete(schema.datasets)
+        .where(eq(schema.datasets.id, id)),
+    )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 
 /** Legacy alias for soft-delete. */
 export const deleteDataset = softDeleteDataset
-
-const DEFAULT_PAGE_SIZE = 20
-const DEFAULT_TRASH_PAGE_SIZE = 50
