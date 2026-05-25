@@ -5,15 +5,16 @@ import { getDb } from "../db"
 import { schema } from "../schema/proxy"
 
 const ADMIN_EMAIL = "admin@ronzz.org"
-const ADMIN_PASSWORD =
-  process.env.ADMIN_PASSWORD ||
-  (() => {
-    console.warn(
-      "\n⚠️  No ADMIN_PASSWORD env var set. Using insecure default 'admin123'.",
-    )
-    console.warn("   Set ADMIN_PASSWORD in production.\n")
-    return "admin123"
-  })()
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+if (!ADMIN_PASSWORD) {
+  console.error(
+    "\n❌ ADMIN_PASSWORD environment variable is required.\n" +
+      "   Set it before running the seed script, e.g.:\n" +
+      "     ADMIN_PASSWORD='your-secure-password' pnpm db:seed\n",
+  )
+  process.exit(1)
+}
 
 async function seedAdminUser() {
   const db = getDb()
@@ -44,11 +45,6 @@ async function seedAdminUser() {
     createdAt: new Date().toISOString(),
   })
 
-  if (ADMIN_PASSWORD === "admin123") {
-    console.warn("\n⚠️  DEFAULT ADMIN PASSWORD DETECTED")
-    console.warn("   The admin account uses password 'admin123'.")
-    console.warn("   Set ADMIN_PASSWORD env var and change it immediately after first login.\n")
-  }
   console.log(`Admin user created: ${ADMIN_EMAIL}`)
 }
 

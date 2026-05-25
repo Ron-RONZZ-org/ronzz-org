@@ -114,8 +114,8 @@ describe("articles queries", () => {
       const { articles, total } = await listArticles(db as any, { limit: 2, offset: 1 })
       expect(total).toBe(5)
       expect(articles).toHaveLength(2)
-      // No ORDER BY in listArticles — insertion order expected
-      expect(articles[0].title).toBe("Article 1")
+      // ORDER BY createdAt DESC — newest first, offset 1 skips Article 4
+      expect(articles[0].title).toBe("Article 3")
       expect(articles[1].title).toBe("Article 2")
     })
 

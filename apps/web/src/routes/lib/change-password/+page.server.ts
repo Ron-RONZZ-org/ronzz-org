@@ -1,5 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit"
-import { eq } from "drizzle-orm"
+import { eq, and, gt } from "drizzle-orm"
+import { createHash } from "node:crypto"
 import { hash, verify } from "@node-rs/argon2"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
@@ -7,8 +8,8 @@ import type { Actions } from "./$types"
 
 export const actions: Actions = {
   changePassword: async ({ request, cookies }) => {
-    const pwResetUser = cookies.get("pw_reset_user")
-    if (!pwResetUser) {
+    const pwReset = cookies.get("pw_reset")
+    if (!pwReset) {
       return fail(403, { message: "No password reset session." })
     }
 
@@ -37,14 +38,33 @@ export const actions: Actions = {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getDb() as any
+    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
+    const now = isPg ? new Date() : Date.now()
+
+    // Look up the user via the session hash stored in the pw_reset cookie
+    const sessionRows = await db
+      .select({ userId: schema.sessions.userId })
+      .from(schema.sessions)
+      .where(
+        and(
+          eq(schema.sessions.id, pwReset),
+          gt(schema.sessions.expiresAt, now),
+        ),
+      )
+    const session = sessionRows?.[0]
+    if (!session) {
+      cookies.delete("pw_reset", { path: "/lib/change-password" })
+      return fail(403, { message: "Session expired or invalid." })
+    }
+
     const userRows = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.id, pwResetUser))
+      .where(eq(schema.users.id, session.userId))
     const user = userRows[0]
 
     if (!user) {
-      cookies.delete("pw_reset_user", { path: "/" })
+      cookies.delete("pw_reset", { path: "/lib/change-password" })
       return fail(403, { message: "User not found." })
     }
 
@@ -68,7 +88,7 @@ export const actions: Actions = {
       })
       .where(eq(schema.users.id, user.id))
 
-    cookies.delete("pw_reset_user", { path: "/" })
+    cookies.delete("pw_reset", { path: "/lib/change-password" })
 
     redirect(303, "/lib")
   },

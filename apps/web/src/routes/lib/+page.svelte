@@ -21,7 +21,9 @@
     <select name="type" class="rounded border border-gray-300 px-3 py-2">
       <option value="">{tr_multi(locale, "Tous les types", "Ĉiuj tipoj", "All types")}</option>
       {#each data.resourceTypes as rt}
-        <option value={rt.slug}>{rt.nameFr}</option>
+        <option value={rt.slug}>
+          {locale === "eo" ? rt.nameEo : locale === "en" ? rt.nameEn : rt.nameFr}
+        </option>
       {/each}
     </select>
     <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">

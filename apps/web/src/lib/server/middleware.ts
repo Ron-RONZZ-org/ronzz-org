@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto"
 import type { Handle } from "@sveltejs/kit"
 import { eq, and, isNull, gt } from "drizzle-orm"
-import { requestLogger, checkRateLimit, detectLocale } from "@ronzz/shared-core"
+import { requestLogger, checkRateLimit, detectLocale, logger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
@@ -81,6 +81,8 @@ export async function handleSessionAuth(
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getDb() as any
+    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
+    const now = isPg ? new Date() : Date.now()
     const rows = await db
       .select({
         userId: schema.users.id,
@@ -92,7 +94,7 @@ export async function handleSessionAuth(
       .where(
         and(
           eq(schema.sessions.id, sessionHash),
-          gt(schema.sessions.expiresAt, Date.now()),
+          gt(schema.sessions.expiresAt, now),
         ),
       )
 
@@ -105,8 +107,8 @@ export async function handleSessionAuth(
       email: found.userEmail,
       role: found.userRole as "admin" | "editor",
     }
-  } catch {
-    // Silently ignore — session validation failure is not fatal
+  } catch (err) {
+    logger.error({ err, sessionId: sessionHash.slice(0, 8) }, "Session auth failed")
   }
 }
 
@@ -114,7 +116,7 @@ export async function handleSessionAuth(
 export async function handleTokenAuth(
   event: Parameters<Handle>[0]["event"],
 ): Promise<Response | null> {
-  if (!event.url.pathname.includes("/admin/")) {
+  if (!event.url.pathname.startsWith("/admin/")) {
     return null
   }
 
