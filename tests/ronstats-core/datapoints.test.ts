@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import type Database from "better-sqlite3"
 import BetterSqlite3 from "better-sqlite3"
 import { drizzle } from "drizzle-orm/better-sqlite3"
@@ -48,7 +48,12 @@ describe("datapoints queries", () => {
   let db: ReturnType<typeof drizzle>
 
   beforeEach(() => {
+    vi.useFakeTimers()
     db = createTestDb()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   describe("createDatapoint", () => {
@@ -94,8 +99,8 @@ describe("datapoints queries", () => {
         value: 1,
       })
 
-      // Small delay to ensure different timestamps
-      await new Promise((r) => setTimeout(r, 10))
+      // Advance time to ensure different createdAt timestamps
+      vi.advanceTimersByTime(1000)
 
       await createDatapoint(db as never, {
         datasetId: "ds-1",

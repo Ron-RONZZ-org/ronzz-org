@@ -1,9 +1,14 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { checkRateLimit, resetAllRateLimits, closeRateLimiter } from "@ronzz/shared-core"
 
 describe("rate limiter", () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     resetAllRateLimits()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it("allows requests within limit", () => {
@@ -20,16 +25,16 @@ describe("rate limiter", () => {
     expect(checkRateLimit("block-key", config)).toBe(false)
   })
 
-  it("resets after window expires", async () => {
+  it("resets after window expires", () => {
     const config = { windowMs: 50, max: 1 }
     expect(checkRateLimit("expire-key", config)).toBe(true)
     expect(checkRateLimit("expire-key", config)).toBe(false)
 
-    // Wait for window to expire
-    await new Promise((r) => setTimeout(r, 60))
+    // Advance time past window expiry
+    vi.advanceTimersByTime(60)
 
     expect(checkRateLimit("expire-key", config)).toBe(true)
-  }, 10_000)
+  })
 
   it("closeRateLimiter clears all state and interval", () => {
     // First make some entries
