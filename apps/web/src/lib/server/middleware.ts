@@ -83,7 +83,7 @@ export async function handleSessionAuth(
   const sessionHash = createHash("sha256").update(sessionId).digest("hex")
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
     const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
     const now = isPg ? new Date() : Date.now()
@@ -133,7 +133,7 @@ export async function handleTokenAuth(
   const tokenHash = createHash("sha256").update(token).digest("hex")
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
     const rows = await db
       .select({

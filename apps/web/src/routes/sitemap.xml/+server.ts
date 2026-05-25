@@ -42,7 +42,7 @@ export const GET: RequestHandler = async () => {
   ]
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
 
     // Dynamic datasets (exclude soft-deleted) — dialect-agnostic query

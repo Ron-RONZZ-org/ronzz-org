@@ -67,7 +67,7 @@ describe("tryResult", () => {
 
   it("handles non-Error throws gracefully", async () => {
     const result = await tryResult(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      // biome-ignore lint/correctness/noThrowLiteral: testing non-Error throw handling
       throw "string error"
     })
     expect(result.ok).toBe(false)

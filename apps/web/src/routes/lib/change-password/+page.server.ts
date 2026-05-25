@@ -4,13 +4,29 @@ import { createHash } from "node:crypto"
 import { hash, verify } from "@node-rs/argon2"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
+import { checkRateLimit } from "@ronzz/shared-core"
+import type { RateLimitConfig } from "@ronzz/shared-core"
 import type { Actions } from "./$types"
 
+const changePasswordLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
+
 export const actions: Actions = {
-  changePassword: async ({ request, cookies }) => {
+  changePassword: async ({ request, cookies, getClientAddress }) => {
     const pwReset = cookies.get("pw_reset")
     if (!pwReset) {
       return fail(403, { message: "No password reset session." })
+    }
+
+    // Rate limit by pw_reset cookie hash + IP to prevent brute-force
+    let ip: string
+    try {
+      ip = getClientAddress()
+    } catch {
+      ip = "127.0.0.1"
+    }
+    const rateLimitKey = `change-pw:${pwReset}:${ip}`
+    if (!checkRateLimit(rateLimitKey, changePasswordLimiter)) {
+      return fail(429, { message: "Too many attempts. Try again later." })
     }
 
     const formData = await request.formData()
@@ -36,7 +52,7 @@ export const actions: Actions = {
       })
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
     const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
     const now = isPg ? new Date() : Date.now()
