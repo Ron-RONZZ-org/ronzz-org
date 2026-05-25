@@ -4,20 +4,22 @@ import { getDb } from "database/db"
 import type { Database } from "database/db-types"
 import { listDatasets, createDataset, deleteDataset } from "@ronzz/ronstats-core"
 import { datasetSchema } from "@ronzz/ronstats-core"
-import { requireAdmin } from "$lib/server/middleware"
+import { requireAdmin, apiHandler } from "$lib/server/middleware"
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+const MAX_LIMIT = 200
+const DEFAULT_LIMIT = 50
+
+export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
   const adminCheck = requireAdmin(locals)
   if (adminCheck) return adminCheck
   const db = getDb() as Database
-  const { datasets, total } = await listDatasets(db, {
-    limit: parseInt(url.searchParams.get("limit") ?? "50", 10),
-    offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
-  })
-  return json({ datasets, total })
-}
+  const limit = Math.min(Number(url.searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT)
+  const offset = Number(url.searchParams.get("offset")) || 0
+  const { datasets, total } = await listDatasets(db, { limit, offset })
+  return json({ datasets, total, limit, offset })
+})
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
   const adminCheck = requireAdmin(locals)
   if (adminCheck) return adminCheck
   const body = await request.json()
@@ -31,9 +33,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
   return json({ dataset: result.value }, { status: 201 })
-}
+})
 
-export const DELETE: RequestHandler = async ({ url, locals }) => {
+// NOTE: DELETE uses query param for backward compatibility.
+// Preferred REST pattern: DELETE /stats/api/v1/admin/datasets/[id]
+export const DELETE: RequestHandler = apiHandler(async ({ url, locals }) => {
   const adminCheck = requireAdmin(locals)
   if (adminCheck) return adminCheck
   const id = url.searchParams.get("id")
@@ -43,5 +47,8 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
   if (!result.ok) {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
-  return json({ deleted: result.value }, result.value ? { status: 200 } : { status: 404 })
-}
+  if (!result.value) {
+    return json({ error: "Not found" }, { status: 404 })
+  }
+  return new Response(null, { status: 204 })
+})

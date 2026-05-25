@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { PostgresSearchEngine } from "@ronzz/search-core"
 import type { SearchDocument, SearchQuery } from "@ronzz/search-core"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
+import { resetDialectCache } from "database/schema/proxy"
 
 // Mock drizzle-orm operators to avoid import issues in test context
 vi.mock("drizzle-orm", () => ({
@@ -46,6 +47,8 @@ describe("PostgresSearchEngine", () => {
   let mockDb: Partial<NodePgDatabase<Record<string, unknown>>>
 
   beforeEach(() => {
+    process.env.DATABASE_URL = "postgresql://test"
+    resetDialectCache()
     mockDb = {
       select: vi.fn().mockReturnValue({
         from: vi.fn().mockReturnThis(),
@@ -63,6 +66,11 @@ describe("PostgresSearchEngine", () => {
     }
 
     engine = new PostgresSearchEngine(mockDb as NodePgDatabase<any>)
+  })
+
+  afterEach(() => {
+    delete process.env.DATABASE_URL
+    resetDialectCache()
   })
 
   describe("search", () => {
@@ -221,9 +229,12 @@ describe("PostgresSearchEngine", () => {
   })
 
   describe("reindex", () => {
-    it("indexes multiple documents", async () => {
-      const indexSpy = vi.spyOn(PostgresSearchEngine.prototype, "index")
-      indexSpy.mockResolvedValue(undefined)
+    it("calls db.insert for each document", async () => {
+      // mockDb.insert is already a vi.fn(); ensure the chain returns properly
+      mockDb.insert = vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnThis(),
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      }) as any
 
       await engine.reindex([
         sampleDoc,
@@ -238,8 +249,7 @@ describe("PostgresSearchEngine", () => {
         },
       ])
 
-      expect(indexSpy).toHaveBeenCalledTimes(2)
-      indexSpy.mockRestore()
+      expect(mockDb.insert).toHaveBeenCalledTimes(2)
     })
   })
 })

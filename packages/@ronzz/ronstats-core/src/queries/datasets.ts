@@ -4,6 +4,15 @@ import type { Database } from "database/db-types"
 import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
 import type { Dataset, DatasetInput } from "../types"
 
+/**
+ * Cast the dual-dialect DB union to a minimal "any" for dialect-specific methods
+ * (.all(), .run(), .get()) that the union type cannot express.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
+function dbAny(db: Database): any {
+  return db
+}
+
 interface ListOptions {
   search?: string
   locale?: string
@@ -13,9 +22,10 @@ interface ListOptions {
 }
 
 export async function listDatasets(
-  db: any,
+  db: Database,
   options: ListOptions = {},
 ): Promise<{ datasets: Dataset[]; total: number }> {
+  const d = dbAny(db)
   const conditions: any[] = []
 
   if (!options.includeTrash) {
@@ -37,10 +47,10 @@ export async function listDatasets(
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
-  const limit = options.limit ?? 20
+  const limit = options.limit ?? DEFAULT_PAGE_SIZE
   const offset = options.offset ?? 0
 
-  const rows = await db
+  const rows = await d
     .select()
     .from(schema.datasets)
     .where(where)
@@ -48,7 +58,7 @@ export async function listDatasets(
     .offset(offset)
     .all()
 
-  const countResult = await db
+  const countResult = await d
     .select({ count: sql<number>`count(*)` })
     .from(schema.datasets)
     .where(where)
@@ -59,10 +69,11 @@ export async function listDatasets(
 }
 
 export async function getDataset(
-  db: any,
+  db: Database,
   id: string,
 ): Promise<Dataset | undefined> {
-  const row = await db
+  const d = dbAny(db)
+  const row = await d
     .select()
     .from(schema.datasets)
     .where(
@@ -77,9 +88,10 @@ export async function createDataset(
   input: DatasetInput,
 ): Promise<Result<Dataset, AppError>> {
   return tryResult(async () => {
+    const d = dbAny(db)
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
-    await (db as any)
+    await d
       .insert(schema.datasets)
       .values({
         id,
@@ -118,7 +130,8 @@ export async function softDeleteDataset(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
-    const result = await (db as any)
+    const d = dbAny(db)
+    const result = await d
       .update(schema.datasets)
       .set({ deletedAt: new Date().toISOString() })
       .where(
@@ -136,13 +149,14 @@ interface TrashListOptions {
 
 /** List soft-deleted (trashed) datasets. */
 export async function listTrashDatasets(
-  db: any,
+  db: Database,
   options?: TrashListOptions,
 ): Promise<{ datasets: Dataset[]; total: number }> {
-  const limit = options?.limit ?? 50
+  const d = dbAny(db)
+  const limit = options?.limit ?? DEFAULT_TRASH_PAGE_SIZE
   const offset = options?.offset ?? 0
 
-  const rows = await db
+  const rows = await d
     .select()
     .from(schema.datasets)
     .where(isNotNull(schema.datasets.deletedAt))
@@ -151,7 +165,7 @@ export async function listTrashDatasets(
     .offset(offset)
     .all()
 
-  const countResult = await db
+  const countResult = await d
     .select({ count: sql<number>`count(*)` })
     .from(schema.datasets)
     .where(isNotNull(schema.datasets.deletedAt))
@@ -167,7 +181,8 @@ export async function restoreDataset(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
-    const result = await (db as any)
+    const d = dbAny(db)
+    const result = await d
       .update(schema.datasets)
       .set({ deletedAt: null })
       .where(
@@ -184,12 +199,13 @@ export async function hardDeleteDataset(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
+    const d = dbAny(db)
     // Delete datapoints first to avoid FK violation on PG
-    await (db as any)
+    await d
       .delete(schema.datapoints)
       .where(eq(schema.datapoints.datasetId, id))
       .run()
-    const result = await (db as any)
+    const result = await d
       .delete(schema.datasets)
       .where(eq(schema.datasets.id, id))
       .run()
@@ -199,3 +215,6 @@ export async function hardDeleteDataset(
 
 /** Legacy alias for soft-delete. */
 export const deleteDataset = softDeleteDataset
+
+const DEFAULT_PAGE_SIZE = 20
+const DEFAULT_TRASH_PAGE_SIZE = 50

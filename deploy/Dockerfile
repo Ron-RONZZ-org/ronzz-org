@@ -5,18 +5,21 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
+# Layer caching: copy manifests first, install, then source
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc tsconfig.json ./
 COPY packages/ packages/
 COPY apps/ apps/
 COPY database/ database/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod
 
 RUN pnpm --filter database build 2>/dev/null || true
 RUN pnpm build
 
 # ---- Production stage ----
 FROM node:20-alpine AS runner
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
@@ -30,11 +33,20 @@ COPY --from=builder /app/packages packages/
 COPY --from=builder /app/database database/
 COPY --from=builder /app/apps/web/.svelte-kit apps/web/.svelte-kit/
 
+# Prune devDependencies from the final image
+RUN pnpm prune --prod 2>/dev/null || true
+
 COPY deploy/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+# Switch to non-root user for security
+USER node
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1
 
 EXPOSE 3000
 

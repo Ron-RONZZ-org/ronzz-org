@@ -12,5 +12,5 @@ if [ "$HEALTH" = "FAIL" ]; then
   exit 1
 fi
 
-echo "$(date -Iseconds) health=ok" >> /var/log/ronzz/health.log
+echo "$(date -u +"%Y-%m-%dT%H:%M:%S%z") health=ok" >> /var/log/ronzz/health.log
 exit 0

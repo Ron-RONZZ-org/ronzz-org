@@ -5,19 +5,26 @@ import type { Database } from "database/db-types"
 import { listDatasets, createDataset } from "@ronzz/ronstats-core"
 import { datasetSchema } from "@ronzz/ronstats-core"
 import { createSearchEngine } from "@ronzz/search-core"
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
 
-export const GET: RequestHandler = async ({ url }) => {
+const MAX_LIMIT = 100
+const DEFAULT_LIMIT = 20
+
+export const GET: RequestHandler = apiHandler(async ({ url }) => {
   const db = getDb() as Database
+  const limit = Math.min(Number(url.searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT)
+  const offset = Number(url.searchParams.get("offset")) || 0
   const { datasets, total } = await listDatasets(db, {
     search: url.searchParams.get("q") ?? undefined,
-    limit: parseInt(url.searchParams.get("limit") ?? "20", 10),
-    offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
+    limit,
+    offset,
   })
-  return json({ datasets, total })
-}
+  return json({ datasets, total, limit, offset })
+})
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const body = await request.json()
   const parsed = datasetSchema.safeParse(body)
   if (!parsed.success) {
@@ -43,4 +50,4 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   })
 
   return json({ dataset }, { status: 201 })
-}
+})

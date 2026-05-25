@@ -9,11 +9,13 @@ echo "PostgreSQL is ready."
 
 # Run migrations
 echo "Running database migrations..."
-pnpm --filter database db:migrate:pg || echo "Migration already applied."
+pnpm --filter database db:migrate:pg
+echo "Migrations applied successfully."
 
 # Seed admin user
 echo "Seeding database..."
-pnpm --filter database db:seed || echo "Seed already applied."
+pnpm --filter database db:seed
+echo "Seed completed successfully."
 
 # Start application
 echo "Starting application..."

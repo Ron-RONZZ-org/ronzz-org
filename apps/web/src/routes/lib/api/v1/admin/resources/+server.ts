@@ -5,19 +5,24 @@ import type { Database } from "database/db-types"
 import { listResources, createResource, deleteResource } from "@ronzz/ronlib-core"
 import { resourceSchema } from "@ronzz/ronlib-core"
 import { createSearchEngine } from "@ronzz/search-core"
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
 
-export const GET: RequestHandler = async ({ url, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+const MAX_LIMIT = 200
+const DEFAULT_LIMIT = 50
+
+export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const db = getDb() as Database
-  const { resources, total } = await listResources(db, {
-    limit: parseInt(url.searchParams.get("limit") ?? "50", 10),
-    offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
-  })
-  return json({ resources, total })
-}
+  const limit = Math.min(Number(url.searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT)
+  const offset = Number(url.searchParams.get("offset")) || 0
+  const { resources, total } = await listResources(db, { limit, offset })
+  return json({ resources, total, limit, offset })
+})
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const body = await request.json()
   const parsed = resourceSchema.safeParse(body)
   if (!parsed.success) {
@@ -44,10 +49,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   })
 
   return json({ resource }, { status: 201 })
-}
+})
 
-export const DELETE: RequestHandler = async ({ url, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const DELETE: RequestHandler = apiHandler(async ({ url, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const id = url.searchParams.get("id")
   if (!id) return json({ error: "id required" }, { status: 400 })
 
@@ -57,9 +63,13 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
 
+  if (!result.value) {
+    return json({ error: "Not found" }, { status: 404 })
+  }
+
   // Remove from search index
   const engine = createSearchEngine(db)
   await engine.remove(id)
 
-  return json({ deleted: result.value }, result.value ? { status: 200 } : { status: 404 })
-}
+  return new Response(null, { status: 204 })
+})

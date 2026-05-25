@@ -134,6 +134,27 @@ export async function handleSessionAuth(
   }
 }
 
+/**
+ * Wraps an API route handler with try/catch error handling and JSON error responses.
+ * Ensures unhandled exceptions return JSON instead of HTML 500 pages.
+ */
+export function apiHandler<T>(
+  fn: (event: Parameters<Handle>[0]["event"]) => Promise<Response>,
+): (event: Parameters<Handle>[0]["event"]) => Promise<Response> {
+  return async (event) => {
+    try {
+      return await fn(event)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Internal server error"
+      logger.error({ err, path: event.url.pathname }, "API handler error")
+      return new Response(JSON.stringify({ error: message }), {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      })
+    }
+  }
+}
+
 /** Authenticate Bearer tokens on admin routes. */
 export async function handleTokenAuth(
   event: Parameters<Handle>[0]["event"],

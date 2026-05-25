@@ -3,7 +3,14 @@ import { join, extname } from "node:path"
 import { eq, like, and, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import { toLocale } from "@ronzz/shared-core"
+import type { Database } from "database/db-types"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
+
+/** Cast the dual-dialect DB union for dialect-specific methods. */
+// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
+function dbAny(db: Database): any {
+  return db
+}
 
 interface ListOptions {
   locale?: string
@@ -12,9 +19,10 @@ interface ListOptions {
 }
 
 export async function listArticles(
-  db: any,
+  db: Database,
   options: ListOptions = {},
 ): Promise<{ articles: ArticleMetadata[]; total: number }> {
+  const d = dbAny(db)
   const conditions: any[] = []
   const locale = toLocale(options.locale)
   if (locale) {
@@ -22,10 +30,10 @@ export async function listArticles(
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
-  const limit = options.limit ?? 50
+  const limit = options.limit ?? DEFAULT_PAGE_SIZE
   const offset = options.offset ?? 0
 
-  const rows = await db
+  const rows = await d
     .select()
     .from(schema.articlesMetadata)
     .where(where)
@@ -34,7 +42,7 @@ export async function listArticles(
     .offset(offset)
     .all()
 
-  const countResult = await db
+  const countResult = await d
     .select({ count: sql<number>`count(*)` })
     .from(schema.articlesMetadata)
     .where(where)
@@ -45,10 +53,11 @@ export async function listArticles(
 }
 
 export async function getArticleBySlug(
-  db: any,
+  db: Database,
   slug: string,
 ): Promise<ArticleMetadata | undefined> {
-  const row = await db
+  const d = dbAny(db)
+  const row = await d
     .select()
     .from(schema.articlesMetadata)
     .where(eq(schema.articlesMetadata.slug, slug))
@@ -57,14 +66,15 @@ export async function getArticleBySlug(
 }
 
 export async function upsertArticleMetadata(
-  db: any,
+  db: Database,
   input: ArticleMetadataInput,
 ): Promise<ArticleMetadata> {
+  const d = dbAny(db)
   const existing = await getArticleBySlug(db, input.slug)
   const now = new Date().toISOString()
 
   if (existing) {
-    await db.update(schema.articlesMetadata)
+    await d.update(schema.articlesMetadata)
       .set({
         title: input.title,
         description: input.description ?? existing.description,
@@ -79,7 +89,7 @@ export async function upsertArticleMetadata(
   }
 
   const id = crypto.randomUUID()
-  await db.insert(schema.articlesMetadata)
+  await d.insert(schema.articlesMetadata)
     .values({
       id,
       slug: input.slug,
@@ -106,10 +116,11 @@ export async function upsertArticleMetadata(
 }
 
 export async function deleteArticle(
-  db: any,
+  db: Database,
   id: string,
 ): Promise<boolean> {
-  const result = await db
+  const d = dbAny(db)
+  const result = await d
     .delete(schema.articlesMetadata)
     .where(eq(schema.articlesMetadata.id, id))
     .run()
@@ -145,7 +156,7 @@ export function extractSvxFrontmatter(filePath: string): Record<string, unknown>
 
 /** Scan the encik content directory and upsert all .svx metadata. */
 export async function syncEncikArticles(
-  db: any,
+  db: Database,
   contentDir: string,
 ): Promise<number> {
   let count = 0
@@ -178,3 +189,5 @@ export async function syncEncikArticles(
   }
   return count
 }
+
+const DEFAULT_PAGE_SIZE = 50

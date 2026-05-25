@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+tests
+.serena
+*.md
+.env
+.env.*
+!.env.example
+*.db
+dist
+.svelte-kit
