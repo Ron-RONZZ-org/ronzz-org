@@ -28,7 +28,7 @@
   <p class="text-gray-600 mb-6">{data.dataset.description}</p>
 
   {#if data.dataset.source}
-    <p class="text-sm text-gray-500 mb-6">
+    <p class="text-sm text-gray-600 mb-6">
       {tr_multi(locale, "Source", "Fonto", "Source")}: {data.dataset.source}
       {#if data.dataset.sourceUrl}
         (<a href={data.dataset.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{data.dataset.sourceUrl}</a>)

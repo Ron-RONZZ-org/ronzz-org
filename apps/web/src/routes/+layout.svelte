@@ -5,6 +5,8 @@
   import { page } from "$app/stores"
   import { webSiteSchema } from "@ronzz/shared-core"
 
+  let skip = $state(false)
+
   let {
     children,
     data,
@@ -21,6 +23,14 @@
   })
 </script>
 
+<!-- Skip-to-content link for keyboard users -->
+<a
+  href="#main-content"
+  class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-blue-600 focus:shadow-lg"
+>
+  {data.locale === "fr" ? "Aller au contenu" : data.locale === "eo" ? "Salti al enhavo" : "Skip to content"}
+</a>
+
 <Seo
   title="ronzz.org"
   description="For everything, but nothing"
@@ -28,7 +38,7 @@
   jsonld={webSiteSchema("ronzz.org", "https://ronzz.org")}
 />
 <Nav locale={data.locale} currentPath={$page.url.pathname} />
-<main class="mx-auto max-w-6xl px-6 py-8">
+<main id="main-content" class="mx-auto max-w-6xl px-6 py-8">
   {#if children}
     {@render children()}
   {/if}

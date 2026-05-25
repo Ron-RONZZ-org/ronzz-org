@@ -13,7 +13,11 @@
   <!-- Search -->
   <form method="GET" action="/stats" class="mb-8">
     <div class="flex gap-2">
+      <label for="stats-search" class="sr-only">
+        {tr_multi(locale, "Rechercher des jeux de données", "Serĉi datumarojn", "Search datasets")}
+      </label>
       <input
+        id="stats-search"
         type="text"
         name="q"
         placeholder={tr_multi(locale, "Rechercher des jeux de données…", "Serĉi datumarojn…", "Search datasets…")}
@@ -26,7 +30,7 @@
   </form>
 
   {#if data.datasets.length === 0}
-    <p class="text-center text-gray-500 py-8">
+    <p class="text-center text-gray-600 py-8">
       {tr_multi(locale,
         "Aucun jeu de données trouvé.",
         "Neniu datumararo trovita.",
@@ -60,7 +64,7 @@
           &larr; {tr_multi(locale, "Précédent", "Antaŭa", "Previous")}
         </a>
       {/if}
-      <span class="text-sm text-gray-500">
+      <span class="text-sm text-gray-600">
         {tr_multi(locale, "pagination.page", { page: data.page, total: data.totalPages })}
       </span>
       {#if data.page < data.totalPages}

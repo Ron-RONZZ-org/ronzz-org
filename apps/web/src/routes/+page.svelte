@@ -50,7 +50,7 @@
       "For everything, but nothing.",
     )}
   </p>
-  <p class="mb-12 text-sm text-gray-500">
+  <p class="mb-12 text-sm text-gray-600">
     {tr_multi(
       locale,
       "Fait avec amour depuis la France, l'Union Européenne.",
