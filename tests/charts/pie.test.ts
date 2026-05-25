@@ -19,7 +19,8 @@ describe("pieChart", () => {
     ]
     const result = pieChart(dps, dim)
     expect(result.arcs).toHaveLength(1)
-    expect(result.arcs[0].key).toBe("A")
+    // key is a composite of dimensionKey and dimensionValue
+    expect(result.arcs[0].key).toBe("cat:::A")
     expect(result.arcs[0].value).toBe(100)
     // Full circle: startAngle=0, endAngle=2*PI
     expect(result.arcs[0].startAngle).toBe(0)
@@ -50,5 +51,18 @@ describe("pieChart", () => {
     expect(result.arcs).toHaveLength(1)
     expect(result.arcs[0].value).toBe(30)
     expect(result.total).toBe(30)
+  })
+
+  it("separates different dimensionKeys with same dimensionValue", () => {
+    // Two datapoints with same dimensionValue but different dimensionKey
+    // should NOT be grouped together (composite key fix)
+    const dps: Datapoint[] = [
+      { id: "1", datasetId: "d1", dimensionKey: "region", dimensionValue: "A", value: 10, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      { id: "2", datasetId: "d1", dimensionKey: "category", dimensionValue: "A", value: 20, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+    ]
+    const result = pieChart(dps, dim)
+    expect(result.arcs).toHaveLength(2)
+    expect(result.arcs[0].key).toBe("region:::A")
+    expect(result.arcs[1].key).toBe("category:::A")
   })
 })

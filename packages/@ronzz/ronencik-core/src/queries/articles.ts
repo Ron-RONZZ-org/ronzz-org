@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs"
 import { join, extname } from "node:path"
 import { eq, like, and, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
-import { toLocale } from "@ronzz/shared-core"
+import { toLocale, logger } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
@@ -183,7 +183,7 @@ export async function syncEncikArticles(
       })
       count++
     } catch (err) {
-      console.error(`Failed to sync article ${file}:`, err)
+      logger.error({ err, file }, "Failed to sync article")
       // Continue processing remaining files
     }
   }

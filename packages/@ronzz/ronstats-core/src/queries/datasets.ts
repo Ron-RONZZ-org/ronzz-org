@@ -160,7 +160,7 @@ export async function listTrashDatasets(
     .select()
     .from(schema.datasets)
     .where(isNotNull(schema.datasets.deletedAt))
-    .orderBy(desc(schema.datasets.deletedAt))
+    .orderBy(desc(schema.datasets.deletedAt), desc(schema.datasets.id))
     .limit(limit)
     .offset(offset)
     .all()

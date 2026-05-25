@@ -6,7 +6,7 @@ export function pieChart(
   _dim: ChartDimensions,
 ): PieChartResult {
   const labelKey = (dp: Datapoint): string =>
-    dp.dimensionValue || dp.dimensionKey || dp.year || dp.id
+    [dp.dimensionKey, dp.dimensionValue].filter(Boolean).join(":::") || dp.year || dp.id
 
   const grouped = new Map<string, number>()
   for (const dp of datapoints) {

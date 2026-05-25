@@ -147,7 +147,10 @@ export function apiHandler<T>(
     } catch (err) {
       const message = err instanceof Error ? err.message : "Internal server error"
       logger.error({ err, path: event.url.pathname }, "API handler error")
-      return new Response(JSON.stringify({ error: message }), {
+      const publicMessage = process.env.NODE_ENV === "production"
+        ? "Internal server error"
+        : message
+      return new Response(JSON.stringify({ error: publicMessage }), {
         status: 500,
         headers: { "content-type": "application/json" },
       })

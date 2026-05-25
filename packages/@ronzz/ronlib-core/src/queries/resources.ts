@@ -161,7 +161,7 @@ export async function listTrashResources(
     .select()
     .from(schema.resources)
     .where(isNotNull(schema.resources.deletedAt))
-    .orderBy(desc(schema.resources.deletedAt))
+    .orderBy(desc(schema.resources.deletedAt), desc(schema.resources.id))
     .limit(limit)
     .offset(offset)
     .all()

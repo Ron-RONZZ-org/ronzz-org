@@ -3,7 +3,7 @@ import { eq, and, gt } from "drizzle-orm"
 import { createHash } from "node:crypto"
 import { hash, verify } from "@node-rs/argon2"
 import { getDb } from "database/db"
-import { schema } from "database/schema/proxy"
+import { schema, detectDialect } from "database/schema/proxy"
 import { checkRateLimit } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import type { Actions } from "./$types"
@@ -54,8 +54,7 @@ export const actions: Actions = {
 
     // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
-    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
-    const now = isPg ? new Date() : Date.now()
+    const now = detectDialect() === "pg" ? new Date() : Date.now()
 
     // Look up the user via the session hash stored in the pw_reset cookie
     const sessionRows = await db
