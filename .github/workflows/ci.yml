@@ -19,7 +19,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - name: pnpm audit
-        run: pnpm audit --audit-level=critical
+        run: pnpm audit
 
   type-check:
     runs-on: ubuntu-latest
@@ -52,22 +52,35 @@ jobs:
         if: matrix.db == 'sqlite'
         run: pnpm test
 
-      - name: Test with PostgreSQL
+      - name: Start PostgreSQL service
         if: matrix.db == 'pg'
         run: |
-          # Start PostgreSQL service
           docker run -d --name pg \
             -e POSTGRES_USER=ronzz \
             -e POSTGRES_PASSWORD=ronzz \
             -e POSTGRES_DB=ronzz \
             -p 5432:5432 \
             postgres:16-alpine
-          # Wait for PG to be ready
-          sleep 3
-          pg_isready -h localhost -U ronzz -d ronzz || sleep 3
+          # Wait for PG to be ready with retry loop
+          for i in $(seq 1 10); do
+            if pg_isready -h localhost -U ronzz -d ronzz 2>/dev/null; then
+              echo "PostgreSQL is ready after ${i}s"
+              break
+            fi
+            echo "Waiting for PostgreSQL... (${i}/10)"
+            sleep 1
+          done
+
+      - name: Test with PostgreSQL
+        if: matrix.db == 'pg'
+        run: |
           DATABASE_URL=postgres://ronzz:ronzz@localhost:5432/ronzz pnpm --filter database db:migrate:pg
           DATABASE_URL=postgres://ronzz:ronzz@localhost:5432/ronzz pnpm --filter database db:seed
           DATABASE_URL=postgres://ronzz:ronzz@localhost:5432/ronzz pnpm test
+
+      - name: Clean up PostgreSQL container
+        if: matrix.db == 'pg' && always()
+        run: docker rm -f pg 2>/dev/null || true
 
   build:
     runs-on: ubuntu-latest
