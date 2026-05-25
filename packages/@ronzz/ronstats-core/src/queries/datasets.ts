@@ -170,18 +170,25 @@ export async function restoreDataset(
     const result = await (db as any)
       .update(schema.datasets)
       .set({ deletedAt: null })
-      .where(eq(schema.datasets.id, id))
+      .where(
+        and(eq(schema.datasets.id, id), isNotNull(schema.datasets.deletedAt)),
+      )
       .run()
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 
-/** Permanently delete a dataset. */
+/** Permanently delete a dataset and all its datapoints. */
 export async function hardDeleteDataset(
   db: Database,
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
+    // Delete datapoints first to avoid FK violation on PG
+    await (db as any)
+      .delete(schema.datapoints)
+      .where(eq(schema.datapoints.datasetId, id))
+      .run()
     const result = await (db as any)
       .delete(schema.datasets)
       .where(eq(schema.datasets.id, id))
