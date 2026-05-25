@@ -207,6 +207,11 @@ ronzz-org/
 20. Chart renderers MUST use `reduce()` instead of `Math.max(...spread)` to avoid stack overflow on large datasets
 21. `createDataset` MUST NOT use `.returning()` (SQLite incompatible); construct the return value manually (same pattern as `createDatapoint`)
 22. The `<html lang>` attribute MUST be set dynamically from page locale data (via `$effect` in root layout), not from `%sveltekit.lang%` which is not a valid placeholder
+23. API route handlers MUST use `apiHandler()` wrapper from `$lib/server/middleware` for JSON error handling; unhandled exceptions in raw handlers return HTML 500 pages
+24. Paginated API endpoints MUST cap `limit` with `Math.min()` — use named constants `MAX_LIMIT`, `DEFAULT_LIMIT` at the top of each route file
+25. Successful DELETE endpoints return `204 No Content`, not `200 { deleted: true }`; 404 for not-found
+26. Monitoring scripts MUST use POSIX-compatible `date -u +"%Y-%m-%dT%H:%M:%S%z"` instead of GNU-only `date -Iseconds` for Alpine/BusyBox compatibility
+27. Test code MUST use `vi.useFakeTimers()` / `vi.advanceTimersByTime()` instead of real `setTimeout()` to avoid flakiness
 
 ---
 
