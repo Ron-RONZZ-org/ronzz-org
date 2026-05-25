@@ -1,14 +1,20 @@
-http://ronzz.org {
+https://ronzz.org {
     reverse_proxy app:3000
 
     # Security headers (CSP is set by SvelteKit hooks.server.ts for nonce support)
-    # HSTS is handled by nginx (TLS terminator)
+    # HSTS
     header {
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     }
 
     encode gzip
+}
+
+# Redirect HTTP to HTTPS
+http://ronzz.org {
+    redir https://{host}{uri} permanent
 }
