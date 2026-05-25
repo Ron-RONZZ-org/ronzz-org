@@ -250,6 +250,8 @@ ronzz-org/
 50. Use global `crypto.randomUUID()` (Web Crypto API, available in Node.js 20+) instead of importing `{ randomUUID }` from `node:crypto` — no import needed and consistent with the rest of the codebase
 51. `validateEnv()` MUST throw in production (not just warn) when `ORIGIN` is missing — missing ORIGIN makes CSRF protection silently block all legitimate requests
 52. Shared test helpers in `tests/helpers/` (`create-test-tables.ts`, `mock-event.ts`) MUST be used by test files instead of duplicating table creation or mock event logic — ensures consistency and reduces maintenance burden
+53. Pagination edge cases MUST be tested thoroughly: negative pages, zero pages, NaN inputs, floats, very large numbers, base-10 radix parsing — Math.max/Math.min handling of NaN should be documented to prevent silent failures
+54. Null-safety patterns in Svelte components MUST be tested: optional property access (`{#if data.resource.url}`), empty array handling, null coalescing fallbacks (`??`), and type-safe data structures for all page loads — detail pages MUST throw 404 for missing resources rather than rendering with undefined data
 
 ---
 
