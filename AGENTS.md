@@ -202,6 +202,11 @@ ronzz-org/
 15. Change-password endpoint is rate-limited (5 attempts/min per pw_reset hash + IP)
 16. Datapoints are returned in descending order by `createdAt` for deterministic chart rendering
 17. Use `biome-ignore` comments (not `eslint-disable`) for intentional suppressions
+18. Admin API route handlers MUST use `requireAdmin(locals)` from `$lib/server/middleware` — checking only `!locals.user` is insufficient; role must be `"admin"`
+19. CSRF origin matching MUST use exact hostname+port comparison (`isOriginAllowed()` in `hooks.server.ts`), NOT `startsWith()` to prevent subdomain bypass attacks
+20. Chart renderers MUST use `reduce()` instead of `Math.max(...spread)` to avoid stack overflow on large datasets
+21. `createDataset` MUST NOT use `.returning()` (SQLite incompatible); construct the return value manually (same pattern as `createDatapoint`)
+22. The `<html lang>` attribute MUST be set dynamically from page locale data (via `$effect` in root layout), not from `%sveltekit.lang%` which is not a valid placeholder
 
 ---
 
