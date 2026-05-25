@@ -26,10 +26,21 @@ describe("escapeLike", () => {
     expect(escapeLike("%a%b%")).toBe("\\%a\\%b\\%")
   })
 
-  it("escapes wildcard even when preceded by backslash (user intent is literal match)", () => {
-    // Input "\%" should become "\\%" — the backslash is treated as literal,
-    // and the % is still escaped, resulting in two backslashes + %.
-    // In SQL LIKE, "\\" is a literal backslash, "\%" is a literal percent.
-    expect(escapeLike("\\% already escaped")).toBe("\\\\% already escaped")
+  it("escapes backslash first, then wildcard when preceded by backslash", () => {
+    // Input "\%" → first escape "\" → "\\%", then escape "%" → "\\\%".
+    // In SQL LIKE: "\\" = literal backslash, "\%" = literal percent.
+    expect(escapeLike("\\% already escaped")).toBe("\\\\\\% already escaped")
+  })
+
+  it("escapes multiple backslashes correctly", () => {
+    expect(escapeLike("a\\b\\c")).toBe("a\\\\b\\\\c")
+  })
+
+  it("escapes backslash not followed by wildcard", () => {
+    expect(escapeLike("path\\to\\file")).toBe("path\\\\to\\\\file")
+  })
+
+  it("escapes mixed backslashes and wildcards correctly", () => {
+    expect(escapeLike("\\_test\\%")).toBe("\\\\\\_test\\\\\\%")
   })
 })
