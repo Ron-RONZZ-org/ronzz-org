@@ -13,10 +13,10 @@ COPY database/ database/
 
 RUN pnpm install --frozen-lockfile
 
-RUN pnpm --filter database build 2>/dev/null || true
-# Remove devDependencies after build for smaller image size
-RUN pnpm prune --prod 2>/dev/null || true
+RUN pnpm --filter database build
 RUN pnpm build
+# Remove devDependencies after build for smaller image size (builder stage is discarded, but this keeps copied layers lean)
+RUN pnpm prune --prod 2>/dev/null || true
 
 # ---- Production stage ----
 FROM node:20-alpine AS runner
