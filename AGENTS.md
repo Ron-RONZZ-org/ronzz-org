@@ -55,6 +55,8 @@ ronzz-org/
 │               │   ├── login/
 │               │   │   ├── +page.svelte     # Login form
 │               │   │   └── +page.server.ts  # Login form action
+│               │   ├── change-password/
+│               │   │   └── +page.server.ts  # Password change (session-bound pw_reset cookie)
 │               │   └── logout/
 │               │       └── +server.ts       # POST logout
 │               ├── stats/
@@ -85,7 +87,7 @@ ronzz-org/
 │   │   └── pg/                 # PostgreSQL dialect (9 tables)
 │   ├── db.ts                   # getDb() — dual-dialect factory (closeDb, resetDb)
 │   ├── db-types.ts             # Database union type (SQLite | PG)
-│   ├── seeds/admin-user.ts     # admin@ronzz.org (ADMIN_PASSWORD env var)
+│   ├── seeds/admin-user.ts     # admin@ronzz.org (ADMIN_PASSWORD env var, required — no fallback)
 │   └── drizzle.config.*.ts     # SQLite + PG Drizzle kit configs
 ├── deploy/
 │   ├── Dockerfile              # Multi-stage build
@@ -107,7 +109,16 @@ ronzz-org/
 │   │   ├── result.test.ts  
 │   │   ├── result-utils.test.ts
 │   │   ├── i18n.test.ts
-│   │   └── rate-limiter.test.ts
+│   │   ├── rate-limiter.test.ts
+│   │   └── ttl-cache.test.ts
+│   ├── validation/
+│   │   ├── ronstats-core.test.ts
+│   │   ├── ronlib-core.test.ts
+│   │   └── ronencik-core.test.ts
+│   ├── charts/
+│   │   ├── bar.test.ts
+│   │   ├── line.test.ts
+│   │   └── pie.test.ts
 │   └── database/               # Future DB tests
 ├── .github/workflows/
 │   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
@@ -140,6 +151,8 @@ ronzz-org/
 - **Migrations**: `pnpm db:migrate:sqlite` / `pnpm db:migrate:pg`
 - **Seeds**: Run via `pnpm db:seed`
 - **Test isolation**: `DATABASE_URL=:memory:` via `beforeEach` fixture
+- **PG timestamp values**: Use `new Date()` for `timestamp` columns, `Date.now()` for `integer` columns — check `process.env.DATABASE_URL` prefix to branch between dialects
+- **Drizzle `.run()` results**: SQLite returns `{ changes }`, PG returns `{ rowCount }` — use `(result.changes ?? result.rowCount ?? 0) > 0` for dialect-agnostic checks
 
 ## Git Workflow
 
