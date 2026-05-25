@@ -30,6 +30,9 @@ export function t(
 
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
+      // WARNING: If `vars` values ever come from user input (URL params, form data, etc.),
+      // they MUST be escaped/sanitised before substitution to prevent XSS.
+      // Currently all callers pass only controlled template variables.
       text = text.replaceAll(`{${k}}`, String(v))
     }
   }

@@ -10,20 +10,23 @@ import {
 
 const MAX_BODY_SIZE = 1_048_576 // 1 MB
 
-/** Validate critical env vars at startup in production. */
+/** Validate critical env vars at startup. Halts in production if ORIGIN is missing. */
 function validateEnv(): void {
-  if (process.env.NODE_ENV === "production") {
-    if (!process.env.ORIGIN) {
-      logger.warn(
-        "ORIGIN environment variable is not set — CSRF protection will block legitimate requests. " +
-        "Set ORIGIN to your deployment URL (e.g., https://ronzz.org).",
-      )
+  if (!process.env.ORIGIN) {
+    const msg =
+      "ORIGIN environment variable is not set — CSRF protection will block all legitimate requests. " +
+      "Set ORIGIN to your deployment URL (e.g., https://ronzz.org)."
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(msg)
     }
-    if (!process.env.ADMIN_PASSWORD) {
-      logger.warn(
-        "ADMIN_PASSWORD environment variable is not set — admin user cannot be seeded.",
-      )
+    logger.warn(msg)
+  }
+  if (!process.env.ADMIN_PASSWORD) {
+    const msg = "ADMIN_PASSWORD environment variable is not set — admin user cannot be seeded."
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(msg)
     }
+    logger.warn(msg)
   }
 }
 

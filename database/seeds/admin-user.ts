@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto"
 import { hash, Algorithm } from "@node-rs/argon2"
 import { eq } from "drizzle-orm"
 import { getDb } from "../db"
@@ -37,7 +36,7 @@ async function seedAdminUser() {
   })
 
   await db.insert(schema.users).values({
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     email: ADMIN_EMAIL,
     passwordHash,
     role: "admin",

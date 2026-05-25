@@ -8,6 +8,7 @@ import type { DatapointInput } from "@ronzz/ronstats-core"
 
 const DEFAULT_DATAPOINT_LIMIT = 1000
 const DATAPOINT_LIMIT_MAX = 10000
+const DATAPOINT_BULK_MAX = 5000
 
 export const GET: RequestHandler = apiHandler(async ({ params, url }) => {
   const db = getDb() as Database
@@ -26,8 +27,14 @@ export const POST: RequestHandler = apiHandler(async ({ request, params, locals 
   const body = await request.json()
   const db = getDb() as Database
 
-  // Bulk import
+  // Bulk import — enforce size cap to prevent memory exhaustion
   if (Array.isArray(body)) {
+    if (body.length > DATAPOINT_BULK_MAX) {
+      return json(
+        { error: `Bulk import limited to ${DATAPOINT_BULK_MAX} datapoints per request` },
+        { status: 400 },
+      )
+    }
     const results: Array<DatapointInput> = []
     for (const item of body) {
       const parsed = datapointSchema.safeParse({ ...item, datasetId: params.uuid })

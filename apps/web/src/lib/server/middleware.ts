@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto"
+import { createHash } from "node:crypto"
 import type { Handle } from "@sveltejs/kit"
 import { eq, and, isNull, gt } from "drizzle-orm"
 import { requestLogger, checkRateLimit, detectLocale, logger } from "@ronzz/shared-core"
@@ -23,7 +23,7 @@ function getClientIp(event: Parameters<Handle>[0]["event"]): string {
 export async function handleRequestContext(
   event: Parameters<Handle>[0]["event"],
 ): Promise<void> {
-  const requestId = randomUUID().slice(0, 8)
+  const requestId = crypto.randomUUID().slice(0, 8)
   event.locals.requestId = requestId
   event.locals.locale = detectLocale(
     event.request.headers.get("accept-language"),

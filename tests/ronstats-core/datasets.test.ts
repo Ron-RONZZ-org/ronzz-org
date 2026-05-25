@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import Database from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import * as sqliteSchema from "database/schema/sqlite/index"
+import { resetDb, getDb } from "database/db"
+import type { Database } from "database/db-types"
 import {
   listDatasets,
   getDataset,
@@ -13,36 +12,38 @@ import {
 } from "@ronzz/ronstats-core"
 import type { DatasetInput } from "@ronzz/ronstats-core"
 
-function createTestDb() {
-  const sqlite = new Database(":memory:")
-  sqlite.exec(`
-    CREATE TABLE "dataset" (
-      "id" text PRIMARY KEY NOT NULL,
-      "title" text NOT NULL,
-      "description" text NOT NULL DEFAULT '',
-      "source" text NOT NULL DEFAULT '',
-      "source_url" text NOT NULL DEFAULT '',
-      "license" text NOT NULL DEFAULT '',
-      "locale" text NOT NULL DEFAULT 'fr',
-      "chart_type" text NOT NULL DEFAULT 'bar',
-      "metadata" text DEFAULT '{}',
-      "created_at" text NOT NULL,
-      "updated_at" text NOT NULL,
-      "deleted_at" text
-    );
-    CREATE TABLE "datapoint" (
-      "id" text PRIMARY KEY NOT NULL,
-      "dataset_id" text NOT NULL REFERENCES "dataset"("id"),
-      "dimension_key" text NOT NULL DEFAULT '',
-      "dimension_value" text NOT NULL DEFAULT '',
-      "value" real NOT NULL DEFAULT 0,
-      "unit" text NOT NULL DEFAULT '',
-      "year" text NOT NULL DEFAULT '',
-      "metadata" text DEFAULT '{}',
-      "created_at" text NOT NULL
-    );
-  `)
-  return drizzle(sqlite, { schema: sqliteSchema })
+function createTestTables(db: Database): void {
+  // biome-ignore lint/suspicious/noExplicitAny: need access to underlying SQLite connection
+  const sqlite = (db as any).session?.client as any
+  if (sqlite?.exec) {
+    sqlite.exec(`
+      CREATE TABLE "dataset" (
+        "id" text PRIMARY KEY NOT NULL,
+        "title" text NOT NULL,
+        "description" text NOT NULL DEFAULT '',
+        "source" text NOT NULL DEFAULT '',
+        "source_url" text NOT NULL DEFAULT '',
+        "license" text NOT NULL DEFAULT '',
+        "locale" text NOT NULL DEFAULT 'fr',
+        "chart_type" text NOT NULL DEFAULT 'bar',
+        "metadata" text DEFAULT '{}',
+        "created_at" text NOT NULL,
+        "updated_at" text NOT NULL,
+        "deleted_at" text
+      );
+      CREATE TABLE "datapoint" (
+        "id" text PRIMARY KEY NOT NULL,
+        "dataset_id" text NOT NULL REFERENCES "dataset"("id"),
+        "dimension_key" text NOT NULL DEFAULT '',
+        "dimension_value" text NOT NULL DEFAULT '',
+        "value" real NOT NULL DEFAULT 0,
+        "unit" text NOT NULL DEFAULT '',
+        "year" text NOT NULL DEFAULT '',
+        "metadata" text DEFAULT '{}',
+        "created_at" text NOT NULL
+      );
+    `)
+  }
 }
 
 const sampleInput: DatasetInput = {
@@ -57,10 +58,13 @@ const sampleInput: DatasetInput = {
 }
 
 describe("datasets queries", () => {
-  let db: ReturnType<typeof createTestDb>
+  let db: Database
 
   beforeEach(() => {
-    db = createTestDb()
+    resetDb()
+    process.env.DATABASE_URL = ":memory:"
+    db = getDb() as Database
+    createTestTables(db)
   })
 
   describe("createDataset", () => {
@@ -142,7 +146,7 @@ describe("datasets queries", () => {
       expect(r1.ok).toBe(true)
       const r2 = await createDataset(db, { ...sampleInput, locale: "en" })
       expect(r2.ok).toBe(true)
-      const r3 = await createDataset(db, { ...sampleInput, locale: "eo" })
+      await createDataset(db, { ...sampleInput, locale: "eo" })
 
       const { datasets, total } = await listDatasets(db, { locale: "fr" })
       expect(total).toBe(1)

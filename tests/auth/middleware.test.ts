@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { createHash, randomUUID, randomBytes } from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 import { resetDb, getDb } from "database/db"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
@@ -38,7 +38,7 @@ function createTables(db: Database): void {
 
 // NOTE: SQLite expects numbers for integer columns (not booleans).
 // This is a known driver constraint — the proxy schema types differ per dialect.
-const testUserId = randomUUID()
+const testUserId = crypto.randomUUID()
 
 describe("session auth logic", () => {
   beforeEach(() => {
@@ -61,7 +61,7 @@ describe("session auth logic", () => {
     })
 
     // Create session
-    const sessionId = randomUUID()
+    const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
     await db.insert(schema.sessions).values({
       id: sessionHash,
@@ -98,7 +98,7 @@ describe("session auth logic", () => {
     })
 
     // Create expired session
-    const sessionId = randomUUID()
+    const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
     await db.insert(schema.sessions).values({
       id: sessionHash,
@@ -153,10 +153,10 @@ describe("token auth logic", () => {
     })
 
     // Create token
-    const tokenValue = `ronzz_${randomUUID().replace(/-/g, "")}${randomUUID().replace(/-/g, "")}`
+    const tokenValue = `ronzz_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "")}`
     const tokenHash = createHash("sha256").update(tokenValue).digest("hex")
     await db.insert(schema.apiTokens).values({
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       userId: testUserId,
       name: "test-token",
       tokenHash,
@@ -198,10 +198,10 @@ describe("token auth logic", () => {
     })
 
     // Create revoked token
-    const tokenValue = `test-revoked-token-${randomUUID()}`
+    const tokenValue = `test-revoked-token-${crypto.randomUUID()}`
     const tokenHash = createHash("sha256").update(tokenValue).digest("hex")
     await db.insert(schema.apiTokens).values({
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       userId: testUserId,
       name: "revoked-token",
       tokenHash,
@@ -239,9 +239,9 @@ describe("token auth logic", () => {
 
     // Create two tokens
     for (let i = 0; i < 2; i++) {
-      const tokenValue = `ronzz_${randomUUID().replace(/-/g, "")}`
+      const tokenValue = `ronzz_${crypto.randomUUID().replace(/-/g, "")}`
       await db.insert(schema.apiTokens).values({
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         userId: testUserId,
         name: `token-${i}`,
         tokenHash: createHash("sha256").update(tokenValue).digest("hex"),

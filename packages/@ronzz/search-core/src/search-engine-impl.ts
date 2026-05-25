@@ -39,12 +39,15 @@ export class SearchEngineImpl implements SearchEngine {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
+    const offset = Math.max(0, query.offset ?? 0)
+    const limit = Math.min(query.limit ?? DEFAULT_PAGE_SIZE, 1000)
+
     const q = this.db
       .select()
       .from(schema.searchIndex)
       .where(where)
-      .limit(query.limit ?? DEFAULT_PAGE_SIZE)
-      .offset(query.offset ?? 0)
+      .limit(limit)
+      .offset(offset)
 
     const rows = await queryAll<Record<string, unknown>>(q)
 

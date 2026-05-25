@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { eq, and, isNull } from "drizzle-orm"
-import { createHash, randomUUID, randomBytes } from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
 import type { Actions, PageServerLoad } from "./$types"
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 }
 
 function generateTokenValue(): string {
-  const hex = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "")
+  const hex = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "")
   return `ronzz_${hex}`
 }
 
@@ -53,7 +53,7 @@ export const actions: Actions = {
     const tokenHash = createHash("sha256").update(token).digest("hex")
     const prefix = generatePrefix()
 
-    const id = randomUUID()
+    const id = crypto.randomUUID()
     await db.insert(schema.apiTokens).values({
       id,
       userId: locals.user.id,

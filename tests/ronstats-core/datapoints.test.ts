@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
-import type Database from "better-sqlite3"
-import BetterSqlite3 from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import * as sqliteSchema from "database/schema/sqlite/index"
+import { resetDb, getDb } from "database/db"
+import type { Database } from "database/db-types"
 import {
   listDatapoints,
   countDatapoints,
@@ -11,22 +9,24 @@ import {
 } from "@ronzz/ronstats-core"
 import type { DatapointInput } from "@ronzz/ronstats-core"
 
-function createTestDb() {
-  const sqlite = new BetterSqlite3(":memory:")
-  sqlite.exec(`
-    CREATE TABLE "datapoint" (
-      "id" text PRIMARY KEY NOT NULL,
-      "dataset_id" text NOT NULL,
-      "dimension_key" text NOT NULL DEFAULT '',
-      "dimension_value" text NOT NULL DEFAULT '',
-      "value" real NOT NULL DEFAULT 0,
-      "unit" text NOT NULL DEFAULT '',
-      "year" text NOT NULL DEFAULT '',
-      "metadata" text DEFAULT '{}',
-      "created_at" text NOT NULL
-    );
-  `)
-  return drizzle(sqlite, { schema: sqliteSchema })
+function createTestTables(db: Database): void {
+  // biome-ignore lint/suspicious/noExplicitAny: need access to underlying SQLite connection
+  const sqlite = (db as any).session?.client as any
+  if (sqlite?.exec) {
+    sqlite.exec(`
+      CREATE TABLE "datapoint" (
+        "id" text PRIMARY KEY NOT NULL,
+        "dataset_id" text NOT NULL,
+        "dimension_key" text NOT NULL DEFAULT '',
+        "dimension_value" text NOT NULL DEFAULT '',
+        "value" real NOT NULL DEFAULT 0,
+        "unit" text NOT NULL DEFAULT '',
+        "year" text NOT NULL DEFAULT '',
+        "metadata" text DEFAULT '{}',
+        "created_at" text NOT NULL
+      );
+    `)
+  }
 }
 
 const sampleInput: DatapointInput = {
@@ -45,11 +45,14 @@ function unwrap<T>(result: { ok: boolean; value?: T }): T {
 }
 
 describe("datapoints queries", () => {
-  let db: ReturnType<typeof drizzle>
+  let db: Database
 
   beforeEach(() => {
     vi.useFakeTimers()
-    db = createTestDb()
+    resetDb()
+    process.env.DATABASE_URL = ":memory:"
+    db = getDb() as Database
+    createTestTables(db)
   })
 
   afterEach(() => {
