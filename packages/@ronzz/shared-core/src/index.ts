@@ -19,3 +19,5 @@ export { libSchema, statsSchema, encikSchema, webSiteSchema } from "./seo/index"
 export type { JsonLd } from "./seo/index"
 
 export { escapeLike } from "./escape-like"
+
+export { escapeXml } from "./escape-xml"

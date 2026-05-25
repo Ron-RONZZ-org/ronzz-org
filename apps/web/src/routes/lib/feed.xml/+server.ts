@@ -2,16 +2,16 @@ import type { RequestHandler } from "./$types"
 import { eq, desc, isNull } from "drizzle-orm"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
-import { TtlCache } from "@ronzz/shared-core"
+import { TtlCache, escapeXml } from "@ronzz/shared-core"
 
-const BASE = "https://ronzz.org"
+const BASE = process.env.ORIGIN || "https://ronzz.org"
 
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+function formatPubDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toUTCString()
+  } catch {
+    return new Date().toUTCString()
+  }
 }
 
 // Cache regenerated feed for 15 minutes
@@ -80,7 +80,7 @@ export const GET: RequestHandler = async () => {
       <description>${escapeXml(item.description)}</description>
       <link>${escapeXml(item.url)}</link>
       <guid>${escapeXml(item.url)}</guid>
-      <pubDate>${new Date(item.createdAt).toUTCString()}</pubDate>
+      <pubDate>${formatPubDate(item.createdAt)}</pubDate>
     </item>`,
     ),
     "  </channel>",
