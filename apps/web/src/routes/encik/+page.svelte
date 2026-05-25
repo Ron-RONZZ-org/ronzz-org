@@ -11,7 +11,7 @@
   <h1 class="mb-6 text-3xl font-bold text-gray-900">RonEncik</h1>
 
   {#if data.articles.length === 0}
-    <p class="text-center text-gray-500 py-8">
+    <p class="text-center text-gray-600 py-8">
       {tr_multi(locale,
         "Aucun article pour l'instant.",
         "Neniu artikolo ankoraŭ.",

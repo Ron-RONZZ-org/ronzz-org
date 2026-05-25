@@ -1,14 +1,21 @@
 <script lang="ts">
   import type { PageData } from "./$types"
-  import { tr_multi } from "@ronzz/shared-core"
+  import { tr_multi, libSchema } from "@ronzz/shared-core"
+  import { page } from "$app/stores"
 
   let { data }: { data: PageData } = $props()
   const locale = data.locale
+
+  let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>
 
 <svelte:head>
   <title>{data.resource.title} | RonLib</title>
   <meta name="description" content={data.resource.description} />
+  <link rel="canonical" href={canonical} />
+  <script type="application/ld+json">
+    {JSON.stringify(libSchema(data.resource.title, data.resource.description, canonical))}
+  </script>
 </svelte:head>
 
 <div class="mx-auto max-w-3xl">

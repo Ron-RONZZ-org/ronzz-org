@@ -1,14 +1,21 @@
 <script lang="ts">
   import type { PageData } from "./$types"
-  import { tr_multi } from "@ronzz/shared-core"
+  import { tr_multi, encikSchema } from "@ronzz/shared-core"
+  import { page } from "$app/stores"
 
   let { data }: { data: PageData } = $props()
   const locale = data.locale
+
+  let canonical = $derived($page.url.origin + $page.url.pathname)
 </script>
 
 <svelte:head>
   <title>{data.article.title} | RonEncik</title>
   <meta name="description" content={data.article.description} />
+  <link rel="canonical" href={canonical} />
+  <script type="application/ld+json">
+    {JSON.stringify(encikSchema(data.article.title, data.article.description, canonical))}
+  </script>
 </svelte:head>
 
 <div class="mx-auto max-w-3xl">
@@ -20,7 +27,7 @@
   <p class="text-gray-600 mb-6">{data.article.description}</p>
 
   <div class="prose max-w-none">
-    <p class="text-gray-500 italic">
+    <p class="text-gray-600 italic">
       {tr_multi(locale,
         "Contenu à venir. Cette page sera remplie via un fichier .svx.",
         "Enhavo venonta. Ĉi tiu paĝo pleniĝos per .svx-dosiero.",

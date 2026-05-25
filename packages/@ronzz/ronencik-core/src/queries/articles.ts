@@ -152,24 +152,29 @@ export async function syncEncikArticles(
   if (!existsSync(contentDir)) return 0
 
   for (const file of readdirSync(contentDir)) {
-    if (extname(file) !== ".svx") continue
-    const filePath = join(contentDir, file)
-    const fm = extractSvxFrontmatter(filePath)
-    if (!fm) continue
+    try {
+      if (extname(file) !== ".svx") continue
+      const filePath = join(contentDir, file)
+      const fm = extractSvxFrontmatter(filePath)
+      if (!fm) continue
 
-    const slug = (fm.slug as string) ?? file.replace(/\.svx$/, "")
-    const title = (fm.title as string) ?? slug
-    const description = (fm.description as string) ?? ""
-    const locale = (fm.locale as string) ?? "fr"
+      const slug = (fm.slug as string) ?? file.replace(/\.svx$/, "")
+      const title = (fm.title as string) ?? slug
+      const description = (fm.description as string) ?? ""
+      const locale = (fm.locale as string) ?? "fr"
 
-    await upsertArticleMetadata(db, {
-      slug,
-      title,
-      description,
-      locale: locale as ArticleMetadataInput["locale"],
-      metadata: fm,
-    })
-    count++
+      await upsertArticleMetadata(db, {
+        slug,
+        title,
+        description,
+        locale: locale as ArticleMetadataInput["locale"],
+        metadata: fm,
+      })
+      count++
+    } catch (err) {
+      console.error(`Failed to sync article ${file}:`, err)
+      // Continue processing remaining files
+    }
   }
   return count
 }

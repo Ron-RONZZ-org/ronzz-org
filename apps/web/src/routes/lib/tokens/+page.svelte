@@ -22,7 +22,7 @@
 
 <section class="mx-auto max-w-2xl py-12">
   <h1 class="mb-2 text-2xl font-bold text-gray-900">API Tokens</h1>
-  <p class="mb-8 text-sm text-gray-500">
+  <p class="mb-8 text-sm text-gray-600">
     Tokens allow CLI and programmatic access to the API.
     Generate one and save it — it will not be shown again.
   </p>

@@ -54,7 +54,7 @@ export const GET: RequestHandler = async () => {
     for (const ds of datasets) {
       entries.push({
         loc: `${BASE}/stats/${ds.id}`,
-        lastmod: String(ds.updatedAt),
+        lastmod: typeof ds.updatedAt === "string" ? ds.updatedAt : (ds.updatedAt as Date).toISOString(),
         changefreq: "monthly",
         priority: 0.6,
       })
