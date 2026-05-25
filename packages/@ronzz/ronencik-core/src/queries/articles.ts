@@ -2,12 +2,8 @@ import { readdirSync, readFileSync, existsSync } from "node:fs"
 import { join, extname } from "node:path"
 import { eq, like, and, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
+import { toLocale } from "@ronzz/shared-core"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
-
-function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
-  if (locale === "fr" || locale === "eo" || locale === "en") return locale
-  return undefined
-}
 
 interface ListOptions {
   locale?: string
