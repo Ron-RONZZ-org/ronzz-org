@@ -165,7 +165,8 @@ export async function handleTokenAuth(
   const path = event.url.pathname
   if (
     !path.startsWith("/admin/") &&
-    !path.startsWith("/stats/api/v1/admin/")
+    !path.startsWith("/stats/api/v1/admin/") &&
+    !path.startsWith("/encik/api/v1/admin/")
   ) {
     return null
   }

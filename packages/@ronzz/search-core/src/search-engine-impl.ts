@@ -1,6 +1,7 @@
 import { eq, and, like, or, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { escapeLike } from "@ronzz/shared-core"
 import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
 
 /**
@@ -18,7 +19,7 @@ export class SearchEngineImpl implements SearchEngine {
     const conditions: any[] = []
 
     if (query.query) {
-      const searchTerm = `%${query.query}%`
+      const searchTerm = `%${escapeLike(query.query)}%`
       conditions.push(
         or(
           like(schema.searchIndex.title, searchTerm),

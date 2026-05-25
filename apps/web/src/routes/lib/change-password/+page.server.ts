@@ -52,59 +52,65 @@ export const actions: Actions = {
       })
     }
 
-    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
-    const db = getDb() as any
-    const now = detectDialect() === "pg" ? new Date() : Date.now()
+    try {
+      // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
+      const db = getDb() as any
+      const now = detectDialect() === "pg" ? new Date() : Date.now()
 
-    // Look up the user via the session hash stored in the pw_reset cookie
-    const sessionRows = await db
-      .select({ userId: schema.sessions.userId })
-      .from(schema.sessions)
-      .where(
-        and(
-          eq(schema.sessions.id, pwReset),
-          gt(schema.sessions.expiresAt, now),
-        ),
-      )
-    const session = sessionRows?.[0]
-    if (!session) {
-      cookies.delete("pw_reset", { path: "/lib/change-password" })
-      return fail(403, { message: "Session expired or invalid." })
-    }
+      // Look up the user via the session hash stored in the pw_reset cookie
+      const sessionRows = await db
+        .select({ userId: schema.sessions.userId })
+        .from(schema.sessions)
+        .where(
+          and(
+            eq(schema.sessions.id, pwReset),
+            gt(schema.sessions.expiresAt, now),
+          ),
+        )
+      const session = sessionRows?.[0]
+      if (!session) {
+        cookies.delete("pw_reset", { path: "/lib/change-password" })
+        return fail(403, { message: "Session expired or invalid." })
+      }
 
-    const userRows = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, session.userId))
-    const user = userRows[0]
+      const userRows = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, session.userId))
+      const user = userRows[0]
 
-    if (!user) {
-      cookies.delete("pw_reset", { path: "/lib/change-password" })
-      return fail(403, { message: "User not found." })
-    }
+      if (!user) {
+        cookies.delete("pw_reset", { path: "/lib/change-password" })
+        return fail(403, { message: "User not found." })
+      }
 
-    const validPassword = await verify(user.passwordHash, currentPassword)
-    if (!validPassword) {
-      return fail(401, { message: "Current password is incorrect." })
-    }
+      const validPassword = await verify(user.passwordHash, currentPassword)
+      if (!validPassword) {
+        return fail(401, { message: "Current password is incorrect." })
+      }
 
-    const newPasswordHash = await hash(newPassword, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    })
-
-    await db
-      .update(schema.users)
-      .set({
-        passwordHash: newPasswordHash,
-        passwordChangeRequired: 0,
+      const newPasswordHash = await hash(newPassword, {
+        memoryCost: 19456,
+        timeCost: 2,
+        outputLen: 32,
+        parallelism: 1,
       })
-      .where(eq(schema.users.id, user.id))
 
-    cookies.delete("pw_reset", { path: "/lib/change-password" })
+      await db
+        .update(schema.users)
+        .set({
+          passwordHash: newPasswordHash,
+          passwordChangeRequired: 0,
+        })
+        .where(eq(schema.users.id, user.id))
 
-    redirect(303, "/lib")
+      cookies.delete("pw_reset", { path: "/lib/change-password" })
+
+      redirect(303, "/lib")
+    } catch (err) {
+      return fail(500, {
+        message: "An unexpected error occurred. Please try again.",
+      })
+    }
   },
 }
