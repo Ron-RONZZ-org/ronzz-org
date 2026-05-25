@@ -125,12 +125,22 @@ ronzz-org/
 │   ├── search-core/
 │   │   ├── sqlite-engine.test.ts # SQLite search engine tests
 │   │   └── pg-engine.test.ts    # PostgreSQL search engine tests (mocked)
+│   ├── routes/
+│   │   ├── health.test.ts       # Health endpoint handler tests
+│   │   ├── datasets-api.test.ts # Dataset API route handler tests
+│   │   ├── datapoints-api.test.ts # Datapoint API route handler tests
+│   │   └── admin-api.test.ts    # Admin API route handler tests
 │   ├── ronstats-core/
+<<<<<<< Updated upstream
 │   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge
 │   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination
 │   ├── helpers/
 │   │   ├── create-test-tables.ts # Shared SQLite table creation for test isolation
 │   │   └── mock-event.ts        # Shared SvelteKit RequestEvent factory for route handler tests
+=======
+│   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge (via getDb())
+│   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination (via getDb())
+>>>>>>> Stashed changes
 ├── .github/workflows/
 │   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
 │   └── deploy.yml              # Build Docker → push ghcr.io → SSH deploy on main push
@@ -232,8 +242,14 @@ ronzz-org/
 42. Search engine singleton (`_engine` in `engine.ts`) MUST track the dialect via `_engineDialect` and re-initialize when `detectDialect()` returns a different value (handles DB reset/reconnect)
 43. Login form actions MUST wrap DB operations in try/catch and return `fail(500, { message })` on error — unhandled exceptions return HTML 500 pages instead of JSON
 44. Request body size limits MUST handle chunked transfer encoding (`transfer-encoding: chunked`) by buffering the body stream and replacing `event.request` with a new `Request` containing the buffered body — otherwise downstream parsers lose access to the body
-45. Critical env vars (`ORIGIN`, `ADMIN_PASSWORD`) MUST be validated at startup via `validateEnv()` called at module load in `hooks.server.ts` — warn on missing values in production
-46. Shared test helpers in `tests/helpers/` (`create-test-tables.ts`, `mock-event.ts`) MUST be used by test files instead of duplicating table creation or mock event logic — ensures consistency and reduces maintenance burden
+45. Critical env vars (`ORIGIN`, `ADMIN_PASSWORD`) MUST be validated at startup via `validateEnv()` called at module load in `hooks.server.ts` — throw on missing values in production (CSRF would silently block requests without ORIGIN)
+46. Route handler tests in `tests/routes/` MUST use `$lib` alias defined in `vitest.config.ts` (`$lib` → `apps/web/src/lib`) and import handlers via `$lib/../routes/<path>/+server.ts` path
+47. All route handler tests MUST create a minimal mock event object with at minimum `request`, `url`, `params`, `locals`, and `cookies` fields matching the shape used by the handler under test
+48. Core query tests (datasets, datapoints, resources, articles) MUST use `getDb()` from `database/db` instead of creating their own SQLite connections — ensures the actual `database/schema/proxy` and `database/db` code paths are exercised
+49. Bulk import endpoints MUST enforce a maximum batch size (e.g., `DATAPOINT_BULK_MAX = 5000`) to prevent memory exhaustion from oversized requests
+50. Use global `crypto.randomUUID()` (Web Crypto API, available in Node.js 20+) instead of importing `{ randomUUID }` from `node:crypto` — no import needed and consistent with the rest of the codebase
+51. `validateEnv()` MUST throw in production (not just warn) when `ORIGIN` is missing — missing ORIGIN makes CSRF protection silently block all legitimate requests
+52. Shared test helpers in `tests/helpers/` (`create-test-tables.ts`, `mock-event.ts`) MUST be used by test files instead of duplicating table creation or mock event logic — ensures consistency and reduces maintenance burden
 
 ---
 
