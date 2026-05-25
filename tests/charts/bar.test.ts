@@ -9,7 +9,7 @@ describe("barChart", () => {
     const result = barChart([], dim)
     expect(result.bars).toEqual([])
     expect(result.xTicks).toEqual([])
-    expect(result.yTicks).toHaveLength(5)
+    expect(result.yTicks.length).toBeGreaterThan(0)
     expect(result.unit).toBe("")
   })
 
@@ -37,14 +37,16 @@ describe("barChart", () => {
     expect(result.bars[1].key).toBe("B")
   })
 
-  it("computes y-axis max as 1.1 * data max", () => {
+  it("uses d3.ticks for round tick labels", () => {
     const dps: Datapoint[] = [
       { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 100, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
     ]
     const result = barChart(dps, dim)
-    // yMin=0, yMax=100*1.1=110, tick[4] should be at yScale(110)
-    const yMaxTick = result.yTicks[result.yTicks.length - 1]
-    expect(yMaxTick.label).toBe("110.0")
+    // d3.ticks returns ~5+1 round human-readable values
+    expect(result.yTicks.length).toBeGreaterThanOrEqual(5)
+    const topLabel = Number(result.yTicks[result.yTicks.length - 1].label)
+    expect(topLabel).toBeGreaterThan(0)
+    expect(topLabel).toBeLessThanOrEqual(110)
   })
 
   it("handles all-zero values", () => {

@@ -1,4 +1,4 @@
-import { scaleLinear, scalePoint, line as d3Line } from "d3"
+import { scaleLinear, scalePoint, line as d3Line, ticks } from "d3"
 import type { Datapoint } from "../../types"
 import type { LineChartResult, ChartDimensions } from "../types"
 import { getInner } from "../types"
@@ -38,11 +38,10 @@ export function lineChart(
     label: d.key,
   }))
 
-  const yTicksCount = 5
-  const yTicks = Array.from({ length: yTicksCount }, (_, i) => {
-    const v = yMin + (yMax / (yTicksCount - 1)) * i
-    return { value: yScale(v), label: formatNumber(v) }
-  })
+  const yTicks = ticks(yMin, yMax, 5).map((v) => ({
+    value: yScale(v),
+    label: formatNumber(v),
+  }))
 
   return {
     path,

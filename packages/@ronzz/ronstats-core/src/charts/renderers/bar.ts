@@ -1,4 +1,4 @@
-import { scaleLinear, scaleBand } from "d3"
+import { scaleLinear, scaleBand, ticks } from "d3"
 import type { Datapoint } from "../../types"
 import type { BarChartResult, ChartDimensions } from "../types"
 import { getInner } from "../types"
@@ -37,11 +37,10 @@ export function barChart(
     height: inner.height - yScale(d.value),
   }))
 
-  const yTicksCount = 5
-  const yTicks = Array.from({ length: yTicksCount }, (_, i) => {
-    const v = yMin + (yMax / (yTicksCount - 1)) * i
-    return { value: yScale(v), label: formatNumber(v) }
-  })
+  const yTicks = ticks(yMin, yMax, 5).map((v) => ({
+    value: yScale(v),
+    label: formatNumber(v),
+  }))
 
   return {
     bars,
