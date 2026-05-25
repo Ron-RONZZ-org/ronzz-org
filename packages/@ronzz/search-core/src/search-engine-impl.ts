@@ -1,16 +1,7 @@
 import { eq, and, like, or, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
+import { queryAll, queryGet, queryRun } from "database/dialect-query"
 import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
-
-/**
- * Helper to add `.run()` only for SQLite (PG awaits directly).
- * SQLite returns { changes }, PG returns { rowCount } — both checked via ??.
- */
-// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
-async function dbRun(promiseOrChain: any, dialect: "sqlite" | "pg"): Promise<any> {
-  if (dialect === "pg") return promiseOrChain
-  return promiseOrChain.run()
-}
 
 /**
  * Unified search engine implementation that works with both SQLite and PostgreSQL.
@@ -47,26 +38,24 @@ export class SearchEngineImpl implements SearchEngine {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
-    let q = this.db
+    const q = this.db
       .select()
       .from(schema.searchIndex)
       .where(where)
       .limit(query.limit ?? DEFAULT_PAGE_SIZE)
       .offset(query.offset ?? 0)
 
-    const rows = this.dialect === "pg" ? await q : await q.all()
+    const rows = await queryAll<Record<string, unknown>>(q)
 
     const countQ = this.db
       .select({ count: sql<number>`count(*)` })
       .from(schema.searchIndex)
       .where(where)
 
-    const countResult = this.dialect === "pg"
-      ? (await countQ)[0]
-      : await countQ.get()
+    const countResult = await queryGet<{ count: number }>(countQ)
 
     return {
-      results: rows.map((row: Record<string, unknown>) => ({
+      results: rows.map((row) => ({
         id: row.id as string,
         type: row.type as SearchResult["type"],
         locale: row.locale as SearchResult["locale"],
@@ -81,7 +70,7 @@ export class SearchEngineImpl implements SearchEngine {
 
   async index(doc: SearchDocument): Promise<void> {
     const now = this.dialect === "pg" ? new Date() : new Date().toISOString()
-    await dbRun(
+    await queryRun(
       this.db
         .insert(schema.searchIndex)
         .values({
@@ -106,16 +95,14 @@ export class SearchEngineImpl implements SearchEngine {
             updatedAt: now,
           },
         }),
-      this.dialect,
     )
   }
 
   async remove(id: string): Promise<void> {
-    await dbRun(
+    await queryRun(
       this.db
         .delete(schema.searchIndex)
         .where(eq(schema.searchIndex.id, id)),
-      this.dialect,
     )
   }
 

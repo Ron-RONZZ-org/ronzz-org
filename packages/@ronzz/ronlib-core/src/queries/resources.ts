@@ -2,7 +2,7 @@ import { eq, like, or, and, desc, asc, isNull, isNotNull, sql } from "drizzle-or
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
-import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
+import { tryResult, toLocale, escapeLike, type Result, type AppError } from "@ronzz/shared-core"
 import type { Resource, ResourceInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -11,14 +11,6 @@ const d = (db: Database): any => db
 
 const DEFAULT_PAGE_SIZE = 20
 const DEFAULT_TRASH_PAGE_SIZE = 50
-
-/**
- * Escape LIKE wildcards so user-provided search strings do not match
- * unintended rows. Replaces `%` → `\%` and `_` → `\_`.
- */
-function escapeLike(term: string): string {
-  return term.replace(/[%_]/g, "\\$&")
-}
 
 interface ListOptions {
   typeId?: string

@@ -23,6 +23,10 @@
     "./i18n": {
       "types": "./src/i18n/index.ts",
       "default": "./src/i18n/index.ts"
+    },
+    "./escape-like": {
+      "types": "./src/escape-like.ts",
+      "default": "./src/escape-like.ts"
     }
   },
   "dependencies": {

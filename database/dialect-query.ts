@@ -22,10 +22,14 @@ export async function queryAll<T>(q: unknown): Promise<T[]> {
 /**
  * Execute a `select` query and return the first matching row (or undefined).
  * - SQLite: await q.get()
- * - PG:     await q
+ * - PG:     await q, then extract the first element (PG returns an array)
  */
 export async function queryGet<T>(q: unknown): Promise<T | undefined> {
-  return detectDialect() === "pg" ? await (q as Promise<T | undefined>) : await (q as { get(): T | undefined }).get()
+  if (detectDialect() === "pg") {
+    const rows = await (q as Promise<T[]>)
+    return rows[0]
+  }
+  return await (q as { get(): T | undefined }).get()
 }
 
 /**

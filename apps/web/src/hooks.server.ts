@@ -10,6 +10,26 @@ import {
 
 const MAX_BODY_SIZE = 1_048_576 // 1 MB
 
+/** Validate critical env vars at startup in production. */
+function validateEnv(): void {
+  if (process.env.NODE_ENV === "production") {
+    if (!process.env.ORIGIN) {
+      logger.warn(
+        "ORIGIN environment variable is not set — CSRF protection will block legitimate requests. " +
+        "Set ORIGIN to your deployment URL (e.g., https://ronzz.org).",
+      )
+    }
+    if (!process.env.ADMIN_PASSWORD) {
+      logger.warn(
+        "ADMIN_PASSWORD environment variable is not set — admin user cannot be seeded.",
+      )
+    }
+  }
+}
+
+// Run once at module load
+validateEnv()
+
 /** Allowed origins for CSRF check. In production, set ORIGIN env var. */
 function getAllowedOrigins(): string[] {
   const origins: string[] = []
@@ -97,11 +117,49 @@ export const handle: Handle = async ({ event, resolve }) => {
   const csrfResponse = csrfCheck(event)
   if (csrfResponse) return csrfResponse
 
-  // Reject oversized request bodies early to avoid memory exhaustion
+  // Reject oversized request bodies early to avoid memory exhaustion.
+  // For requests with explicit Content-Length, check the header value directly.
+  // For chunked requests (no Content-Length), buffer the body up to MAX_BODY_SIZE
+  // then replace the request so downstream handlers can still read it.
   const contentLength = event.request.headers.get("content-length")
-  const parsedSize = contentLength ? Number.parseInt(contentLength, 10) : NaN
-  if (!Number.isNaN(parsedSize) && parsedSize > MAX_BODY_SIZE) {
-    return new Response("Request body too large", { status: 413 })
+  if (contentLength) {
+    const parsedSize = Number.parseInt(contentLength, 10)
+    if (!Number.isNaN(parsedSize) && parsedSize > MAX_BODY_SIZE) {
+      return new Response("Request body too large", { status: 413 })
+    }
+  } else if (
+    event.request.headers.get("transfer-encoding")?.includes("chunked") &&
+    event.request.body
+  ) {
+    // Buffer chunked body; if it exceeds the limit, reject. Otherwise, replace
+    // the request so downstream form/json body parsers can still read it.
+    const chunks: Uint8Array[] = []
+    let total = 0
+    const reader = event.request.body.getReader()
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (value) {
+          chunks.push(value)
+          total += value.byteLength
+          if (total > MAX_BODY_SIZE) {
+            await reader.cancel()
+            return new Response("Request body too large", { status: 413 })
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+    // Replace with a new Request that has the buffered body
+    const body = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      body.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    event.request = new Request(event.request, { body })
   }
 
   const log = logger.child({ requestId: event.locals.requestId })

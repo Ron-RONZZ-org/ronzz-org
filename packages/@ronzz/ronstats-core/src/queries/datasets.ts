@@ -2,7 +2,7 @@ import { eq, like, or, and, isNull, isNotNull, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
-import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
+import { tryResult, toLocale, escapeLike, type Result, type AppError } from "@ronzz/shared-core"
 import type { Dataset, DatasetInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -18,14 +18,6 @@ interface ListOptions {
   limit?: number
   offset?: number
   includeTrash?: boolean
-}
-
-/**
- * Escape LIKE wildcards so user-provided search strings do not match
- * unintended rows. Replaces `%` → `\%` and `_` → `\_`.
- */
-function escapeLike(term: string): string {
-  return term.replace(/[%_]/g, "\\$&")
 }
 
 export async function listDatasets(
