@@ -131,16 +131,11 @@ ronzz-org/
 │   │   ├── datapoints-api.test.ts # Datapoint API route handler tests
 │   │   └── admin-api.test.ts    # Admin API route handler tests
 │   ├── ronstats-core/
-<<<<<<< Updated upstream
-│   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge
-│   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination
+│   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge (via getDb())
+│   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination (via getDb())
 │   ├── helpers/
 │   │   ├── create-test-tables.ts # Shared SQLite table creation for test isolation
 │   │   └── mock-event.ts        # Shared SvelteKit RequestEvent factory for route handler tests
-=======
-│   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge (via getDb())
-│   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination (via getDb())
->>>>>>> Stashed changes
 ├── .github/workflows/
 │   ├── ci.yml                  # lint, type-check, test (sqlite+pg), build, audit
 │   └── deploy.yml              # Build Docker → push ghcr.io → SSH deploy on main push
@@ -172,7 +167,7 @@ ronzz-org/
 - **Migrations**: `pnpm db:migrate:sqlite` / `pnpm db:migrate:pg`
 - **Seeds**: Run via `pnpm db:seed`
 - **Test isolation**: `DATABASE_URL=:memory:` via `beforeEach` fixture
-- **PG timestamp values**: Use `new Date()` for `timestamp` columns, `Date.now()` for `integer` columns — check `process.env.DATABASE_URL` prefix to branch between dialects
+- **PG timestamp values**: Use `dbNow()` from `database/dialect-query` for dialect-appropriate timestamps — `new Date()` for `timestamp` columns (PG), `Date.now()` for `integer` columns (SQLite). Accepts optional `offsetMs`. Never duplicate the `detectDialect()` branching manually.
 - **Drizzle `.run()` results**: SQLite returns `{ changes }`, PG returns `{ rowCount }` — use `(result.changes ?? result.rowCount ?? 0) > 0` for dialect-agnostic checks
 
 ## Git Workflow
@@ -252,6 +247,12 @@ ronzz-org/
 52. Shared test helpers in `tests/helpers/` (`create-test-tables.ts`, `mock-event.ts`) MUST be used by test files instead of duplicating table creation or mock event logic — ensures consistency and reduces maintenance burden
 53. Pagination edge cases MUST be tested thoroughly: negative pages, zero pages, NaN inputs, floats, very large numbers, base-10 radix parsing — Math.max/Math.min handling of NaN should be documented to prevent silent failures
 54. Null-safety patterns in Svelte components MUST be tested: optional property access (`{#if data.resource.url}`), empty array handling, null coalescing fallbacks (`??`), and type-safe data structures for all page loads — detail pages MUST throw 404 for missing resources rather than rendering with undefined data
+
+55. All form action `redirect()` calls MUST be placed **outside** the try/catch block — SvelteKit's `redirect()` throws a `Redirect` exception that is caught by catch blocks, silently breaking redirects. Variables needed for redirect decisions (e.g., `passwordChangeRequired`, `sessionHash`) MUST be declared before the try block and assigned within it, with redirects following after the try/catch
+
+56. Timestamp branching for dialect compatibility MUST use `dbNow()` from `database/dialect-query` (`import { dbNow } from "database/dialect-query"`) instead of repeating `detectDialect() === "pg" ? new Date() : Date.now()` — this avoids code duplication and ensures consistent behaviour across all call sites. `dbNow()` accepts an optional `offsetMs` parameter for expiry values (e.g. `dbNow(7 * 24 * 60 * 60 * 1000)`)
+
+57. Locale switching in the Nav component MUST use `goto(currentPath, { invalidateAll: true })` to ensure server-side load functions re-execute with the new locale cookie — `goto(currentPath)` without `invalidateAll` performs a client-side navigation that skips server load functions
 
 ---
 
