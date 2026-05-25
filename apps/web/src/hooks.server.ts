@@ -121,7 +121,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   // Session cookie auth (populates event.locals.user for logged-in users)
   await handleSessionAuth(event)
 
-  // Bearer token auth for admin routes (/admin/* and /stats/api/v1/admin/*)
+  // Bearer token auth for admin routes
   const authResponse = await handleTokenAuth(event)
   if (authResponse) return authResponse
 

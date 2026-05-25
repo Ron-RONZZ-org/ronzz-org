@@ -30,6 +30,25 @@ export async function handleRequestContext(
   )
 }
 
+/** Require admin role — returns a 403 JSON response if the user is not an admin. */
+export function requireAdmin(
+  locals: App.Locals,
+): Response | null {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  if (locals.user.role !== "admin") {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  return null
+}
+
 /** Rate-limit login, search, API, and all unauthenticated endpoints. */
 export async function handleRateLimit(
   event: Parameters<Handle>[0]["event"],
