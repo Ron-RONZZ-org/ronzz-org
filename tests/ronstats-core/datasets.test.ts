@@ -148,6 +148,23 @@ describe("datasets queries", () => {
       expect(total).toBe(1)
       expect(datasets[0].locale).toBe("fr")
     })
+
+    it("includes soft-deleted datasets when includeTrash is true", async () => {
+      const created = await createDataset(db as any, sampleInput)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
+
+      await softDeleteDataset(db as any, created.value.id)
+
+      // Default: trash excluded
+      const { total: totalActive } = await listDatasets(db as any)
+      expect(totalActive).toBe(0)
+
+      // With includeTrash: trash included
+      const { datasets, total } = await listDatasets(db as any, { includeTrash: true })
+      expect(total).toBe(1)
+      expect(datasets[0].title).toBe("Test Dataset")
+    })
   })
 
   describe("getDataset", () => {

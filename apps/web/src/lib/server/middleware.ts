@@ -47,7 +47,11 @@ export async function handleRateLimit(
     return null
   }
 
-  if (path.includes("/search")) {
+  // Rate-limit search API endpoints (not generic paths containing "search")
+  if (
+    path.startsWith("/api/v1/search") ||
+    path.startsWith("/lib/api/v1/search")
+  ) {
     if (!checkRateLimit(`search:${ip}`, searchLimiter)) {
       return new Response("Too many search requests", { status: 429 })
     }

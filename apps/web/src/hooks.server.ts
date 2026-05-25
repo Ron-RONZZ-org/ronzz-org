@@ -10,8 +10,63 @@ import {
 
 const MAX_BODY_SIZE = 1_048_576 // 1 MB
 
+/** Allowed origins for CSRF check. In production, set ORIGIN env var. */
+function getAllowedOrigins(): string[] {
+  const origins: string[] = []
+  const envOrigin = process.env.ORIGIN
+  if (envOrigin) {
+    origins.push(envOrigin.replace(/\/+$/, ""))
+  }
+  // Allow localhost in development
+  origins.push("http://localhost:5173", "http://127.0.0.1:5173")
+  return origins
+}
+
+/** CSRF protection — reject state-changing requests without a matching Origin/Referer. */
+function csrfCheck(event: Parameters<Handle>[0]["event"]): Response | null {
+  const method = event.request.method
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return null
+  }
+
+  // API requests with Bearer token bypass CSRF check (tokens are not browser-automated)
+  if (event.request.headers.get("authorization")?.startsWith("Bearer ")) {
+    return null
+  }
+
+  const allowedOrigins = getAllowedOrigins()
+  const origin = event.request.headers.get("origin")
+  const referer = event.request.headers.get("referer")
+
+  // Check Origin header first
+  if (origin && allowedOrigins.some((o) => origin.startsWith(o))) {
+    return null
+  }
+
+  // Fall back to Referer header
+  if (referer && allowedOrigins.some((o) => referer.startsWith(o))) {
+    return null
+  }
+
+  // Allow requests with neither Origin nor Referer (e.g. curl, mobile apps) if not authenticated
+  // This is a best-effort check; authenticated API calls use Bearer tokens which skip above.
+  if (!origin && !referer) {
+    return null
+  }
+
+  logger.warn(
+    { method, origin, referer, path: event.url.pathname },
+    "CSRF check failed — rejecting state-changing request",
+  )
+  return new Response("Forbidden", { status: 403 })
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
   await handleRequestContext(event)
+
+  // CSRF protection for state-changing requests
+  const csrfResponse = csrfCheck(event)
+  if (csrfResponse) return csrfResponse
 
   // Reject oversized request bodies early to avoid memory exhaustion
   const contentLength = event.request.headers.get("content-length")

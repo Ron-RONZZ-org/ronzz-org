@@ -122,7 +122,7 @@ export async function deleteResource(
         and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
       )
       .run()
-    return (result as { changes: number }).changes > 0
+    return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 
@@ -143,6 +143,7 @@ export async function listTrashResources(
     .select()
     .from(schema.resources)
     .where(isNotNull(schema.resources.deletedAt))
+    .orderBy(desc(schema.resources.deletedAt))
     .limit(limit)
     .offset(offset)
     .all()
@@ -168,7 +169,7 @@ export async function restoreResource(
       .set({ deletedAt: null })
       .where(eq(schema.resources.id, id))
       .run()
-    return (result as { changes: number }).changes > 0
+    return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 
@@ -182,6 +183,6 @@ export async function hardDeleteResource(
       .delete(schema.resources)
       .where(eq(schema.resources.id, id))
       .run()
-    return (result as { changes: number }).changes > 0
+    return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }

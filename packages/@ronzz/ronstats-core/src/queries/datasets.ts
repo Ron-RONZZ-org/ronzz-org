@@ -1,4 +1,4 @@
-import { eq, like, or, and, isNull, isNotNull, sql } from "drizzle-orm"
+import { eq, like, or, and, isNull, isNotNull, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
 import { tryResult, toLocale, type Result, type AppError } from "@ronzz/shared-core"
@@ -16,7 +16,11 @@ export async function listDatasets(
   db: any,
   options: ListOptions = {},
 ): Promise<{ datasets: Dataset[]; total: number }> {
-  const conditions = [isNull(schema.datasets.deletedAt)]
+  const conditions: any[] = []
+
+  if (!options.includeTrash) {
+    conditions.push(isNull(schema.datasets.deletedAt))
+  }
 
   if (options.search) {
     const term = `%${options.search}%`
@@ -112,7 +116,7 @@ export async function softDeleteDataset(
         and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
       )
       .run()
-    return (result as { changes: number }).changes > 0
+    return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 
@@ -133,6 +137,7 @@ export async function listTrashDatasets(
     .select()
     .from(schema.datasets)
     .where(isNotNull(schema.datasets.deletedAt))
+    .orderBy(desc(schema.datasets.deletedAt))
     .limit(limit)
     .offset(offset)
     .all()
@@ -158,7 +163,7 @@ export async function restoreDataset(
       .set({ deletedAt: null })
       .where(eq(schema.datasets.id, id))
       .run()
-    return (result as { changes: number }).changes > 0
+    return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 
@@ -172,7 +177,7 @@ export async function hardDeleteDataset(
       .delete(schema.datasets)
       .where(eq(schema.datasets.id, id))
       .run()
-    return (result as { changes: number }).changes > 0
+    return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }
 

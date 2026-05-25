@@ -6,17 +6,7 @@ import DatabaseImport from "better-sqlite3"
 import { Pool } from "pg"
 import * as sqliteSchema from "./schema/sqlite/index"
 import * as pgSchema from "./schema/pg/index"
-import { resetDialectCache } from "./schema/proxy"
-
-type DbDialect = "sqlite" | "pg"
-
-function detectDialect(): DbDialect {
-  const url = process.env.DATABASE_URL ?? ""
-  if (url.startsWith("postgres") || url.startsWith("postgresql")) {
-    return "pg"
-  }
-  return "sqlite"
-}
+import { detectDialect, resetDialectCache } from "./schema/proxy"
 
 let _db: ReturnType<typeof createDb> | null = null
 let _dbClient: InstanceType<typeof DatabaseImport> | Pool | null = null

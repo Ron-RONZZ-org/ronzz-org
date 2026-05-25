@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
       }
       results.push(parsed.data)
     }
-    const created = bulkCreateDatapoints(db, results.map((r) => ({ ...r, datasetId: params.uuid })))
+    const created = await bulkCreateDatapoints(db, results.map((r) => ({ ...r, datasetId: params.uuid })))
     return json({ datapoints: created }, { status: 201 })
   }
 
@@ -41,6 +41,6 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
   if (!parsed.success) {
     return json({ error: parsed.error.flatten() }, { status: 400 })
   }
-  const datapoint = createDatapoint(db, parsed.data)
+  const datapoint = await createDatapoint(db, parsed.data)
   return json({ datapoint }, { status: 201 })
 }
