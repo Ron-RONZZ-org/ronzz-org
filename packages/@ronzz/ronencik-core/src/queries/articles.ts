@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs"
 import { join, extname } from "node:path"
-import { eq, like, and, sql } from "drizzle-orm"
+import { eq, like, and, desc, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
@@ -33,6 +33,7 @@ export async function listArticles(
     .select()
     .from(schema.articlesMetadata)
     .where(where)
+    .orderBy(desc(schema.articlesMetadata.createdAt))
     .limit(limit)
     .offset(offset)
     .all()
@@ -116,7 +117,8 @@ export async function deleteArticle(
     .delete(schema.articlesMetadata)
     .where(eq(schema.articlesMetadata.id, id))
     .run()
-  return result.changes > 0
+  // SQLite returns { changes }, PG returns { rowCount }
+  return (result.changes ?? result.rowCount ?? 0) > 0
 }
 
 /** Extract frontmatter from a .svx file and return metadata. */

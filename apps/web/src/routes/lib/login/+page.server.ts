@@ -33,26 +33,17 @@ export const actions: Actions = {
       return fail(401, { message: "Invalid email or password." })
     }
 
-    // Check if password change is required
-    if (user.passwordChangeRequired) {
-      cookies.set("pw_reset_user", user.id, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 10, // 10 minutes
-      })
-      redirect(303, "/lib/change-password")
-    }
-
     // Create session: store hashed ID in DB, raw ID in cookie
     const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
 
+    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
+    const SESSION_TTL_MS = 60 * 60 * 24 * 7 * 1000
+
     await db.insert(schema.sessions).values({
       id: sessionHash,
       userId: user.id,
-      expiresAt: Date.now() + 60 * 60 * 24 * 7 * 1000,
+      expiresAt: isPg ? new Date(Date.now() + SESSION_TTL_MS) : Date.now() + SESSION_TTL_MS,
     })
 
     cookies.set("session", sessionId, {
@@ -62,6 +53,18 @@ export const actions: Actions = {
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7, // 1 week
     })
+
+    // Check if password change is required — uses session binding
+    if (user.passwordChangeRequired) {
+      cookies.set("pw_reset", sessionHash, {
+        path: "/lib/change-password",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 10, // 10 minutes
+      })
+      redirect(303, "/lib/change-password")
+    }
 
     redirect(303, "/lib")
   },
