@@ -14,8 +14,8 @@ export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
   if (adminCheck) return adminCheck
   const db = getDb() as Database
   const { articles, total } = await listArticles(db, {
-    limit: Math.min(Number(url.searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT),
-    offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
+    limit: Math.min(parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10), MAX_LIMIT),
+    offset: Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10)),
   })
   return json({ articles, total })
 })

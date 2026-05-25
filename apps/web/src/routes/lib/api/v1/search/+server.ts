@@ -13,7 +13,7 @@ export const GET: RequestHandler = apiHandler(async ({ url }) => {
   const q = url.searchParams.get("q") ?? ""
   const locale = url.searchParams.get("locale") as SearchQuery["locale"] | null
   const limit = Math.min(parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10), MAX_LIMIT)
-  const offset = parseInt(url.searchParams.get("offset") ?? "0", 10)
+  const offset = Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10))
 
   const db = getDb() as Database
   const engine = createSearchEngine(db)

@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
   const db = getDb() as Database
   const typeSlug = url.searchParams.get("type") ?? undefined
   const search = url.searchParams.get("q") ?? undefined
-  const page = parseInt(url.searchParams.get("page") ?? "1", 10)
+  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10))
   const limit = 20
   const offset = (page - 1) * limit
 

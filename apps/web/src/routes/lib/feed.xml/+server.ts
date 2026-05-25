@@ -5,6 +5,7 @@ import { schema } from "database/schema/proxy"
 import { TtlCache, escapeXml } from "@ronzz/shared-core"
 
 const BASE = process.env.ORIGIN || "https://ronzz.org"
+const FEED_LIMIT = 50
 
 function formatPubDate(dateStr: string): string {
   try {
@@ -52,7 +53,7 @@ export const GET: RequestHandler = async () => {
       )
       .where(isNull(schema.resources.deletedAt))
       .orderBy(desc(schema.resources.createdAt))
-      .limit(50)
+      .limit(FEED_LIMIT)
 
     for (const row of rows) {
       items.push({
