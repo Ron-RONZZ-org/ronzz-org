@@ -16,6 +16,11 @@
   "references": [
     { "path": "packages/@ronzz/shared-core" },
     { "path": "packages/@ronzz/ui" },
+    { "path": "packages/@ronzz/ronstats-core" },
+    { "path": "packages/@ronzz/ronlib-core" },
+    { "path": "packages/@ronzz/ronencik-core" },
+    { "path": "packages/@ronzz/search-core" },
+    { "path": "packages/@ronzz/cli" },
     { "path": "apps/web" },
     { "path": "database" }
   ],
