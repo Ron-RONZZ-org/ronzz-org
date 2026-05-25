@@ -230,7 +230,7 @@ ronzz-org/
 30. Trash listing queries (soft-deleted records) MUST include `id` as a tiebreaker in `ORDER BY` (e.g., `orderBy(desc(deletedAt), desc(id))`) for deterministic pagination
 31. Dialect detection MUST always use `detectDialect()` from `database/schema/proxy` — never reimplement it with raw `process.env.DATABASE_URL` checks
 32. Core query files MUST use `queryAll<T>()`, `queryGet<T>()`, `queryRun()` from `database/dialect-query` instead of SQLite-specific `.all()`, `.get()`, `.run()` — these helpers abstract the dialect difference and work on both SQLite and PostgreSQL
-33. User-provided search terms MUST be escaped with `escapeLike()` (escape `%` and `_` with backslash) before using in SQL LIKE patterns to prevent LIKE wildcard injection
+33. User-provided search terms MUST be escaped with `escapeLike()` (escape `%` and `_` with backslash) before using in SQL LIKE patterns to prevent LIKE wildcard injection — `escapeLike()` escapes backslash FIRST, THEN `%` and `_`, so user input like `\%` is treated as literal backslash + literal percent (not escaped backslash + wildcard percent)
 34. JSON-LD in Svelte `<script type="application/ld+json">` MUST use `{@html JSON.stringify(jsonld)}` — `{JSON.stringify()}` produces HTML-escaped output (`&quot;`) that breaks structured data
 35. `t()` template variable replacement MUST use `.replaceAll()` not `.replace()` — `String.replace()` with a string argument only replaces the first occurrence
 36. TTL cache eviction MUST scan for expired entries before evicting the oldest (first-inserted) entry when at capacity
