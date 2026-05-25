@@ -3,7 +3,8 @@ import { createHash } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { verify } from "@node-rs/argon2"
 import { getDb } from "database/db"
-import { schema, detectDialect } from "database/schema/proxy"
+import { schema } from "database/schema/proxy"
+import { dbNow } from "database/dialect-query"
 import { logger } from "@ronzz/shared-core"
 import type { Actions } from "./$types"
 
@@ -12,6 +13,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export const actions: Actions = {
   login: async ({ request, cookies }) => {
+    let passwordChangeRequired = false
+    let sessionHash = ""
+
     try {
       const formData = await request.formData()
       const rawEmail = formData.get("email")?.toString()
@@ -47,16 +51,13 @@ export const actions: Actions = {
 
       // Create session: store hashed ID in DB, raw ID in cookie
       const sessionId = crypto.randomUUID()
-      const sessionHash = createHash("sha256").update(sessionId).digest("hex")
-
       const SESSION_TTL_MS = 60 * 60 * 24 * 7 * 1000
+      sessionHash = createHash("sha256").update(sessionId).digest("hex")
 
       await db.insert(schema.sessions).values({
         id: sessionHash,
         userId: user.id,
-        expiresAt: detectDialect() === "pg"
-          ? new Date(Date.now() + SESSION_TTL_MS)
-          : Date.now() + SESSION_TTL_MS,
+        expiresAt: dbNow(SESSION_TTL_MS),
       })
 
       cookies.set("session", sessionId, {
@@ -67,22 +68,25 @@ export const actions: Actions = {
         maxAge: 60 * 60 * 24 * 7, // 1 week
       })
 
-      // Check if password change is required — uses session binding
-      if (user.passwordChangeRequired) {
-        cookies.set("pw_reset", sessionHash, {
-          path: "/lib/change-password",
-          httpOnly: true,
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 60 * 10, // 10 minutes
-        })
-        redirect(303, "/lib/change-password")
-      }
-
-      redirect(303, "/lib")
+      passwordChangeRequired = !!user.passwordChangeRequired
     } catch (err) {
       logger.error({ err }, "Login action failed unexpectedly")
       return fail(500, { message: "Server error. Please try again later." })
     }
+
+    // redirect() must be outside try/catch — SvelteKit's redirect throws a Redirect error
+    // which would be caught by the catch block, preventing the redirect from happening
+    if (passwordChangeRequired) {
+      cookies.set("pw_reset", sessionHash, {
+        path: "/lib/change-password",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 10, // 10 minutes
+      })
+      redirect(303, "/lib/change-password")
+    }
+
+    redirect(303, "/lib")
   },
 }

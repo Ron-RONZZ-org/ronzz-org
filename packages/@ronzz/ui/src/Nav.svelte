@@ -31,7 +31,7 @@
 
   function switchLocale(newLocale: Locale) {
     document.cookie = `locale=${newLocale}; path=/; max-age=31536000`
-    goto(currentPath)
+    goto(currentPath, { invalidateAll: true })
   }
 </script>
 

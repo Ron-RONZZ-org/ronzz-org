@@ -4,7 +4,8 @@ import { eq, and, isNull, gt } from "drizzle-orm"
 import { requestLogger, checkRateLimit, detectLocale, logger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import { getDb } from "database/db"
-import { schema, detectDialect } from "database/schema/proxy"
+import { schema } from "database/schema/proxy"
+import { dbNow } from "database/dialect-query"
 
 const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
 const searchLimiter: RateLimitConfig = { windowMs: 60_000, max: 30 }
@@ -104,7 +105,7 @@ export async function handleSessionAuth(
   try {
     // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
     const db = getDb() as any
-    const now = detectDialect() === "pg" ? new Date() : Date.now()
+    const now = dbNow()
     const rows = await db
       .select({
         userId: schema.users.id,

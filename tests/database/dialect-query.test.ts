@@ -3,7 +3,8 @@ import Database from "better-sqlite3"
 import { drizzle } from "drizzle-orm/better-sqlite3"
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core"
 import { sql } from "drizzle-orm"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { queryAll, queryGet, queryRun, dbNow } from "database/dialect-query"
+import { resetDialectCache } from "database/schema/proxy"
 
 /**
  * Minimal inline schema for testing dialect-agnostic helpers.
@@ -106,6 +107,63 @@ describe("dialect-query helpers (SQLite)", () => {
         db.select().from(testItems).where(sql`1=0`),
       )
       expect(row).toBeUndefined()
+    })
+  })
+})
+
+describe("dbNow", () => {
+  beforeEach(() => {
+    process.env.DATABASE_URL = ":memory:"
+    resetDialectCache()
+  })
+
+  describe("SQLite dialect", () => {
+    it("returns a number", () => {
+      const now = dbNow()
+      expect(typeof now).toBe("number")
+    })
+
+    it("returns a value close to Date.now()", () => {
+      const before = Date.now()
+      const now = dbNow() as number
+      const after = Date.now()
+      expect(now).toBeGreaterThanOrEqual(before - 1)
+      expect(now).toBeLessThanOrEqual(after + 1)
+    })
+
+    it("applies offsetMs", () => {
+      const offset = 5000
+      const now = dbNow(offset) as number
+      const base = Date.now()
+      expect(now).toBeGreaterThanOrEqual(base + offset - 10)
+    })
+  })
+
+  describe("PostgreSQL dialect", () => {
+    it("returns a Date object", () => {
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test"
+      resetDialectCache()
+      const now = dbNow()
+      expect(now).toBeInstanceOf(Date)
+    })
+
+    it("returns a Date close to now", () => {
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test"
+      resetDialectCache()
+      const before = Date.now()
+      const now = dbNow() as Date
+      const after = Date.now()
+      expect(now.getTime()).toBeGreaterThanOrEqual(before - 100)
+      expect(now.getTime()).toBeLessThanOrEqual(after + 100)
+    })
+
+    it("applies offsetMs", () => {
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test"
+      resetDialectCache()
+      const offset = 5000
+      const now = dbNow(offset) as Date
+      const base = Date.now()
+      expect(now.getTime()).toBeGreaterThanOrEqual(base + offset - 10)
     })
   })
 })

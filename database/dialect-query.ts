@@ -11,6 +11,21 @@ import { detectDialect } from "./schema/proxy"
 type Dialect = ReturnType<typeof detectDialect>
 
 /**
+ * Return a dialect-appropriate current-timestamp value.
+ * - PG:      `new Date()` (for `timestamp` columns)
+ * - SQLite:  `Date.now()` (for `integer` columns)
+ *
+ * An optional `offsetMs` adds a duration to the current time
+ * (e.g. `dbNow(7 * 24 * 60 * 60 * 1000)` for a 1-week expiry).
+ */
+export function dbNow(offsetMs?: number): Date | number {
+  if (detectDialect() === "pg") {
+    return offsetMs ? new Date(Date.now() + offsetMs) : new Date()
+  }
+  return offsetMs ? Date.now() + offsetMs : Date.now()
+}
+
+/**
  * Execute a `select` query and return all matching rows.
  * - SQLite: await q.all()
  * - PG:     await q

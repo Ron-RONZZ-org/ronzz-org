@@ -3,8 +3,9 @@ import { eq, and, gt } from "drizzle-orm"
 import { createHash } from "node:crypto"
 import { hash, verify } from "@node-rs/argon2"
 import { getDb } from "database/db"
-import { schema, detectDialect } from "database/schema/proxy"
-import { checkRateLimit } from "@ronzz/shared-core"
+import { schema } from "database/schema/proxy"
+import { dbNow } from "database/dialect-query"
+import { checkRateLimit, logger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import type { Actions } from "./$types"
 
@@ -55,7 +56,7 @@ export const actions: Actions = {
     try {
       // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
       const db = getDb() as any
-      const now = detectDialect() === "pg" ? new Date() : Date.now()
+      const now = dbNow()
 
       // Look up the user via the session hash stored in the pw_reset cookie
       const sessionRows = await db
@@ -105,12 +106,15 @@ export const actions: Actions = {
         .where(eq(schema.users.id, user.id))
 
       cookies.delete("pw_reset", { path: "/lib/change-password" })
-
-      redirect(303, "/lib")
     } catch (err) {
+      logger.error({ err }, "Change password action failed unexpectedly")
       return fail(500, {
         message: "An unexpected error occurred. Please try again.",
       })
     }
+
+    // redirect() must be outside try/catch — SvelteKit's redirect throws a Redirect error
+    // which would be caught by the catch block, preventing the redirect from happening
+    redirect(303, "/lib")
   },
 }
