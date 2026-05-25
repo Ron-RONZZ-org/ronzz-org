@@ -79,7 +79,7 @@ export async function createDataset(
   return tryResult(async () => {
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
-    const [dataset] = await (db as any)
+    await (db as any)
       .insert(schema.datasets)
       .values({
         id,
@@ -94,11 +94,20 @@ export async function createDataset(
         createdAt: now,
         updatedAt: now,
       })
-      .returning()
-      .all()
+      .run()
     return {
-      ...dataset,
-      deletedAt: dataset.deletedAt ?? null,
+      id,
+      title: input.title,
+      description: input.description ?? "",
+      source: input.source ?? "",
+      sourceUrl: input.sourceUrl ?? "",
+      license: input.license ?? "",
+      locale: input.locale ?? "fr",
+      chartType: input.chartType ?? "bar",
+      metadata: input.metadata ?? {},
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
     } as Dataset
   })
 }
