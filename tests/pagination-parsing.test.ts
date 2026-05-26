@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest"
 
 describe("Pagination Parameter Parsing - Unit Tests", () => {
   const parsePageNumber = (pageParam: string | null | undefined): number => {
-    return Math.max(1, Number.parseInt(pageParam ?? "1", 10))
+    const raw = Number.parseInt(pageParam ?? "1", 10)
+    return Number.isFinite(raw) && raw > 0 ? raw : 1
   }
 
   const calculateOffset = (page: number, limit: number): number => {
@@ -20,11 +21,11 @@ describe("Pagination Parameter Parsing - Unit Tests", () => {
       expect(page).toBe(1)
     })
 
-    it("handles empty string page parameter (NaN stays NaN)", () => {
+    it("handles empty string page parameter (defaults to 1)", () => {
       const page = parsePageNumber("")
-      // Empty string is not null/undefined, so it goes to parseInt("", 10) which returns NaN
-      // Math.max(1, NaN) returns NaN
-      expect(Number.isNaN(page)).toBe(true)
+      // Empty string produces NaN from parseInt, but the fixed implementation
+      // guards against NaN with Number.isFinite check
+      expect(page).toBe(1)
     })
 
     it("parses valid page number", () => {
@@ -42,12 +43,10 @@ describe("Pagination Parameter Parsing - Unit Tests", () => {
       expect(page).toBe(1)
     })
 
-    it("handles non-numeric page parameter (NaN coerced to 1)", () => {
+    it("handles non-numeric page parameter (defaults to 1)", () => {
       const page = parsePageNumber("abc")
-      // parseInt("abc", 10) returns NaN, but the implementation needs Number.isNaN check
-      // For now, this test documents the actual behavior (NaN stays NaN with Math.max)
-      // In real code, this should be handled with Number.isNaN(page) || page < 1 ? 1 : page
-      expect(Number.isNaN(page)).toBe(true)
+      // parseInt("abc", 10) returns NaN, now guarded by Number.isFinite check
+      expect(page).toBe(1)
     })
 
     it("truncates floating point page parameter", () => {
@@ -140,19 +139,20 @@ describe("Pagination Parameter Parsing - Unit Tests", () => {
       expect(offset).toBe(0)
     })
 
-    it("full flow: NaN page -> stays NaN (design flaw in current implementation)", () => {
+    it("full flow: NaN page -> defaults to 1 -> offset 0", () => {
       const page = parsePageNumber("invalid")
       const offset = calculateOffset(page, 20)
-      // This demonstrates an edge case in the current implementation
-      // Math.max(1, NaN) returns NaN instead of 1
-      expect(Number.isNaN(page)).toBe(true)
-      expect(Number.isNaN(offset)).toBe(true)
+      // Fixed: Number.isFinite check guards against NaN
+      expect(page).toBe(1)
+      expect(offset).toBe(0)
     })
   })
 
   describe("Limit parameter validation", () => {
     const capLimit = (limit: string | null | undefined, maxLimit: number): number => {
-      return Math.min(maxLimit, Math.max(1, Number.parseInt(limit ?? "20", 10)))
+      const raw = Number.parseInt(limit ?? "20", 10)
+      const clamped = Number.isFinite(raw) && raw > 0 ? raw : 1
+      return Math.min(maxLimit, clamped)
     }
 
     it("respects default limit when not provided", () => {
@@ -180,10 +180,10 @@ describe("Pagination Parameter Parsing - Unit Tests", () => {
       expect(limit).toBe(1)
     })
 
-    it("handles NaN limit (NaN stays NaN with current implementation)", () => {
+    it("handles NaN limit (defaults to 1)", () => {
       const limit = capLimit("invalid", 1000)
-      // parseInt("invalid", 10) returns NaN, and Math.max/Math.min with NaN returns NaN
-      expect(Number.isNaN(limit)).toBe(true)
+      // parseInt("invalid", 10) returns NaN, now guarded by Number.isFinite
+      expect(limit).toBe(1)
     })
   })
 })

@@ -15,6 +15,12 @@ export class ApiClient {
     this.token = config.token
   }
 
+  /** Update API base URL and bearer token after construction. */
+  setAuth(api: string, token: string): void {
+    this.api = api.replace(/\/+$/, "")
+    this.token = token
+  }
+
   private async request(method: string, path: string, body?: unknown): Promise<unknown> {
     const url = `${this.api}${path}`
     const headers: Record<string, string> = {

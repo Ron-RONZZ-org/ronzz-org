@@ -6,7 +6,8 @@ import type { PageServerLoad } from "./$types"
 export const load: PageServerLoad = async ({ url, locals }) => {
   const db = getDb() as Database
   const search = url.searchParams.get("q") ?? undefined
-  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") ?? "1", 10))
+  const pageRaw = Number.parseInt(url.searchParams.get("page") ?? "1", 10)
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1
   const limit = 20
   const offset = (page - 1) * limit
 
