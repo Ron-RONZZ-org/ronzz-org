@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto"
+import { logger } from "@ronzz/shared-core"
 import { fail, redirect } from "@sveltejs/kit"
 import { getDb } from "database/db"
+import { dbNow } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
-import { and, eq, isNull } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { Actions, PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -49,26 +51,31 @@ export const actions: Actions = {
       return fail(400, { message: "Token name is required." })
     }
 
-    const token = generateTokenValue()
-    const tokenHash = createHash("sha256").update(token).digest("hex")
-    const prefix = derivePrefix(token)
+    try {
+      const token = generateTokenValue()
+      const tokenHash = createHash("sha256").update(token).digest("hex")
+      const prefix = derivePrefix(token)
 
-    const id = crypto.randomUUID()
-    await db.insert(schema.apiTokens).values({
-      id,
-      userId: locals.user.id,
-      name,
-      tokenHash,
-      prefix,
-      createdAt: new Date().toISOString(),
-    })
+      const id = crypto.randomUUID()
+      await db.insert(schema.apiTokens).values({
+        id,
+        userId: locals.user.id,
+        name,
+        tokenHash,
+        prefix,
+        createdAt: dbNow(),
+      })
 
-    return {
-      created: true,
-      id,
-      name,
-      token,
-      prefix,
+      return {
+        created: true,
+        id,
+        name,
+        token,
+        prefix,
+      }
+    } catch (err) {
+      logger.error({ err }, "Failed to create token")
+      return fail(500, { message: "An unexpected error occurred. Please try again." })
     }
   },
 
@@ -84,22 +91,27 @@ export const actions: Actions = {
       return fail(400, { message: "Token ID is required." })
     }
 
-    // Ensure the token belongs to this user
-    const tokenRows = await db
-      .select({ id: schema.apiTokens.id })
-      .from(schema.apiTokens)
-      .where(and(eq(schema.apiTokens.id, tokenId), eq(schema.apiTokens.userId, locals.user.id)))
-    const found = tokenRows[0]
+    try {
+      // Ensure the token belongs to this user
+      const tokenRows = await db
+        .select({ id: schema.apiTokens.id })
+        .from(schema.apiTokens)
+        .where(and(eq(schema.apiTokens.id, tokenId), eq(schema.apiTokens.userId, locals.user.id)))
+      const found = tokenRows[0]
 
-    if (!found) {
-      return fail(404, { message: "Token not found." })
+      if (!found) {
+        return fail(404, { message: "Token not found." })
+      }
+
+      await db
+        .update(schema.apiTokens)
+        .set({ revokedAt: dbNow() })
+        .where(eq(schema.apiTokens.id, tokenId))
+
+      return { revoked: true }
+    } catch (err) {
+      logger.error({ err }, "Failed to revoke token")
+      return fail(500, { message: "An unexpected error occurred. Please try again." })
     }
-
-    await db
-      .update(schema.apiTokens)
-      .set({ revokedAt: new Date().toISOString() })
-      .where(eq(schema.apiTokens.id, tokenId))
-
-    return { revoked: true }
   },
 }
