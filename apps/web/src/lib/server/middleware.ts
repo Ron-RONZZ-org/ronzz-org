@@ -188,7 +188,9 @@ export async function handleTokenAuth(
       email: found.userEmail,
       role: found.userRole as "admin" | "editor",
     }
-  } catch {
+  } catch (err) {
+    // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
+    logger.error({ err, path: event.url.pathname }, "Token auth failed unexpectedly")
     return new Response("Authentication error", { status: 500 })
   }
 

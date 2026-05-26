@@ -29,7 +29,7 @@ async function main() {
     .middleware((argv) => {
       // Reinitialize client with CLI args if provided
       if (argv.api !== api || argv.token !== token) {
-        Object.assign(client, { api: argv.api, token: argv.token })
+        client.setAuth(argv.api as string, argv.token as string)
       }
     })
     .command("token", "Manage API tokens", (ygs) => tokenCommand(ygs, client))

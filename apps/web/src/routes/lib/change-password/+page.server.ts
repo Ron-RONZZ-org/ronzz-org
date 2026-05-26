@@ -96,7 +96,7 @@ export const actions: Actions = {
         .update(schema.users)
         .set({
           passwordHash: newPasswordHash,
-          passwordChangeRequired: 0,
+          passwordChangeRequired: false,
         })
         .where(eq(schema.users.id, user.id))
 
