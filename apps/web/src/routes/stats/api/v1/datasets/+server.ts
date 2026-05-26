@@ -1,6 +1,5 @@
 import { apiHandler, requireAdmin } from "$lib/server/middleware"
-import { createDataset, listDatasets } from "@ronzz/ronstats-core"
-import { datasetSchema } from "@ronzz/ronstats-core"
+import { createDataset, datasetSchema, listDatasets } from "@ronzz/ronstats-core"
 import { createSearchEngine } from "@ronzz/search-core"
 import { json } from "@sveltejs/kit"
 import { getDb } from "database/db"
@@ -12,11 +11,13 @@ const DEFAULT_LIMIT = 20
 
 export const GET: RequestHandler = apiHandler(async ({ url }) => {
   const db = getDb() as Database
+  const rawLimit = Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)
   const limit = Math.min(
-    Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10),
+    Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_LIMIT,
     MAX_LIMIT,
   )
-  const offset = Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10))
+  const rawOffset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
+  const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0
   const { datasets, total } = await listDatasets(db, {
     search: url.searchParams.get("q") ?? undefined,
     limit,

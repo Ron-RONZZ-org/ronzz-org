@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs"
 import { extname, join } from "node:path"
 import { getArticleBySlug } from "@ronzz/ronencik-core"
-import { error } from "@sveltejs/kit"
+import { HttpError, error } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
 import type { PageServerLoad } from "./$types"
@@ -29,7 +29,9 @@ export const load: PageServerLoad = async ({ params }) => {
     }
 
     return { article }
-  } catch {
+  } catch (err) {
+    // Re-throw HttpError (from the 404 above) — don't mask it
+    if (err instanceof HttpError) throw err
     error(404, "Article not found")
   }
 }

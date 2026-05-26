@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto"
 import { hash, verify } from "@node-rs/argon2"
 import { checkRateLimit, logger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
