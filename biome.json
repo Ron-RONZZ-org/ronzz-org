@@ -57,6 +57,6 @@
     }
   ],
   "files": {
-    "ignore": ["node_modules", "dist", ".svelte-kit", "*.db", "*.svelte"]
+    "ignore": ["node_modules", "dist", ".svelte-kit", "*.db", "*.svelte", "coverage"]
   }
 }

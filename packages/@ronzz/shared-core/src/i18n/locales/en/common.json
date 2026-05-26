@@ -16,5 +16,6 @@
   "error.unauthorized": "Unauthorized",
   "locale.fr": "French",
   "locale.eo": "Esperanto",
-  "locale.en": "English"
+  "locale.en": "English",
+  "test.repeatedVar": "{name} is {name}"
 }

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
 describe("Pagination Parameter Parsing - Unit Tests", () => {
+  // These functions mirror the pattern used in all API route handlers
+  // and +page.server.ts files across the codebase.
+  // See apps/web/src/routes/lib/+page.server.ts for the canonical reference.
   const parsePageNumber = (pageParam: string | null | undefined): number => {
     const raw = Number.parseInt(pageParam ?? "1", 10)
     return Number.isFinite(raw) && raw > 0 ? raw : 1

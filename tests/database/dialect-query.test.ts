@@ -4,7 +4,7 @@ import { resetDialectCache } from "database/schema/proxy"
 import { sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/better-sqlite3"
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
-import { beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 /**
  * Minimal inline schema for testing dialect-agnostic helpers.
@@ -98,6 +98,15 @@ describe("dialect-query helpers (SQLite)", () => {
 })
 
 describe("dbNow", () => {
+  beforeAll(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2025-06-15T10:30:00Z"))
+  })
+
+  afterAll(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     process.env.DATABASE_URL = ":memory:"
     resetDialectCache()
@@ -109,19 +118,15 @@ describe("dbNow", () => {
       expect(typeof now).toBe("number")
     })
 
-    it("returns a value close to Date.now()", () => {
-      const before = Date.now()
+    it("returns a value equal to Date.now() (with fake timers)", () => {
       const now = dbNow() as number
-      const after = Date.now()
-      expect(now).toBeGreaterThanOrEqual(before - 1)
-      expect(now).toBeLessThanOrEqual(after + 1)
+      expect(now).toBe(Date.now())
     })
 
     it("applies offsetMs", () => {
       const offset = 5000
       const now = dbNow(offset) as number
-      const base = Date.now()
-      expect(now).toBeGreaterThanOrEqual(base + offset - 10)
+      expect(now).toBe(Date.now() + offset)
     })
   })
 
@@ -133,14 +138,11 @@ describe("dbNow", () => {
       expect(now).toBeInstanceOf(Date)
     })
 
-    it("returns a Date close to now", () => {
+    it("returns a Date equal to now (with fake timers)", () => {
       process.env.DATABASE_URL = "postgresql://localhost:5432/test"
       resetDialectCache()
-      const before = Date.now()
       const now = dbNow() as Date
-      const after = Date.now()
-      expect(now.getTime()).toBeGreaterThanOrEqual(before - 100)
-      expect(now.getTime()).toBeLessThanOrEqual(after + 100)
+      expect(now.getTime()).toBe(Date.now())
     })
 
     it("applies offsetMs", () => {
@@ -148,8 +150,7 @@ describe("dbNow", () => {
       resetDialectCache()
       const offset = 5000
       const now = dbNow(offset) as Date
-      const base = Date.now()
-      expect(now.getTime()).toBeGreaterThanOrEqual(base + offset - 10)
+      expect(now.getTime()).toBe(Date.now() + offset)
     })
   })
 })
