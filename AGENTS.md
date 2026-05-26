@@ -254,6 +254,10 @@ ronzz-org/
 
 57. Locale switching in the Nav component MUST use `goto(currentPath, { invalidateAll: true })` to ensure server-side load functions re-execute with the new locale cookie — `goto(currentPath)` without `invalidateAll` performs a client-side navigation that skips server load functions
 
+58. Svelte (`.svelte`) files are excluded from Biome linting (`biome.json` `files.ignore` includes `"*.svelte"`) — Biome v1.9 panics on Svelte 5 rune syntax. Svelte files are linted by `svelte-check` instead (`pnpm check`). Do NOT add `// biome-ignore` comments to Svelte files.
+
+59. Test files (`tests/`) have relaxed Biome rules configured via `linter.overrides` in `biome.json` — `noExplicitAny`, `noNonNullAssertion`, `noUnusedVariables`, and `noForEach` are disabled for test code. Use `// biome-ignore` comments in source (non-test) files for intentional suppressions instead.
+
 ---
 
 ## Key Contacts
