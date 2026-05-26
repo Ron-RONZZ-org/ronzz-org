@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
-import { tr_multi, detectLocale } from "@ronzz/shared-core"
+import { detectLocale, tr_multi } from "@ronzz/shared-core"
+import { describe, expect, it } from "vitest"
 
 describe("tr_multi", () => {
   it("returns French when fr locale is passed", () => {
@@ -19,9 +19,12 @@ describe("tr_multi", () => {
   })
 
   it("supports key-based lookup with template vars", () => {
-    expect(tr_multi("en", "pagination.page", { page: 1, total: 5 })).toBe(
-      "Page 1 of 5",
-    )
+    expect(tr_multi("en", "pagination.page", { page: 1, total: 5 })).toBe("Page 1 of 5")
+  })
+
+  it("replaces multiple occurrences of the same template variable", () => {
+    // Verify that .replaceAll() is used (not .replace()), which would only replace the first occurrence
+    expect(tr_multi("en", "test.repeatedVar", { name: "Ron" })).toBe("Ron is Ron")
   })
 })
 

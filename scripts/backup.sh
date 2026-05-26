@@ -4,6 +4,9 @@
 set -e
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/ronzz}"
+# Use docker compose to discover container name automatically
+# Falls back to `DB_CONTAINER` env var, then tries compose discovery
+DB_CONTAINER="${DB_CONTAINER:-$(docker compose -f /opt/ronzz-org/deploy/docker-compose.yml ps -q db 2>/dev/null | head -1 || echo "")}"
 DB_CONTAINER="${DB_CONTAINER:-ronzz-db}"
 DB_USER="${DB_USER:-ronzz}"
 DB_NAME="${DB_NAME:-ronzz}"
@@ -22,7 +25,8 @@ gzip "$BACKUP_FILE"
 echo "Backup written: ${BACKUP_FILE}.gz"
 
 # Remove backups older than retention period
-find "$BACKUP_DIR" -name "ronzz_*.sql.gz" -mtime "+${RETENTION_DAYS}" -delete
+# Remove backups older than retention period (|| true to handle no-matches)
+find "$BACKUP_DIR" -name "ronzz_*.sql.gz" -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
 echo "Removed backups older than ${RETENTION_DAYS} days."
 
 exit 0

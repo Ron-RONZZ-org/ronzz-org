@@ -8,9 +8,11 @@ interface RateLimitEntry {
   resetAt: number
 }
 
-// NOTE: In-memory store — not shared across instances.
+// NOTE: In-memory store — not shared across instances, and state resets on process restart.
 // Current deployment is single-container (see deploy/docker-compose.yml).
 // If horizontal scaling is needed, replace with a shared store (Redis or DB).
+// KNOWN LIMITATION: After restart or crash, rate-limit counters reset — an attacker could
+// flood requests immediately. Acceptable for current single-container deployment.
 const stores = new Map<string, RateLimitEntry>()
 const MAX_STORE_SIZE = 10_000
 

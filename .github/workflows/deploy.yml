@@ -10,7 +10,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ron-ronzz-org/ronzz-org
+  IMAGE_NAME: ronzz-org/ronzz-org
 
 jobs:
   deploy:
@@ -18,17 +18,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build application
-        run: pnpm build
 
       - name: Set up QEMU for multi-arch
         uses: docker/setup-qemu-action@v3
@@ -64,6 +53,30 @@ jobs:
           script: |
             cd /opt/ronzz-org
             echo "$GITHUB_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin
+            # Pull new image
             docker compose pull
-            docker compose up -d
+            # Tag current as rollback target
+            ROLLBACK_TAG="rollback-$(date -u +'%s')"
+            docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:$ROLLBACK_TAG" 2>/dev/null || true
+            # Deploy new containers
+            docker compose up -d --wait --wait-timeout 60
+            # Health check: verify app responds within timeout
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost:3000/api/v1/health > /dev/null 2>&1; then
+                echo "Health check passed after ${i}s"
+                break
+              fi
+              echo "Waiting for app... (${i}/12)"
+              sleep 5
+            done
+            # Verify health (last attempt)
+            if ! curl -sf http://localhost:3000/api/v1/health > /dev/null 2>&1; then
+              echo "Health check FAILED — rolling back..."
+              docker tag "$REGISTRY/$IMAGE_NAME:$ROLLBACK_TAG" "$REGISTRY/$IMAGE_NAME:latest"
+              docker compose up -d --wait --wait-timeout 60
+              echo "Rollback to $ROLLBACK_TAG complete"
+              exit 1
+            fi
+            # Clean up old rollback tags (keep last 3)
+            docker images "$REGISTRY/$IMAGE_NAME" --format "{{.Tag}}" | grep "^rollback-" | sort | head -n -3 | xargs -r docker rmi 2>/dev/null || true
             echo "Deployment complete: ${{ github.sha }}"

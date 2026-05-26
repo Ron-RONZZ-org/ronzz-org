@@ -12,5 +12,7 @@ if [ "$HEALTH" = "FAIL" ]; then
   exit 1
 fi
 
-echo "$(date -Iseconds) health=ok" >> /var/log/ronzz/health.log
+LOGDIR="/var/log/ronzz"
+mkdir -p "$LOGDIR"
+echo "$(date -u +"%Y-%m-%dT%H:%M:%S%z") health=ok" >> "$LOGDIR/health.log"
 exit 0

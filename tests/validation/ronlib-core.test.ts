@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
 import { resourceSchema, resourceTypeSchema } from "@ronzz/ronlib-core"
+import { describe, expect, it } from "vitest"
 
 describe("resourceTypeSchema", () => {
   it("accepts valid resource type", () => {

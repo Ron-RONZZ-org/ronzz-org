@@ -13,7 +13,7 @@
     height?: number
   } = $props()
 
-  let cw = useContainerWidth(explicitWidth)
+  let cw = useContainerWidth(() => explicitWidth)
 
   let dim = $derived(defaultDimensions(cw.width, height))
   let result = $derived(pieChart(datapoints, dim))
@@ -24,6 +24,8 @@
   let radius = $derived(Math.min(cw.width, height) / 2 - 40)
 
   // Compute SVG arc paths
+  let total = $derived(result.total > 0 ? result.total : 1) // guard against division by zero
+
   let arcs = $derived(
     result.arcs.map((a) => {
       const p1 = polarToCartesian(cx, cy, radius, a.startAngle)
@@ -40,7 +42,7 @@
       const midAngle = a.startAngle + (a.endAngle - a.startAngle) / 2
       const labelR = radius * 0.65
       const lp = polarToCartesian(cx, cy, labelR, midAngle)
-      const percentage = ((a.value / result.total) * 100).toFixed(1)
+      const percentage = ((a.value / total) * 100).toFixed(1)
 
       return { key: a.key, path, labelX: lp.x, labelY: lp.y, percentage }
     }),

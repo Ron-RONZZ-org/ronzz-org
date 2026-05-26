@@ -1,51 +1,32 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { createHash, randomUUID, randomBytes } from "node:crypto"
-import { resetDb, getDb } from "database/db"
-import { schema } from "database/schema/proxy"
+import { createHash, randomBytes } from "node:crypto"
+import { getDb, resetDb } from "database/db"
 import type { Database } from "database/db-types"
-import { eq, and, gt, isNull } from "drizzle-orm"
-
-function createTables(db: Database): void {
-  const sqlite = (db as any).session?.client as any
-  if (sqlite?.exec) {
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS "user" (
-        "id" text PRIMARY KEY NOT NULL,
-        "email" text NOT NULL UNIQUE,
-        "password_hash" text NOT NULL,
-        "role" text NOT NULL DEFAULT 'editor',
-        "password_change_required" integer NOT NULL DEFAULT 0,
-        "created_at" text NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS "session" (
-        "id" text PRIMARY KEY NOT NULL,
-        "user_id" text NOT NULL REFERENCES "user"("id"),
-        "expires_at" integer NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS "api_token" (
-        "id" text PRIMARY KEY NOT NULL,
-        "user_id" text NOT NULL REFERENCES "user"("id"),
-        "name" text NOT NULL,
-        "token_hash" text NOT NULL,
-        "prefix" text NOT NULL,
-        "revoked_at" text,
-        "created_at" text NOT NULL,
-        "last_used_at" text
-      );
-    `)
-  }
-}
+import { schema } from "database/schema/proxy"
+import { and, eq, gt, isNull } from "drizzle-orm"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import { createTestTables } from "../helpers/create-test-tables"
 
 // NOTE: SQLite expects numbers for integer columns (not booleans).
 // This is a known driver constraint — the proxy schema types differ per dialect.
-const testUserId = randomUUID()
+const testUserId = crypto.randomUUID()
+
+const FIXED_TIME = new Date("2025-06-01T12:00:00Z")
 
 describe("session auth logic", () => {
+  beforeAll(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(FIXED_TIME)
+  })
+
+  afterAll(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     resetDb()
     process.env.DATABASE_URL = ":memory:"
     const db = getDb() as Database
-    createTables(db)
+    createTestTables(db)
   })
 
   it("validates a valid session", async () => {
@@ -61,7 +42,7 @@ describe("session auth logic", () => {
     })
 
     // Create session
-    const sessionId = randomUUID()
+    const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
     await db.insert(schema.sessions).values({
       id: sessionHash,
@@ -74,12 +55,7 @@ describe("session auth logic", () => {
     const rows = await db
       .select({ userId: schema.sessions.userId })
       .from(schema.sessions)
-      .where(
-        and(
-          eq(schema.sessions.id, lookupHash),
-          gt(schema.sessions.expiresAt, Date.now()),
-        ),
-      )
+      .where(and(eq(schema.sessions.id, lookupHash), gt(schema.sessions.expiresAt, Date.now())))
 
     expect(rows).toHaveLength(1)
     expect(rows[0].userId).toBe(testUserId)
@@ -98,7 +74,7 @@ describe("session auth logic", () => {
     })
 
     // Create expired session
-    const sessionId = randomUUID()
+    const sessionId = crypto.randomUUID()
     const sessionHash = createHash("sha256").update(sessionId).digest("hex")
     await db.insert(schema.sessions).values({
       id: sessionHash,
@@ -110,12 +86,7 @@ describe("session auth logic", () => {
     const rows = await db
       .select({ userId: schema.sessions.userId })
       .from(schema.sessions)
-      .where(
-        and(
-          eq(schema.sessions.id, lookupHash),
-          gt(schema.sessions.expiresAt, Date.now()),
-        ),
-      )
+      .where(and(eq(schema.sessions.id, lookupHash), gt(schema.sessions.expiresAt, Date.now())))
 
     expect(rows).toHaveLength(0)
   })
@@ -137,7 +108,7 @@ describe("token auth logic", () => {
     resetDb()
     process.env.DATABASE_URL = ":memory:"
     const db = getDb() as Database
-    createTables(db)
+    createTestTables(db)
   })
 
   it("validates a valid bearer token", async () => {
@@ -153,14 +124,14 @@ describe("token auth logic", () => {
     })
 
     // Create token
-    const tokenValue = `ronzz_${randomUUID().replace(/-/g, "")}${randomUUID().replace(/-/g, "")}`
+    const tokenValue = `ronzz_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "")}`
     const tokenHash = createHash("sha256").update(tokenValue).digest("hex")
     await db.insert(schema.apiTokens).values({
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       userId: testUserId,
       name: "test-token",
       tokenHash,
-      prefix: "ronzz_" + randomBytes(4).toString("hex"),
+      prefix: `ronzz_${randomBytes(4).toString("hex")}`,
       createdAt: new Date().toISOString(),
     })
 
@@ -173,12 +144,7 @@ describe("token auth logic", () => {
       })
       .from(schema.apiTokens)
       .innerJoin(schema.users, eq(schema.apiTokens.userId, schema.users.id))
-      .where(
-        and(
-          eq(schema.apiTokens.tokenHash, lookupHash),
-          isNull(schema.apiTokens.revokedAt),
-        ),
-      )
+      .where(and(eq(schema.apiTokens.tokenHash, lookupHash), isNull(schema.apiTokens.revokedAt)))
 
     expect(rows).toHaveLength(1)
     expect(rows[0].userEmail).toBe("token-test@example.com")
@@ -198,14 +164,14 @@ describe("token auth logic", () => {
     })
 
     // Create revoked token
-    const tokenValue = `test-revoked-token-${randomUUID()}`
+    const tokenValue = `test-revoked-token-${crypto.randomUUID()}`
     const tokenHash = createHash("sha256").update(tokenValue).digest("hex")
     await db.insert(schema.apiTokens).values({
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       userId: testUserId,
       name: "revoked-token",
       tokenHash,
-      prefix: "ronzz_" + randomBytes(4).toString("hex"),
+      prefix: `ronzz_${randomBytes(4).toString("hex")}`,
       revokedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     })
@@ -215,12 +181,7 @@ describe("token auth logic", () => {
     const rows = await db
       .select()
       .from(schema.apiTokens)
-      .where(
-        and(
-          eq(schema.apiTokens.tokenHash, lookupHash),
-          isNull(schema.apiTokens.revokedAt),
-        ),
-      )
+      .where(and(eq(schema.apiTokens.tokenHash, lookupHash), isNull(schema.apiTokens.revokedAt)))
 
     expect(rows).toHaveLength(0)
   })
@@ -239,13 +200,13 @@ describe("token auth logic", () => {
 
     // Create two tokens
     for (let i = 0; i < 2; i++) {
-      const tokenValue = `ronzz_${randomUUID().replace(/-/g, "")}`
+      const tokenValue = `ronzz_${crypto.randomUUID().replace(/-/g, "")}`
       await db.insert(schema.apiTokens).values({
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         userId: testUserId,
         name: `token-${i}`,
         tokenHash: createHash("sha256").update(tokenValue).digest("hex"),
-        prefix: "ronzz_" + randomBytes(4).toString("hex"),
+        prefix: `ronzz_${randomBytes(4).toString("hex")}`,
         createdAt: new Date().toISOString(),
       })
     }

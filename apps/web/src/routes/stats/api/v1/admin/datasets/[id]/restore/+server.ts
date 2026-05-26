@@ -1,15 +1,20 @@
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
+import { restoreDataset } from "@ronzz/ronstats-core"
 import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { restoreDataset } from "@ronzz/ronstats-core"
+import type { RequestHandler } from "./$types"
 
-export const POST: RequestHandler = async ({ params, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const POST: RequestHandler = apiHandler(async ({ params, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const db = getDb() as Database
   const result = await restoreDataset(db, params.id)
   if (!result.ok) {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
-  return json({ restored: result.value }, result.value ? { status: 200 } : { status: 404 })
-}
+  if (!result.value) {
+    return json({ error: "Not found" }, { status: 404 })
+  }
+  return json({ restored: result.value })
+})

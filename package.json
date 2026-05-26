@@ -8,8 +8,9 @@
     "build": "pnpm --filter @ronzz/web build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "biome check .",
-    "lint:fix": "biome check --apply .",
+    "lint:fix": "biome check --write .",
     "check": "pnpm --filter @ronzz/web check",
     "db:migrate:sqlite": "pnpm --filter database db:migrate:sqlite",
     "db:migrate:pg": "pnpm --filter database db:migrate:pg",
@@ -18,22 +19,19 @@
     "clean": "pnpm -r exec rm -rf node_modules dist .svelte-kit"
   },
   "packageManager": "pnpm@10.6.5",
-    "engines": {
-        "node": ">=20"
-    },
+  "engines": {
+    "node": ">=20"
+  },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "@node-rs/argon2",
-      "better-sqlite3",
-      "esbuild"
-    ]
+    "onlyBuiltDependencies": ["@biomejs/biome", "@node-rs/argon2", "better-sqlite3", "esbuild"]
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "autoprefixer": "^10.5.0",
-    "biome": "^0.3.3",
+    "@biomejs/biome": "^1.9.4",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.7"
   }
 }

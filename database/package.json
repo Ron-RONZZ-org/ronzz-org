@@ -24,7 +24,8 @@
     "./schema/pg/datasets": "./schema/pg/datasets.ts",
     "./schema/pg/datapoints": "./schema/pg/datapoints.ts",
     "./schema/pg/articles-metadata": "./schema/pg/articles-metadata.ts",
-    "./schema/pg/index": "./schema/pg/index.ts"
+    "./schema/pg/index": "./schema/pg/index.ts",
+    "./dialect-query": "./dialect-query.ts"
   },
   "scripts": {
     "db:migrate:sqlite": "drizzle-kit push --config drizzle.config.sqlite.ts",

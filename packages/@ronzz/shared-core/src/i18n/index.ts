@@ -1,6 +1,6 @@
-import frCommon from "./locales/fr/common.json" with { type: "json" }
-import eoCommon from "./locales/eo/common.json" with { type: "json" }
 import enCommon from "./locales/en/common.json" with { type: "json" }
+import eoCommon from "./locales/eo/common.json" with { type: "json" }
+import frCommon from "./locales/fr/common.json" with { type: "json" }
 
 export type Locale = "fr" | "eo" | "en"
 
@@ -16,11 +16,7 @@ const bundles: Record<Locale, TranslationBundle> = {
  * Translate a key using an explicit locale's translation bundle.
  * Falls back to the key itself if not found.
  */
-export function t(
-  locale: Locale,
-  key: string,
-  vars?: Record<string, string | number>,
-): string {
+export function t(locale: Locale, key: string, vars?: Record<string, string | number>): string {
   let text = bundles[locale][key]
   if (!text) {
     // Try English fallback
@@ -30,7 +26,10 @@ export function t(
 
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
-      text = text.replace(`{${k}}`, String(v))
+      // WARNING: If `vars` values ever come from user input (URL params, form data, etc.),
+      // they MUST be escaped/sanitised before substitution to prevent XSS.
+      // Currently all callers pass only controlled template variables.
+      text = text.replaceAll(`{${k}}`, String(v))
     }
   }
   return text
@@ -83,9 +82,7 @@ export function toLocale(locale?: string): "fr" | "eo" | "en" | undefined {
 export function detectLocale(acceptLanguage: string | null): Locale {
   if (!acceptLanguage) return "fr"
 
-  const langs = acceptLanguage
-    .split(",")
-    .map((l) => l.split(";")[0].trim().toLowerCase())
+  const langs = acceptLanguage.split(",").map((l) => l.split(";")[0].trim().toLowerCase())
 
   for (const lang of langs) {
     if (lang.startsWith("fr")) return "fr"

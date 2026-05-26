@@ -1,22 +1,33 @@
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
+import { createDataset, deleteDataset, listDatasets } from "@ronzz/ronstats-core"
+import { datasetSchema } from "@ronzz/ronstats-core"
+import { createSearchEngine } from "@ronzz/search-core"
 import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { listDatasets, createDataset, deleteDataset } from "@ronzz/ronstats-core"
-import { datasetSchema } from "@ronzz/ronstats-core"
+import type { RequestHandler } from "./$types"
 
-export const GET: RequestHandler = async ({ url, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+const MAX_LIMIT = 200
+const DEFAULT_LIMIT = 50
+
+export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const db = getDb() as Database
-  const { datasets, total } = await listDatasets(db, {
-    limit: parseInt(url.searchParams.get("limit") ?? "50", 10),
-    offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
-  })
-  return json({ datasets, total })
-}
+  const rawLimit = Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)
+  const limit = Math.min(
+    Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_LIMIT,
+    MAX_LIMIT,
+  )
+  const rawOffset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
+  const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0
+  const { datasets, total } = await listDatasets(db, { limit, offset })
+  return json({ datasets, total, limit, offset })
+})
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const body = await request.json()
   const parsed = datasetSchema.safeParse(body)
   if (!parsed.success) {
@@ -27,11 +38,28 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   if (!result.ok) {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
-  return json({ dataset: result.value }, { status: 201 })
-}
+  const dataset = result.value
 
-export const DELETE: RequestHandler = async ({ url, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+  // Index in search engine so admin-created datasets appear in search results
+  const engine = createSearchEngine(db)
+  await engine.index({
+    id: dataset.id,
+    type: "dataset",
+    locale: dataset.locale,
+    title: dataset.title,
+    description: dataset.description,
+    content: dataset.description,
+    url: `/stats/${dataset.id}`,
+  })
+
+  return json({ dataset }, { status: 201 })
+})
+
+// NOTE: DELETE uses query param for backward compatibility.
+// Preferred REST pattern: DELETE /stats/api/v1/admin/datasets/[id]
+export const DELETE: RequestHandler = apiHandler(async ({ url, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const id = url.searchParams.get("id")
   if (!id) return json({ error: "id required" }, { status: 400 })
   const db = getDb() as Database
@@ -39,5 +67,8 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
   if (!result.ok) {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
-  return json({ deleted: result.value }, result.value ? { status: 200 } : { status: 404 })
-}
+  if (!result.value) {
+    return json({ error: "Not found" }, { status: 404 })
+  }
+  return new Response(null, { status: 204 })
+})

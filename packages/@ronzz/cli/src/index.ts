@@ -1,21 +1,21 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
-import { ApiClient } from "./lib/api-client"
+import { articleCommand } from "./commands/article"
+import { datasetCommand } from "./commands/dataset"
+import { resourceCommand } from "./commands/resource"
+import { searchCommand } from "./commands/search"
 import { tokenCommand } from "./commands/token"
 import { userCommand } from "./commands/user"
-import { resourceCommand } from "./commands/resource"
-import { datasetCommand } from "./commands/dataset"
-import { articleCommand } from "./commands/article"
-import { searchCommand } from "./commands/search"
+import { ApiClient } from "./lib/api-client"
 
-function main() {
+async function main() {
   const api = process.env.RONZZ_API ?? "http://localhost:5173"
   const token = process.env.RONZZ_TOKEN ?? ""
 
   const client = new ApiClient({ api, token })
 
-  yargs(hideBin(process.argv))
+  await yargs(hideBin(process.argv))
     .option("api", {
       type: "string",
       description: "API base URL",
@@ -29,7 +29,7 @@ function main() {
     .middleware((argv) => {
       // Reinitialize client with CLI args if provided
       if (argv.api !== api || argv.token !== token) {
-        Object.assign(client, { api: argv.api, token: argv.token })
+        client.setAuth(argv.api as string, argv.token as string)
       }
     })
     .command("token", "Manage API tokens", (ygs) => tokenCommand(ygs, client))
@@ -44,4 +44,7 @@ function main() {
     .parse()
 }
 
-main()
+main().catch((err) => {
+  console.error("Fatal error:", err)
+  process.exit(1)
+})

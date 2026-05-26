@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
-import { ok, fail } from "@ronzz/shared-core"
+import { fail, ok } from "@ronzz/shared-core"
 import { AppError } from "@ronzz/shared-core"
+import { describe, expect, it } from "vitest"
 
 describe("Result type", () => {
   it("creates an ok result", () => {

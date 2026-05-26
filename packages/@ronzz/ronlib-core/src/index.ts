@@ -7,6 +7,10 @@ export {
   restoreResource,
   hardDeleteResource,
 } from "./queries/resources"
-export { listResourceTypes, getResourceTypeBySlug, createResourceType } from "./queries/resource-types"
+export {
+  listResourceTypes,
+  getResourceTypeBySlug,
+  createResourceType,
+} from "./queries/resource-types"
 export { resourceSchema, resourceTypeSchema } from "./validation"
 export type { Resource, ResourceInput, ResourceType, ResourceTypeInput } from "./types"

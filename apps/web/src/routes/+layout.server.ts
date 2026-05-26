@@ -1,6 +1,6 @@
 import { detectLocale } from "@ronzz/shared-core"
-import type { LayoutServerLoad } from "./$types"
 import type { Locale } from "@ronzz/shared-core"
+import type { LayoutServerLoad } from "./$types"
 
 export const load: LayoutServerLoad = async ({ request, cookies }) => {
   try {

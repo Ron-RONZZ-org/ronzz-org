@@ -1,5 +1,10 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.0/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "organizeImports": {
     "enabled": true
   },
@@ -30,12 +35,28 @@
       "trailingCommas": "all"
     }
   },
+  "overrides": [
+    {
+      "include": ["tests/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noForEach": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ],
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".svelte-kit",
-      "*.db"
-    ]
+    "ignore": ["node_modules", "dist", ".svelte-kit", "*.db", "*.svelte", "coverage"]
   }
 }

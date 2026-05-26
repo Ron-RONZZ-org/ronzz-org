@@ -1,25 +1,31 @@
-import type { SearchEngine } from "./types"
-import { SqliteSearchEngine } from "./sqlite-engine"
+import { detectDialect } from "database/schema/proxy"
 import { PostgresSearchEngine } from "./pg-engine"
+import { SqliteSearchEngine } from "./sqlite-engine"
+import type { SearchEngine } from "./types"
 
 let _engine: SearchEngine | null = null
+let _engineDialect: string | null = null
 
 export function createSearchEngine(db: unknown): SearchEngine {
-  if (_engine) return _engine
-  const dialect = detectDialect()
-  _engine =
-    dialect === "pg"
+  const currentDialect = detectDialect()
+
+  // Re-create engine if dialect changed (e.g., DB was reset/reconnected)
+  if (_engine && _engineDialect === currentDialect) {
+    return _engine
+  }
+
+  const engine =
+    currentDialect === "pg"
       ? new PostgresSearchEngine(db as never)
       : new SqliteSearchEngine(db as never)
-  return _engine
+
+  _engine = engine
+  _engineDialect = currentDialect
+  return engine
 }
 
-let _dialect: "sqlite" | "pg" | null = null
-
-function detectDialect(): "sqlite" | "pg" {
-  if (_dialect) return _dialect
-  const url = process.env.DATABASE_URL ?? ""
-  _dialect =
-    url.startsWith("postgres") || url.startsWith("postgresql") ? "pg" : "sqlite"
-  return _dialect
+/** Reset the engine singleton. Used for test isolation. */
+export function resetSearchEngine(): void {
+  _engine = null
+  _engineDialect = null
 }

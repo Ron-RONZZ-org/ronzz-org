@@ -1,5 +1,5 @@
-const DEFAULT_API = process.env.RONZZ_API ?? "http://localhost:5173"
-const DEFAULT_TOKEN = process.env.RONZZ_TOKEN ?? ""
+const _DEFAULT_API = process.env.RONZZ_API ?? "http://localhost:5173"
+const _DEFAULT_TOKEN = process.env.RONZZ_TOKEN ?? ""
 
 export interface ApiClientConfig {
   api: string
@@ -15,17 +15,19 @@ export class ApiClient {
     this.token = config.token
   }
 
-  private async request(
-    method: string,
-    path: string,
-    body?: unknown,
-  ): Promise<unknown> {
+  /** Update API base URL and bearer token after construction. */
+  setAuth(api: string, token: string): void {
+    this.api = api.replace(/\/+$/, "")
+    this.token = token
+  }
+
+  private async request(method: string, path: string, body?: unknown): Promise<unknown> {
     const url = `${this.api}${path}`
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     }
     if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`
+      headers.Authorization = `Bearer ${this.token}`
     }
 
     const response = await fetch(url, {
@@ -37,6 +39,11 @@ export class ApiClient {
     if (!response.ok) {
       const text = await response.text()
       throw new Error(`HTTP ${response.status}: ${text}`)
+    }
+
+    // Handle 204 No Content (DELETE responses) — no body to parse
+    if (response.status === 204) {
+      return { deleted: true }
     }
 
     return response.json()
@@ -51,9 +58,7 @@ export class ApiClient {
   }
 
   async listTokens(): Promise<{ id: string; name: string }[]> {
-    return this.request("GET", "/api/v1/admin/tokens") as Promise<
-      { id: string; name: string }[]
-    >
+    return this.request("GET", "/api/v1/admin/tokens") as Promise<{ id: string; name: string }[]>
   }
 
   async revokeToken(id: string): Promise<{ deleted: boolean }> {
@@ -63,10 +68,7 @@ export class ApiClient {
   }
 
   // Resource commands
-  async listResources(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ resources: unknown[]; total: number }> {
+  async listResources(limit = 50, offset = 0): Promise<{ resources: unknown[]; total: number }> {
     return this.request(
       "GET",
       `/lib/api/v1/admin/resources?limit=${limit}&offset=${offset}`,
@@ -102,10 +104,7 @@ export class ApiClient {
   }
 
   // Dataset commands
-  async listDatasets(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ datasets: unknown[]; total: number }> {
+  async listDatasets(limit = 50, offset = 0): Promise<{ datasets: unknown[]; total: number }> {
     return this.request(
       "GET",
       `/stats/api/v1/admin/datasets?limit=${limit}&offset=${offset}`,
@@ -141,10 +140,7 @@ export class ApiClient {
   }
 
   // Article commands
-  async listArticles(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ articles: unknown[]; total: number }> {
+  async listArticles(limit = 50, offset = 0): Promise<{ articles: unknown[]; total: number }> {
     return this.request(
       "GET",
       `/encik/api/v1/admin/articles?limit=${limit}&offset=${offset}`,
@@ -184,10 +180,7 @@ export class ApiClient {
     return this.request("POST", "/api/v1/search/index", data)
   }
 
-  async search(
-    q: string,
-    type?: string,
-  ): Promise<{ results: unknown[]; total: number }> {
+  async search(q: string, type?: string): Promise<{ results: unknown[]; total: number }> {
     const params = new URLSearchParams({ q })
     if (type) params.set("type", type)
     return this.request("GET", `/api/v1/search?${params}`) as Promise<{

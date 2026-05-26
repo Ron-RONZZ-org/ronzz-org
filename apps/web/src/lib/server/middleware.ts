@@ -101,6 +101,43 @@ export async function handleSessionAuth(event: Parameters<Handle>[0]["event"]): 
   }
 }
 
+/** Require admin role — returns a 401/403 JSON response if not authenticated or not admin. */
+export function requireAdmin(locals: App.Locals): Response | null {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  if (locals.user.role !== "admin") {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  return null
+}
+
+/** Wrap an API handler with try/catch JSON error handling. */
+export function apiHandler<_T>(
+  fn: (event: Parameters<Handle>[0]["event"]) => Promise<Response>,
+): (event: Parameters<Handle>[0]["event"]) => Promise<Response> {
+  return async (event) => {
+    try {
+      return await fn(event)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Internal server error"
+      logger.error({ err, path: event.url.pathname }, "API handler error")
+      const publicMessage =
+        process.env.NODE_ENV === "production" ? "Internal server error" : message
+      return new Response(JSON.stringify({ error: publicMessage }), {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      })
+    }
+  }
+}
+
 /** Authenticate Bearer tokens on /admin/ routes. */
 export async function handleTokenAuth(
   event: Parameters<Handle>[0]["event"],

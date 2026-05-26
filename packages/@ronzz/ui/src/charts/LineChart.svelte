@@ -13,7 +13,7 @@
     height?: number
   } = $props()
 
-  let cw = useContainerWidth(explicitWidth)
+  let cw = useContainerWidth(() => explicitWidth)
 
   let dim = $derived(defaultDimensions(cw.width, height))
   let result = $derived(lineChart(datapoints, dim))

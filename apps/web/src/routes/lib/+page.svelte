@@ -4,7 +4,7 @@
   import { Card } from "@ronzz/ui"
 
   let { data }: { data: PageData } = $props()
-  const locale = data.locale
+  let locale = $derived(data.locale)
 </script>
 
 <section class="py-8">
@@ -12,13 +12,20 @@
 
   <!-- Search form -->
   <form method="GET" action="/lib" class="mb-8 flex gap-2">
+    <label for="lib-search" class="sr-only">
+      {tr_multi(locale, "Rechercher des ressources", "Serĉi rimedojn", "Search resources")}
+    </label>
     <input
+      id="lib-search"
       type="text"
       name="q"
       placeholder={tr_multi(locale, "Rechercher des ressources…", "Serĉi rimedojn…", "Search resources…")}
       class="flex-1 rounded border border-gray-300 px-4 py-2"
     />
-    <select name="type" class="rounded border border-gray-300 px-3 py-2">
+    <label for="lib-type" class="sr-only">
+      {tr_multi(locale, "Type de ressource", "Tipo de rimedo", "Resource type")}
+    </label>
+    <select id="lib-type" name="type" class="rounded border border-gray-300 px-3 py-2">
       <option value="">{tr_multi(locale, "Tous les types", "Ĉiuj tipoj", "All types")}</option>
       {#each data.resourceTypes as rt}
         <option value={rt.slug}>
@@ -33,7 +40,7 @@
 
   <!-- Resource cards -->
   {#if data.resources.length === 0}
-    <p class="text-center text-gray-500 py-8">
+    <p class="text-center text-gray-600 py-8">
       {tr_multi(locale,
         "Aucune ressource trouvée.",
         "Neniu rimedo trovita.",
@@ -64,7 +71,7 @@
           &larr; {tr_multi(locale, "Précédent", "Antaŭa", "Previous")}
         </a>
       {/if}
-      <span class="text-sm text-gray-500">
+      <span class="text-sm text-gray-600">
         {tr_multi(locale, "pagination.page", { page: data.page, total: data.totalPages })}
       </span>
       {#if data.page < data.totalPages}

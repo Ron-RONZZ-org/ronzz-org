@@ -9,9 +9,12 @@ LOGFILE="${LOGFILE:-/var/log/ronzz/disk.log}"
 mkdir -p "$(dirname "$LOGFILE")"
 
 df -h | awk 'NR>1 {print $5, $6}' | sed 's/%//' | while read -r usage mount; do
+  if [ -z "$usage" ] || [ -z "$mount" ]; then
+    continue
+  fi
   if [ "$usage" -gt "$THRESHOLD" ] 2>/dev/null; then
     "$ALERT_SCRIPT" "Disk at ${usage}% on ${mount}"
-    echo "$(date -Iseconds) WARN disk=${usage}% mount=${mount}" >> "$LOGFILE"
+    echo "$(date -u +"%Y-%m-%dT%H:%M:%S%z") WARN disk=${usage}% mount=${mount}" >> "$LOGFILE"
   fi
 done
 

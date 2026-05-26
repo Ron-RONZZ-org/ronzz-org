@@ -1,23 +1,33 @@
-import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
-import { getDb } from "database/db"
-import type { Database } from "database/db-types"
-import { listResources, createResource, deleteResource } from "@ronzz/ronlib-core"
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
+import { createResource, deleteResource, listResources } from "@ronzz/ronlib-core"
 import { resourceSchema } from "@ronzz/ronlib-core"
 import { createSearchEngine } from "@ronzz/search-core"
+import { json } from "@sveltejs/kit"
+import { getDb } from "database/db"
+import type { Database } from "database/db-types"
+import type { RequestHandler } from "./$types"
 
-export const GET: RequestHandler = async ({ url, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+const MAX_LIMIT = 200
+const DEFAULT_LIMIT = 50
+
+export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const db = getDb() as Database
-  const { resources, total } = await listResources(db, {
-    limit: parseInt(url.searchParams.get("limit") ?? "50", 10),
-    offset: parseInt(url.searchParams.get("offset") ?? "0", 10),
-  })
-  return json({ resources, total })
-}
+  const rawLimit = Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)
+  const limit = Math.min(
+    Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_LIMIT,
+    MAX_LIMIT,
+  )
+  const rawOffset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
+  const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0
+  const { resources, total } = await listResources(db, { limit, offset })
+  return json({ resources, total, limit, offset })
+})
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const body = await request.json()
   const parsed = resourceSchema.safeParse(body)
   if (!parsed.success) {
@@ -44,10 +54,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   })
 
   return json({ resource }, { status: 201 })
-}
+})
 
-export const DELETE: RequestHandler = async ({ url, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized" }, { status: 401 })
+export const DELETE: RequestHandler = apiHandler(async ({ url, locals }) => {
+  const adminCheck = requireAdmin(locals)
+  if (adminCheck) return adminCheck
   const id = url.searchParams.get("id")
   if (!id) return json({ error: "id required" }, { status: 400 })
 
@@ -57,9 +68,13 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
     return json({ error: result.error.message }, { status: result.error.statusCode })
   }
 
+  if (!result.value) {
+    return json({ error: "Not found" }, { status: 404 })
+  }
+
   // Remove from search index
   const engine = createSearchEngine(db)
   await engine.remove(id)
 
-  return json({ deleted: result.value }, result.value ? { status: 200 } : { status: 404 })
-}
+  return new Response(null, { status: 204 })
+})

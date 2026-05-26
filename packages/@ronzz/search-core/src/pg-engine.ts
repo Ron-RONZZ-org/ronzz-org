@@ -95,37 +95,10 @@ export class PostgresSearchEngine implements SearchEngine {
     await this.db.delete(pgSchema.searchIndex).where(eq(pgSchema.searchIndex.id, id))
   }
 
-  /** Batch-reindex documents in a single transaction for performance. */
+  /** Batch-reindex documents. PG async transactions don't add significant overhead. */
   async reindex(docs: SearchDocument[]): Promise<void> {
-    if (docs.length === 0) return
-    await this.db.transaction(async (tx) => {
-      for (const doc of docs) {
-        const now = new Date()
-        await tx
-          .insert(pgSchema.searchIndex)
-          .values({
-            id: doc.id,
-            type: doc.type,
-            locale: doc.locale,
-            title: doc.title,
-            description: doc.description,
-            content: doc.content,
-            url: doc.url,
-            score: 0,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .onConflictDoUpdate({
-            target: pgSchema.searchIndex.id,
-            set: {
-              title: doc.title,
-              description: doc.description,
-              content: doc.content,
-              url: doc.url,
-              updatedAt: now,
-            },
-          })
-      }
-    })
+    for (const doc of docs) {
+      await this.index(doc)
+    }
   }
 }

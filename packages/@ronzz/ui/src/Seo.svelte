@@ -30,7 +30,7 @@
   {/if}
   {#if jsonld}
     <script type="application/ld+json">
-      {JSON.stringify(jsonld)}
+      {@html JSON.stringify(jsonld)}
     </script>
   {/if}
 </svelte:head>
