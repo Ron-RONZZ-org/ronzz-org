@@ -1,5 +1,5 @@
 import { escapeLike } from "@ronzz/shared-core"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
 import { and, eq, like, or, sql } from "drizzle-orm"
 import type {
@@ -76,7 +76,7 @@ export class SearchEngineImpl implements SearchEngine {
   }
 
   async index(doc: SearchDocument): Promise<void> {
-    const now = this.dialect === "pg" ? new Date() : new Date().toISOString()
+    const now = dbNow()
     await queryRun(
       this.db
         .insert(schema.searchIndex)

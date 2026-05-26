@@ -1,4 +1,4 @@
-import { closeDb, resetDb } from "database/db"
+import { resetDb } from "database/db"
 import { beforeEach, describe, expect, it } from "vitest"
 import { mockEvent } from "../helpers/mock-event"
 

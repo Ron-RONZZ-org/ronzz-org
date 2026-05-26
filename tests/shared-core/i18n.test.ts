@@ -21,6 +21,11 @@ describe("tr_multi", () => {
   it("supports key-based lookup with template vars", () => {
     expect(tr_multi("en", "pagination.page", { page: 1, total: 5 })).toBe("Page 1 of 5")
   })
+
+  it("replaces multiple occurrences of the same template variable", () => {
+    // Verify that .replaceAll() is used (not .replace()), which would only replace the first occurrence
+    expect(tr_multi("en", "test.repeatedVar", { name: "Ron" })).toBe("Ron is Ron")
+  })
 })
 
 describe("detectLocale", () => {

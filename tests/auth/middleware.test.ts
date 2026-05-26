@@ -3,14 +3,25 @@ import { getDb, resetDb } from "database/db"
 import type { Database } from "database/db-types"
 import { schema } from "database/schema/proxy"
 import { and, eq, gt, isNull } from "drizzle-orm"
-import { beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 
 // NOTE: SQLite expects numbers for integer columns (not booleans).
 // This is a known driver constraint — the proxy schema types differ per dialect.
 const testUserId = crypto.randomUUID()
 
+const FIXED_TIME = new Date("2025-06-01T12:00:00Z")
+
 describe("session auth logic", () => {
+  beforeAll(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(FIXED_TIME)
+  })
+
+  afterAll(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     resetDb()
     process.env.DATABASE_URL = ":memory:"

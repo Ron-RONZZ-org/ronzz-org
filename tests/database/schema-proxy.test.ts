@@ -1,6 +1,4 @@
-import * as pgSchema from "database/schema/pg/index"
 import { detectDialect, getSchema, resetDialectCache, schema } from "database/schema/proxy"
-import * as sqliteSchema from "database/schema/sqlite/index"
 import { beforeEach, describe, expect, it } from "vitest"
 
 describe("schema proxy", () => {

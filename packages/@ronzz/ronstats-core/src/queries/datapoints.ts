@@ -1,6 +1,6 @@
 import { type AppError, type Result, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
 import { count, desc, eq } from "drizzle-orm"
 import type { Datapoint, DatapointInput } from "../types"
@@ -52,7 +52,7 @@ export async function createDatapoint(
 ): Promise<Result<Datapoint, AppError>> {
   return tryResult(async () => {
     const id = crypto.randomUUID()
-    const now = new Date().toISOString()
+    const now = dbNow()
     await queryRun(
       d(db)
         .insert(schema.datapoints)
@@ -87,7 +87,7 @@ export async function bulkCreateDatapoints(
   inputs: DatapointInput[],
 ): Promise<Result<Datapoint[], AppError>> {
   return tryResult(async () => {
-    const now = new Date().toISOString()
+    const now = dbNow()
     const values = inputs.map((input) => ({
       id: crypto.randomUUID(),
       datasetId: input.datasetId,

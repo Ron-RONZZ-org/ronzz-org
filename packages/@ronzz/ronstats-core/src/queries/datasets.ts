@@ -1,6 +1,6 @@
 import { type AppError, type Result, escapeLike, toLocale, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
 import { and, desc, eq, isNotNull, isNull, like, or, sql } from "drizzle-orm"
 import type { Dataset, DatasetInput } from "../types"
@@ -73,7 +73,7 @@ export async function createDataset(
 ): Promise<Result<Dataset, AppError>> {
   return tryResult(async () => {
     const id = crypto.randomUUID()
-    const now = new Date().toISOString()
+    const now = dbNow()
     await queryRun(
       d(db)
         .insert(schema.datasets)
@@ -117,7 +117,7 @@ export async function softDeleteDataset(
     const result = await queryRun(
       d(db)
         .update(schema.datasets)
-        .set({ deletedAt: new Date().toISOString() })
+        .set({ deletedAt: dbNow() })
         .where(and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0

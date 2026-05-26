@@ -21,11 +21,7 @@ function isOriginAllowed(value: string, allowedOrigins: string[]): boolean {
 }
 
 describe("CSRF origin matching", () => {
-  const allowedOrigins = [
-    "https://ronzz.org",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-  ]
+  const allowedOrigins = ["https://ronzz.org", "http://localhost:5173", "http://127.0.0.1:5173"]
 
   describe("isOriginAllowed", () => {
     it("matches exact origin", () => {
@@ -48,11 +44,10 @@ describe("CSRF origin matching", () => {
       expect(isOriginAllowed("http://127.0.0.1:5173", allowedOrigins)).toBe(true)
     })
 
-    it("rejects wrong scheme (http vs https)", () => {
+    it("allows different scheme (http vs https) — host comparison ignores scheme", () => {
       // http://ronzz.org has host "ronzz.org", same as https://ronzz.org
-      // This is technically the same host, which is acceptable since
-      // the Origin header's scheme is part of the URL but host comparison
-      // is hostname:port which doesn't include scheme
+      // This is acceptable since the Origin header's scheme is part of the URL
+      // but host comparison is hostname:port which doesn't include scheme
       expect(isOriginAllowed("http://ronzz.org", allowedOrigins)).toBe(true)
     })
 
@@ -75,9 +70,9 @@ describe("CSRF origin matching", () => {
     })
 
     it("handles referer URL with path and query", () => {
-      expect(
-        isOriginAllowed("https://ronzz.org/lib/login?redirect=/stats", allowedOrigins),
-      ).toBe(true)
+      expect(isOriginAllowed("https://ronzz.org/lib/login?redirect=/stats", allowedOrigins)).toBe(
+        true,
+      )
     })
 
     it("returns false for invalid URL", () => {

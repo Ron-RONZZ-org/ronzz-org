@@ -41,6 +41,11 @@ export class ApiClient {
       throw new Error(`HTTP ${response.status}: ${text}`)
     }
 
+    // Handle 204 No Content (DELETE responses) — no body to parse
+    if (response.status === 204) {
+      return { deleted: true }
+    }
+
     return response.json()
   }
 

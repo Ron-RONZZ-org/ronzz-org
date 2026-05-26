@@ -2,10 +2,12 @@ node_modules/
 .env
 dist/
 .svelte-kit/
+coverage/
 database/*.db
 apps/web/build/
 .serena/cache/
 .serena/project.local.yml
+.serena/memories/
 ronzz-org/
 *.db
 *.db-shm

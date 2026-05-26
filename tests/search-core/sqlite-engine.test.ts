@@ -1,5 +1,5 @@
 import { SqliteSearchEngine } from "@ronzz/search-core"
-import type { SearchDocument, SearchQuery } from "@ronzz/search-core"
+import type { SearchDocument } from "@ronzz/search-core"
 import Database from "better-sqlite3"
 import * as sqliteSchema from "database/schema/sqlite/index"
 import { drizzle } from "drizzle-orm/better-sqlite3"

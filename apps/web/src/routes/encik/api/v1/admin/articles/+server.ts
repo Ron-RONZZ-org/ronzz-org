@@ -14,11 +14,17 @@ export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
   if (adminCheck) return adminCheck
   const db = getDb() as Database
   const { articles, total } = await listArticles(db, {
-    limit: Math.min(
-      Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10),
-      MAX_LIMIT,
-    ),
-    offset: Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10)),
+    limit: (() => {
+      const rawLimit = Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)
+      return Math.min(
+        Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_LIMIT,
+        MAX_LIMIT,
+      )
+    })(),
+    offset: (() => {
+      const rawOffset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
+      return Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0
+    })(),
   })
   return json({ articles, total })
 })
@@ -33,7 +39,10 @@ export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
   }
   const db = getDb() as Database
   const article = await upsertArticleMetadata(db, parsed.data)
-  return json({ article }, { status: 201 })
+  if (!article.ok) {
+    return json({ error: article.error.message }, { status: article.error.statusCode })
+  }
+  return json({ article: article.value }, { status: 201 })
 })
 
 export const DELETE: RequestHandler = apiHandler(async ({ url, locals }) => {
@@ -43,7 +52,10 @@ export const DELETE: RequestHandler = apiHandler(async ({ url, locals }) => {
   if (!id) return json({ error: "id required" }, { status: 400 })
   const db = getDb() as Database
   const deleted = await deleteArticle(db, id)
-  if (!deleted) {
+  if (!deleted.ok) {
+    return json({ error: deleted.error.message }, { status: deleted.error.statusCode })
+  }
+  if (!deleted.value) {
     return json({ error: "Not found" }, { status: 404 })
   }
   return new Response(null, { status: 204 })

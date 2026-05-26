@@ -7,13 +7,27 @@
   let newName = $state("")
   let copiedToken = $state("")
   let justCopied = $state(false)
+  let copyError = $state("")
+  let copyTimer: ReturnType<typeof setTimeout> | undefined = $state()
 
   function copyToClipboard(t: string) {
-    navigator.clipboard.writeText(t)
-    copiedToken = t
-    justCopied = true
-    setTimeout(() => { justCopied = false }, 3000)
+    try {
+      navigator.clipboard.writeText(t)
+      copiedToken = t
+      justCopied = true
+      copyError = ""
+      clearTimeout(copyTimer)
+      copyTimer = setTimeout(() => { justCopied = false }, 3000)
+    } catch {
+      copyError = "Failed to copy. Please copy manually."
+    }
   }
+
+  $effect(() => {
+    return () => {
+      clearTimeout(copyTimer)
+    }
+  })
 </script>
 
 <svelte:head>
@@ -44,6 +58,9 @@
         >
           {justCopied ? "Copied!" : "Copy"}
         </button>
+        {#if copyError}
+          <p class="text-xs text-red-600">{copyError}</p>
+        {/if}
       </div>
     </div>
   {/if}

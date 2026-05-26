@@ -1,7 +1,7 @@
 # ---- Build stage ----
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.6.5 --activate
 
 WORKDIR /app
 
@@ -13,15 +13,12 @@ COPY database/ database/
 
 RUN pnpm install --frozen-lockfile
 
-RUN pnpm --filter database build
 RUN pnpm build
-# Remove devDependencies after build for smaller image size (builder stage is discarded, but this keeps copied layers lean)
-RUN pnpm prune --prod || true
 
 # ---- Production stage ----
 FROM node:20-alpine AS runner
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.6.5 --activate
 
 WORKDIR /app
 
@@ -31,12 +28,11 @@ RUN apk add --no-cache postgresql-client
 COPY --from=builder /app/apps/web/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/pnpm-lock.yaml ./
 COPY --from=builder /app/packages packages/
 COPY --from=builder /app/database database/
 COPY --from=builder /app/apps/web/.svelte-kit apps/web/.svelte-kit/
-
-# Prune devDependencies from the final image
-RUN pnpm prune --prod || true
 
 COPY deploy/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

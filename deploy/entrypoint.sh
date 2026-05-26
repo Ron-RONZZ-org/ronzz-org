@@ -7,7 +7,17 @@ DB_HOST="$(node -e "
   const u = new URL(process.env.DATABASE_URL);
   console.log(u.hostname);
 ")"
-until pg_isready -h "$DB_HOST" -U ronzz -d ronzz 2>/dev/null; do
+DB_USER="$(node -e "
+  const url = require('url');
+  const u = new URL(process.env.DATABASE_URL);
+  console.log(u.username);
+")"
+DB_NAME="$(node -e "
+  const url = require('url');
+  const u = new URL(process.env.DATABASE_URL);
+  console.log(u.pathname.replace(/^\//, ''));
+")"
+until pg_isready -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" 2>/dev/null; do
   sleep 1
 done
 echo "PostgreSQL is ready."

@@ -1,6 +1,6 @@
 import { type AppError, type Result, escapeLike, toLocale, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
 import { and, asc, desc, eq, isNotNull, isNull, like, or, sql } from "drizzle-orm"
 import type { Resource, ResourceInput } from "../types"
@@ -85,7 +85,7 @@ export async function createResource(
 ): Promise<Result<Resource, AppError>> {
   return tryResult(async () => {
     const id = crypto.randomUUID()
-    const now = new Date().toISOString()
+    const now = dbNow()
     await queryRun(
       d(db)
         .insert(schema.resources)
@@ -122,7 +122,7 @@ export async function deleteResource(db: Database, id: string): Promise<Result<b
     const result = await queryRun(
       d(db)
         .update(schema.resources)
-        .set({ deletedAt: new Date().toISOString() })
+        .set({ deletedAt: dbNow() })
         .where(and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0

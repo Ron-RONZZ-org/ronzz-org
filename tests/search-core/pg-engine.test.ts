@@ -1,5 +1,5 @@
 import { PostgresSearchEngine } from "@ronzz/search-core"
-import type { SearchDocument, SearchQuery } from "@ronzz/search-core"
+import type { SearchDocument } from "@ronzz/search-core"
 import { resetDialectCache } from "database/schema/proxy"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -92,7 +92,6 @@ describe("PostgresSearchEngine", () => {
         limit: vi.fn().mockReturnThis(),
         offset: vi.fn().mockResolvedValue(mockRows),
       })
-      const _mockCountSelect = vi.fn().mockResolvedValue([{ count: 1 }])
       mockDb.select = mockSelect as any
       // Override the second .select() call to return count
       mockSelect

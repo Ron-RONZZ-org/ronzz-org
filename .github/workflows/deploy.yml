@@ -56,7 +56,7 @@ jobs:
             # Pull new image
             docker compose pull
             # Tag current as rollback target
-            ROLLBACK_TAG="rollback-$(date +%s)"
+            ROLLBACK_TAG="rollback-$(date -u +'%s')"
             docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:$ROLLBACK_TAG" 2>/dev/null || true
             # Deploy new containers
             docker compose up -d --wait --wait-timeout 60
