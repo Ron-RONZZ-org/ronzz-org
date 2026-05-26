@@ -1,8 +1,8 @@
-import { eq, count, desc } from "drizzle-orm"
-import { schema } from "database/schema/proxy"
+import { type AppError, type Result, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
-import { tryResult, type Result, type AppError } from "@ronzz/shared-core"
+import { schema } from "database/schema/proxy"
+import { count, desc, eq } from "drizzle-orm"
 import type { Datapoint, DatapointInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -36,10 +36,7 @@ export async function listDatapoints(
   return rows as Datapoint[]
 }
 
-export async function countDatapoints(
-  db: Database,
-  datasetId: string,
-): Promise<number> {
+export async function countDatapoints(db: Database, datasetId: string): Promise<number> {
   const result = await queryGet<{ total: number }>(
     d(db)
       .select({ total: count() })

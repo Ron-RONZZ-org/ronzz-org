@@ -1,13 +1,13 @@
-import type { PageServerLoad } from "./$types"
+import { listResourceTypes, listResources } from "@ronzz/ronlib-core"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { listResources, listResourceTypes } from "@ronzz/ronlib-core"
+import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ url, locals }) => {
   const db = getDb() as Database
   const typeSlug = url.searchParams.get("type") ?? undefined
   const search = url.searchParams.get("q") ?? undefined
-  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10))
+  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") ?? "1", 10))
   const limit = 20
   const offset = (page - 1) * limit
 

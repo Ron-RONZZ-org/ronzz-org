@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
-import { pieChart, defaultDimensions } from "@ronzz/ronstats-core/charts"
 import type { Datapoint } from "@ronzz/ronstats-core"
+import { defaultDimensions, pieChart } from "@ronzz/ronstats-core/charts"
+import { describe, expect, it } from "vitest"
 
 describe("pieChart", () => {
   const dim = defaultDimensions(600)
@@ -15,7 +15,17 @@ describe("pieChart", () => {
 
   it("renders a single arc filling 360 degrees", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 100, unit: "units", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 100,
+        unit: "units",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = pieChart(dps, dim)
     expect(result.arcs).toHaveLength(1)
@@ -31,8 +41,28 @@ describe("pieChart", () => {
 
   it("splits arcs proportionally", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 1, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
-      { id: "2", datasetId: "d1", dimensionKey: "cat", dimensionValue: "B", value: 3, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 1,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
+      {
+        id: "2",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "B",
+        value: 3,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = pieChart(dps, dim)
     expect(result.arcs).toHaveLength(2)
@@ -44,8 +74,28 @@ describe("pieChart", () => {
 
   it("groups duplicate dimension values", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 10, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
-      { id: "2", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 20, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 10,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
+      {
+        id: "2",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 20,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = pieChart(dps, dim)
     expect(result.arcs).toHaveLength(1)
@@ -57,8 +107,28 @@ describe("pieChart", () => {
     // Two datapoints with same dimensionValue but different dimensionKey
     // should NOT be grouped together (composite key fix)
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "region", dimensionValue: "A", value: 10, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
-      { id: "2", datasetId: "d1", dimensionKey: "category", dimensionValue: "A", value: 20, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "region",
+        dimensionValue: "A",
+        value: 10,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
+      {
+        id: "2",
+        datasetId: "d1",
+        dimensionKey: "category",
+        dimensionValue: "A",
+        value: 20,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = pieChart(dps, dim)
     expect(result.arcs).toHaveLength(2)

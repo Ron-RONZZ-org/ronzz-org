@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { PostgresSearchEngine } from "@ronzz/search-core"
 import type { SearchDocument, SearchQuery } from "@ronzz/search-core"
-import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { resetDialectCache } from "database/schema/proxy"
+import type { NodePgDatabase } from "drizzle-orm/node-postgres"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Mock drizzle-orm operators to avoid import issues in test context
 vi.mock("drizzle-orm", () => ({
@@ -69,7 +69,7 @@ describe("PostgresSearchEngine", () => {
   })
 
   afterEach(() => {
-    delete process.env.DATABASE_URL
+    process.env.DATABASE_URL = undefined
     resetDialectCache()
   })
 
@@ -92,7 +92,7 @@ describe("PostgresSearchEngine", () => {
         limit: vi.fn().mockReturnThis(),
         offset: vi.fn().mockResolvedValue(mockRows),
       })
-      const mockCountSelect = vi.fn().mockResolvedValue([{ count: 1 }])
+      const _mockCountSelect = vi.fn().mockResolvedValue([{ count: 1 }])
       mockDb.select = mockSelect as any
       // Override the second .select() call to return count
       mockSelect
@@ -177,10 +177,7 @@ describe("PostgresSearchEngine", () => {
         where: vi.fn().mockResolvedValue([{ count: 0 }]),
       }
 
-      const mockSelect = vi
-        .fn()
-        .mockReturnValueOnce(queryBuilder)
-        .mockReturnValueOnce(countQuery)
+      const mockSelect = vi.fn().mockReturnValueOnce(queryBuilder).mockReturnValueOnce(countQuery)
       mockDb.select = mockSelect as any
 
       await engine.search({ query: "", limit: 5, offset: 10 })

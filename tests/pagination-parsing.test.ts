@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
 
 describe("Pagination Parameter Parsing - Unit Tests", () => {
   const parsePageNumber = (pageParam: string | null | undefined): number => {
-    return Math.max(1, parseInt(pageParam ?? "1", 10))
+    return Math.max(1, Number.parseInt(pageParam ?? "1", 10))
   }
 
   const calculateOffset = (page: number, limit: number): number => {
@@ -112,7 +112,7 @@ describe("Pagination Parameter Parsing - Unit Tests", () => {
     })
 
     it("calculates offset when clamped page is 1", () => {
-      const page = Math.max(1, parseInt("-10", 10))
+      const page = Math.max(1, Number.parseInt("-10", 10))
       const offset = calculateOffset(page, 20)
       expect(offset).toBe(0)
     })
@@ -152,7 +152,7 @@ describe("Pagination Parameter Parsing - Unit Tests", () => {
 
   describe("Limit parameter validation", () => {
     const capLimit = (limit: string | null | undefined, maxLimit: number): number => {
-      return Math.min(maxLimit, Math.max(1, parseInt(limit ?? "20", 10)))
+      return Math.min(maxLimit, Math.max(1, Number.parseInt(limit ?? "20", 10)))
     }
 
     it("respects default limit when not provided", () => {

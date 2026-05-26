@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import type * as pgSchema from "database/schema/pg/index"
-import type { SearchEngine, SearchQuery, SearchDocument, SearchResultSet } from "./types"
+import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { SearchEngineImpl } from "./search-engine-impl"
+import type { SearchDocument, SearchEngine, SearchQuery, SearchResultSet } from "./types"
 
 /**
  * PostgreSQL search engine.

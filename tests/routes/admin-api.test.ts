@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { resetDb, getDb } from "database/db"
+import { getDb, resetDb } from "database/db"
 import type { Database } from "database/db-types"
+import { beforeEach, describe, expect, it } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 import { mockEvent } from "../helpers/mock-event"
 
@@ -53,9 +53,7 @@ describe("Admin Datasets API", () => {
 
   describe("GET /stats/api/v1/admin/datasets/trash", () => {
     it("rejects non-admin users", async () => {
-      const { GET } = await import(
-        "$lib/../routes/stats/api/v1/admin/datasets/trash/+server.ts"
-      )
+      const { GET } = await import("$lib/../routes/stats/api/v1/admin/datasets/trash/+server.ts")
       const editorUser = { id: "editor-1", email: "editor@test.com", role: "editor" as const }
 
       const response = await GET(mockEvent({ user: editorUser }))
@@ -63,9 +61,7 @@ describe("Admin Datasets API", () => {
     })
 
     it("returns empty trash when admin", async () => {
-      const { GET } = await import(
-        "$lib/../routes/stats/api/v1/admin/datasets/trash/+server.ts"
-      )
+      const { GET } = await import("$lib/../routes/stats/api/v1/admin/datasets/trash/+server.ts")
       const adminUser = { id: "admin-1", email: "admin@test.com", role: "admin" as const }
 
       const response = await GET(mockEvent({ user: adminUser }))

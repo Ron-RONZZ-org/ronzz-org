@@ -1,4 +1,4 @@
-import { hash, Algorithm } from "@node-rs/argon2"
+import { Algorithm, hash } from "@node-rs/argon2"
 import { eq } from "drizzle-orm"
 import { getDb } from "../db"
 import { schema } from "../schema/proxy"
@@ -18,10 +18,7 @@ if (!ADMIN_PASSWORD) {
 async function seedAdminUser() {
   const db = getDb()
 
-  const existing = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.email, ADMIN_EMAIL))
+  const existing = await db.select().from(schema.users).where(eq(schema.users.email, ADMIN_EMAIL))
   if (existing.length > 0) {
     console.log("Admin user already exists, skipping seed.")
     return

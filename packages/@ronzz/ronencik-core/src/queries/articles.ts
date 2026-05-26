@@ -1,10 +1,10 @@
-import { readdirSync, readFileSync, existsSync } from "node:fs"
-import { join, extname } from "node:path"
-import { eq, like, and, desc, sql } from "drizzle-orm"
-import { schema } from "database/schema/proxy"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
-import { toLocale, logger, tryResult, type Result, type AppError } from "@ronzz/shared-core"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
+import { extname, join } from "node:path"
+import { type AppError, type Result, logger, toLocale, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
+import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { schema } from "database/schema/proxy"
+import { and, desc, eq, like, sql } from "drizzle-orm"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -23,6 +23,7 @@ export async function listArticles(
   db: Database,
   options: ListOptions = {},
 ): Promise<{ articles: ArticleMetadata[]; total: number }> {
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle condition array accepts mixed types
   const conditions: any[] = []
   const locale = toLocale(options.locale)
   if (locale) {
@@ -44,10 +45,7 @@ export async function listArticles(
   )
 
   const countResult = await queryGet<{ count: number }>(
-    d(db)
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.articlesMetadata)
-      .where(where),
+    d(db).select({ count: sql<number>`count(*)` }).from(schema.articlesMetadata).where(where),
   )
   const total = countResult?.count ?? 0
 
@@ -59,10 +57,7 @@ export async function getArticleBySlug(
   slug: string,
 ): Promise<ArticleMetadata | undefined> {
   const row = await queryGet<ArticleMetadata>(
-    d(db)
-      .select()
-      .from(schema.articlesMetadata)
-      .where(eq(schema.articlesMetadata.slug, slug)),
+    d(db).select().from(schema.articlesMetadata).where(eq(schema.articlesMetadata.slug, slug)),
   )
   return row as ArticleMetadata | undefined
 }
@@ -122,15 +117,10 @@ export async function upsertArticleMetadata(
   })
 }
 
-export async function deleteArticle(
-  db: Database,
-  id: string,
-): Promise<Result<boolean, AppError>> {
+export async function deleteArticle(db: Database, id: string): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
     const result = await queryRun(
-      d(db)
-        .delete(schema.articlesMetadata)
-        .where(eq(schema.articlesMetadata.id, id)),
+      d(db).delete(schema.articlesMetadata).where(eq(schema.articlesMetadata.id, id)),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
@@ -163,10 +153,7 @@ export function extractSvxFrontmatter(filePath: string): Record<string, unknown>
 }
 
 /** Scan the encik content directory and upsert all .svx metadata. */
-export async function syncEncikArticles(
-  db: Database,
-  contentDir: string,
-): Promise<number> {
+export async function syncEncikArticles(db: Database, contentDir: string): Promise<number> {
   let count = 0
   if (!existsSync(contentDir)) return 0
 

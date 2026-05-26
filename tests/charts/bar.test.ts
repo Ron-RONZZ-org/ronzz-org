@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
-import { barChart, defaultDimensions } from "@ronzz/ronstats-core/charts"
 import type { Datapoint } from "@ronzz/ronstats-core"
+import { barChart, defaultDimensions } from "@ronzz/ronstats-core/charts"
+import { describe, expect, it } from "vitest"
 
 describe("barChart", () => {
   const dim = defaultDimensions(600)
@@ -15,7 +15,17 @@ describe("barChart", () => {
 
   it("renders a single bar", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 10, unit: "kg", year: "2024", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 10,
+        unit: "kg",
+        year: "2024",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = barChart(dps, dim)
     expect(result.bars).toHaveLength(1)
@@ -27,8 +37,28 @@ describe("barChart", () => {
 
   it("renders multiple bars in sorted order", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "B", value: 20, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
-      { id: "2", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 10, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "B",
+        value: 20,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
+      {
+        id: "2",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 10,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = barChart(dps, dim)
     expect(result.bars).toHaveLength(2)
@@ -39,7 +69,17 @@ describe("barChart", () => {
 
   it("uses d3.ticks for round tick labels", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 100, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 100,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = barChart(dps, dim)
     // d3.ticks returns ~5+1 round human-readable values
@@ -51,7 +91,17 @@ describe("barChart", () => {
 
   it("handles all-zero values", () => {
     const dps: Datapoint[] = [
-      { id: "1", datasetId: "d1", dimensionKey: "cat", dimensionValue: "A", value: 0, unit: "", year: "", metadata: {}, createdAt: "2024-01-01" },
+      {
+        id: "1",
+        datasetId: "d1",
+        dimensionKey: "cat",
+        dimensionValue: "A",
+        value: 0,
+        unit: "",
+        year: "",
+        metadata: {},
+        createdAt: "2024-01-01",
+      },
     ]
     const result = barChart(dps, dim)
     expect(result.bars).toHaveLength(1)

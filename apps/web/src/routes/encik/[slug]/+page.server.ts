@@ -1,10 +1,10 @@
 import { readdirSync } from "node:fs"
-import { join, extname } from "node:path"
+import { extname, join } from "node:path"
+import { getArticleBySlug } from "@ronzz/ronencik-core"
 import { error } from "@sveltejs/kit"
-import type { PageServerLoad } from "./$types"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { getArticleBySlug } from "@ronzz/ronencik-core"
+import type { PageServerLoad } from "./$types"
 
 /** Provide entries for prerendering from .svx files on disk. */
 export function entries(): { slug: string }[] {

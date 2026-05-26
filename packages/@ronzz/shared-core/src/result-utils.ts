@@ -1,5 +1,5 @@
-import { ok, fail, type Result } from "./result"
 import { AppError } from "./errors/app-error"
+import { type Result, fail, ok } from "./result"
 
 /**
  * Wraps an async function in a try/catch and returns a Result.
@@ -16,10 +16,7 @@ export async function tryResult<T>(
     return ok(value)
   } catch (e) {
     if (e instanceof AppError) return fail(e)
-    const message =
-      e instanceof Error ? e.message : "An unknown error occurred"
-    return fail(
-      errorMapper?.(e) ?? new AppError(message, "INTERNAL_ERROR", 500),
-    )
+    const message = e instanceof Error ? e.message : "An unknown error occurred"
+    return fail(errorMapper?.(e) ?? new AppError(message, "INTERNAL_ERROR", 500))
   }
 }

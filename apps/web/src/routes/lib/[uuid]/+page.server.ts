@@ -1,8 +1,8 @@
-import type { PageServerLoad } from "./$types"
+import { getResource } from "@ronzz/ronlib-core"
 import { error } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { getResource } from "@ronzz/ronlib-core"
+import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ params }) => {
   const db = getDb() as Database

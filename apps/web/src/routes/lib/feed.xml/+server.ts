@@ -1,8 +1,8 @@
-import type { RequestHandler } from "./$types"
-import { eq, desc, isNull } from "drizzle-orm"
+import { TtlCache, escapeXml } from "@ronzz/shared-core"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
-import { TtlCache, escapeXml } from "@ronzz/shared-core"
+import { desc, eq, isNull } from "drizzle-orm"
+import type { RequestHandler } from "./$types"
 
 const BASE = process.env.ORIGIN || "https://ronzz.org"
 const FEED_LIMIT = 50
@@ -47,10 +47,7 @@ export const GET: RequestHandler = async () => {
         createdAt: schema.resources.createdAt,
       })
       .from(schema.resources)
-      .leftJoin(
-        schema.resourceTypes,
-        eq(schema.resources.typeId, schema.resourceTypes.id),
-      )
+      .leftJoin(schema.resourceTypes, eq(schema.resources.typeId, schema.resourceTypes.id))
       .where(isNull(schema.resources.deletedAt))
       .orderBy(desc(schema.resources.createdAt))
       .limit(FEED_LIMIT)
@@ -71,9 +68,9 @@ export const GET: RequestHandler = async () => {
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
     "  <channel>",
-    `    <title>RonLib — Latest Resources</title>`,
+    "    <title>RonLib — Latest Resources</title>",
     `    <link>${BASE}/lib</link>`,
-    `    <description>Recently added resources on RonLib</description>`,
+    "    <description>Recently added resources on RonLib</description>",
     `    <atom:link href="${BASE}/lib/feed.xml" rel="self" type="application/rss+xml"/>`,
     ...items.map(
       (item) => `    <item>

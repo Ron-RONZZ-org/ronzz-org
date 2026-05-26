@@ -1,17 +1,13 @@
-import { scaleLinear, scaleBand, ticks } from "d3"
+import { scaleBand, scaleLinear, ticks } from "d3"
 import type { Datapoint } from "../../types"
 import type { BarChartResult, ChartDimensions } from "../types"
 import { getInner } from "../types"
 import { formatNumber } from "./format-number"
 
-export function barChart(
-  datapoints: Datapoint[],
-  dim: ChartDimensions,
-): BarChartResult {
+export function barChart(datapoints: Datapoint[], dim: ChartDimensions): BarChartResult {
   const inner = getInner(dim)
 
-  const labelKey = (dp: Datapoint): string =>
-    dp.year || dp.dimensionValue || dp.dimensionKey
+  const labelKey = (dp: Datapoint): string => dp.year || dp.dimensionValue || dp.dimensionKey
 
   const data = [...datapoints]
     .sort((a, b) => labelKey(a).localeCompare(labelKey(b)))
@@ -24,13 +20,12 @@ export function barChart(
 
   const yMin = 0
   const yMax = data.reduce((max, d) => Math.max(max, d.value), 1) * 1.1
-  const yScale = scaleLinear()
-    .domain([yMin, yMax])
-    .range([inner.height, 0])
+  const yScale = scaleLinear().domain([yMin, yMax]).range([inner.height, 0])
 
   const bars = data.map((d) => ({
     key: d.key,
     value: d.value,
+    // biome-ignore lint/style/noNonNullAssertion: d.key is guaranteed in the domain (derived from same data)
     x: xScale(d.key)!,
     y: yScale(d.value),
     width: xScale.bandwidth(),
@@ -45,6 +40,7 @@ export function barChart(
   return {
     bars,
     xTicks: data.map((d) => ({
+      // biome-ignore lint/style/noNonNullAssertion: d.key is guaranteed in the domain
       value: xScale(d.key)! + xScale.bandwidth() / 2,
       label: d.key,
     })),
@@ -52,5 +48,3 @@ export function barChart(
     unit: datapoints[0]?.unit ?? "",
   }
 }
-
-

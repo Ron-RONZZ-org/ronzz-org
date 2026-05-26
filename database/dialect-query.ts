@@ -8,8 +8,6 @@
 
 import { detectDialect } from "./schema/proxy"
 
-type Dialect = ReturnType<typeof detectDialect>
-
 /**
  * Return a dialect-appropriate current-timestamp value.
  * - PG:      `new Date()` (for `timestamp` columns)
@@ -54,5 +52,7 @@ export async function queryGet<T>(q: unknown): Promise<T | undefined> {
  * - PG:     await q
  */
 export async function queryRun(q: unknown): Promise<{ changes?: number; rowCount?: number }> {
-  return detectDialect() === "pg" ? await (q as Promise<{ rowCount: number }>) : await (q as { run(): { changes: number } }).run()
+  return detectDialect() === "pg"
+    ? await (q as Promise<{ rowCount: number }>)
+    : await (q as { run(): { changes: number } }).run()
 }

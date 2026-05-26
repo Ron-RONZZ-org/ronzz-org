@@ -1,8 +1,8 @@
-import { eq, like, or, and, isNull, isNotNull, desc, sql } from "drizzle-orm"
-import { schema } from "database/schema/proxy"
+import { type AppError, type Result, escapeLike, toLocale, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
-import { tryResult, toLocale, escapeLike, type Result, type AppError } from "@ronzz/shared-core"
+import { schema } from "database/schema/proxy"
+import { and, desc, eq, isNotNull, isNull, like, or, sql } from "drizzle-orm"
 import type { Dataset, DatasetInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -24,6 +24,7 @@ export async function listDatasets(
   db: Database,
   options: ListOptions = {},
 ): Promise<{ datasets: Dataset[]; total: number }> {
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle condition array accepts mixed types
   const conditions: any[] = []
 
   if (!options.includeTrash) {
@@ -32,12 +33,8 @@ export async function listDatasets(
 
   if (options.search) {
     const term = `%${escapeLike(options.search)}%`
-    conditions.push(
-      or(
-        like(schema.datasets.title, term),
-        like(schema.datasets.description, term),
-      )!,
-    )
+    // biome-ignore lint/style/noNonNullAssertion: or() returns undefined only for empty arrays
+    conditions.push(or(like(schema.datasets.title, term), like(schema.datasets.description, term))!)
   }
   const locale = toLocale(options.locale)
   if (locale) {
@@ -49,36 +46,23 @@ export async function listDatasets(
   const offset = options.offset ?? 0
 
   const rows = await queryAll<Dataset>(
-    d(db)
-      .select()
-      .from(schema.datasets)
-      .where(where)
-      .limit(limit)
-      .offset(offset),
+    d(db).select().from(schema.datasets).where(where).limit(limit).offset(offset),
   )
 
   const countResult = await queryGet<{ count: number }>(
-    d(db)
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.datasets)
-      .where(where),
+    d(db).select({ count: sql<number>`count(*)` }).from(schema.datasets).where(where),
   )
   const total = countResult?.count ?? 0
 
   return { datasets: rows as Dataset[], total }
 }
 
-export async function getDataset(
-  db: Database,
-  id: string,
-): Promise<Dataset | undefined> {
+export async function getDataset(db: Database, id: string): Promise<Dataset | undefined> {
   const row = await queryGet<Dataset>(
     d(db)
       .select()
       .from(schema.datasets)
-      .where(
-        and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
-      ),
+      .where(and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt))),
   )
   return row as Dataset | undefined
 }
@@ -134,9 +118,7 @@ export async function softDeleteDataset(
       d(db)
         .update(schema.datasets)
         .set({ deletedAt: new Date().toISOString() })
-        .where(
-          and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt)),
-        ),
+        .where(and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
@@ -177,18 +159,13 @@ export async function listTrashDatasets(
 }
 
 /** Restore a soft-deleted dataset. */
-export async function restoreDataset(
-  db: Database,
-  id: string,
-): Promise<Result<boolean, AppError>> {
+export async function restoreDataset(db: Database, id: string): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
     const result = await queryRun(
       d(db)
         .update(schema.datasets)
         .set({ deletedAt: null })
-        .where(
-          and(eq(schema.datasets.id, id), isNotNull(schema.datasets.deletedAt)),
-        ),
+        .where(and(eq(schema.datasets.id, id), isNotNull(schema.datasets.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
@@ -201,16 +178,8 @@ export async function hardDeleteDataset(
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
     // Delete datapoints first to avoid FK violation on PG
-    await queryRun(
-      d(db)
-        .delete(schema.datapoints)
-        .where(eq(schema.datapoints.datasetId, id)),
-    )
-    const result = await queryRun(
-      d(db)
-        .delete(schema.datasets)
-        .where(eq(schema.datasets.id, id)),
-    )
+    await queryRun(d(db).delete(schema.datapoints).where(eq(schema.datapoints.datasetId, id)))
+    const result = await queryRun(d(db).delete(schema.datasets).where(eq(schema.datasets.id, id)))
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }

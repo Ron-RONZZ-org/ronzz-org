@@ -1,9 +1,9 @@
-import type { PageServerLoad } from "./$types"
+import { getDataset, listDatapoints } from "@ronzz/ronstats-core"
 import { error } from "@sveltejs/kit"
 import { getDb } from "database/db"
-import { getDataset, listDatapoints } from "@ronzz/ronstats-core"
+import type { PageServerLoad } from "./$types"
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params }) => {
   const db = getDb()
   const dataset = await getDataset(db, params.uuid)
 

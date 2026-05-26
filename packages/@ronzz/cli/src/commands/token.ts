@@ -17,16 +17,21 @@ export function tokenCommand(yargs: Argv, client: ApiClient): Argv {
         console.log("  Save this token — it won't be shown again.")
       },
     )
-    .command("list", "List API tokens", () => {}, async () => {
-      const tokens = await client.listTokens()
-      if (tokens.length === 0) {
-        console.log("No tokens found.")
-        return
-      }
-      for (const t of tokens) {
-        console.log(`${t.id.padEnd(36)} ${t.name}`)
-      }
-    })
+    .command(
+      "list",
+      "List API tokens",
+      () => {},
+      async () => {
+        const tokens = await client.listTokens()
+        if (tokens.length === 0) {
+          console.log("No tokens found.")
+          return
+        }
+        for (const t of tokens) {
+          console.log(`${t.id.padEnd(36)} ${t.name}`)
+        }
+      },
+    )
     .command(
       "revoke <id>",
       "Revoke an API token",

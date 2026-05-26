@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
-import { sql } from "drizzle-orm"
 import { detectDialect } from "database/schema/proxy"
+import { sql } from "drizzle-orm"
+import type { RequestHandler } from "./$types"
 
 export const GET: RequestHandler = async () => {
   let dbStatus = "disconnected"
@@ -13,9 +13,11 @@ export const GET: RequestHandler = async () => {
       // Ping the database to verify the connection is actually live
       // Use dialect-appropriate execution method
       if (detectDialect() === "pg") {
+        // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB requires dynamic dispatch
         await (db as any).execute(sql`SELECT 1`)
       } else {
-        (db as any).run(sql`SELECT 1`)
+        // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB requires dynamic dispatch
+        ;(db as any).run(sql`SELECT 1`)
       }
       dbStatus = "connected"
     }

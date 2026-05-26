@@ -1,12 +1,12 @@
-import type { Handle } from "@sveltejs/kit"
 import { randomBytes } from "node:crypto"
-import { logger } from "@ronzz/shared-core"
 import {
-  handleRequestContext,
   handleRateLimit,
+  handleRequestContext,
   handleSessionAuth,
   handleTokenAuth,
 } from "$lib/server/middleware"
+import { logger } from "@ronzz/shared-core"
+import type { Handle } from "@sveltejs/kit"
 
 const MAX_BODY_SIZE = 1_048_576 // 1 MB
 
@@ -33,8 +33,8 @@ function validateEnv(): void {
 // Run once at module load
 validateEnv()
 
-/** Allowed origins for CSRF check. In production, set ORIGIN env var. */
-function getAllowedOrigins(): string[] {
+/** Allowed origins for CSRF check. Evaluated at module load — origins don't change at runtime. */
+function buildAllowedOrigins(): string[] {
   const origins: string[] = []
   const envOrigin = process.env.ORIGIN
   if (envOrigin) {
@@ -46,6 +46,8 @@ function getAllowedOrigins(): string[] {
   }
   return origins
 }
+
+const ALLOWED_ORIGINS = buildAllowedOrigins()
 
 /** Match an origin/referer URL against allowed origins by comparing host (hostname:port). */
 function isOriginAllowed(value: string, allowedOrigins: string[]): boolean {
@@ -76,7 +78,7 @@ function csrfCheck(event: Parameters<Handle>[0]["event"]): Response | null {
     return null
   }
 
-  const allowedOrigins = getAllowedOrigins()
+  const allowedOrigins = ALLOWED_ORIGINS
   const origin = event.request.headers.get("origin")
   const referer = event.request.headers.get("referer")
 

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, real } from "drizzle-orm/pg-core"
+import { pgTable, real, text, timestamp } from "drizzle-orm/pg-core"
 
 export const searchIndex = pgTable("search_index", {
   id: text("id").primaryKey(),

@@ -1,7 +1,7 @@
 import { detectDialect } from "database/schema/proxy"
-import type { SearchEngine } from "./types"
-import { SqliteSearchEngine } from "./sqlite-engine"
 import { PostgresSearchEngine } from "./pg-engine"
+import { SqliteSearchEngine } from "./sqlite-engine"
+import type { SearchEngine } from "./types"
 
 let _engine: SearchEngine | null = null
 let _engineDialect: string | null = null

@@ -1,8 +1,8 @@
-import type { RequestHandler } from "./$types"
-import { isNull } from "drizzle-orm"
+import { TtlCache, escapeXml } from "@ronzz/shared-core"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
-import { TtlCache, escapeXml } from "@ronzz/shared-core"
+import { isNull } from "drizzle-orm"
+import type { RequestHandler } from "./$types"
 
 const BASE = process.env.ORIGIN || "https://ronzz.org"
 
@@ -46,7 +46,8 @@ export const GET: RequestHandler = async () => {
     for (const ds of datasets) {
       entries.push({
         loc: `${BASE}/stats/${ds.id}`,
-        lastmod: typeof ds.updatedAt === "string" ? ds.updatedAt : (ds.updatedAt as Date).toISOString(),
+        lastmod:
+          typeof ds.updatedAt === "string" ? ds.updatedAt : (ds.updatedAt as Date).toISOString(),
         changefreq: "monthly",
         priority: 0.6,
       })
