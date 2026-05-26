@@ -174,6 +174,8 @@ ronzz-org/
 8. Do NOT use `@apply` in Svelte `<style>` blocks (Tailwind v4 limitation); use inline utility classes instead
 9. CSP is nonce-based, generated in `hooks.server.ts` — do not set CSP in Caddy's static config
 10. Health endpoint lives at `GET /api/v1/health` (top-level), old route at `/stats/api/v1/health` kept for compat
+11. **Chunked body TOCTOU guard**: When buffering chunked request bodies in `hooks.server.ts`, check each chunk size (max 64 KB) BEFORE pushing to the buffer array to prevent a single oversized chunk from bypassing the total size check
+12. **better-sqlite3 transactions are sync**: Drizzle's better-sqlite3 adapter wraps synchronous calls in Promises, but `db.transaction()` callbacks MUST be synchronous (no `async`/`await` inside). PostgreSQL transactions support async callbacks.
 
 ---
 
