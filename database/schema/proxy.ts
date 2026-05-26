@@ -1,13 +1,12 @@
-import * as sqliteSchema from "./sqlite/index"
 import * as pgSchema from "./pg/index"
+import * as sqliteSchema from "./sqlite/index"
 
 let _cachedDialect: "sqlite" | "pg" | null = null
 
 export function detectDialect(): "sqlite" | "pg" {
   if (_cachedDialect) return _cachedDialect
   const url = process.env.DATABASE_URL ?? ""
-  _cachedDialect =
-    url.startsWith("postgres") || url.startsWith("postgresql") ? "pg" : "sqlite"
+  _cachedDialect = url.startsWith("postgres") || url.startsWith("postgresql") ? "pg" : "sqlite"
   return _cachedDialect
 }
 

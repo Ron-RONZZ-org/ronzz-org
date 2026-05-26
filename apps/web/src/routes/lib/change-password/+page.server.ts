@@ -1,12 +1,12 @@
-import { fail, redirect } from "@sveltejs/kit"
-import { eq, and, gt } from "drizzle-orm"
 import { createHash } from "node:crypto"
 import { hash, verify } from "@node-rs/argon2"
-import { getDb } from "database/db"
-import { schema } from "database/schema/proxy"
-import { dbNow } from "database/dialect-query"
 import { checkRateLimit, logger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
+import { fail, redirect } from "@sveltejs/kit"
+import { getDb } from "database/db"
+import { dbNow } from "database/dialect-query"
+import { schema } from "database/schema/proxy"
+import { and, eq, gt } from "drizzle-orm"
 import type { Actions } from "./$types"
 
 const changePasswordLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
@@ -62,12 +62,7 @@ export const actions: Actions = {
       const sessionRows = await db
         .select({ userId: schema.sessions.userId })
         .from(schema.sessions)
-        .where(
-          and(
-            eq(schema.sessions.id, pwReset),
-            gt(schema.sessions.expiresAt, now),
-          ),
-        )
+        .where(and(eq(schema.sessions.id, pwReset), gt(schema.sessions.expiresAt, now)))
       const session = sessionRows?.[0]
       if (!session) {
         cookies.delete("pw_reset", { path: "/lib/change-password" })

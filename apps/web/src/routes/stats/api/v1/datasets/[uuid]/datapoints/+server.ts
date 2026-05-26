@@ -1,10 +1,16 @@
+import { apiHandler } from "$lib/server/middleware"
+import {
+  bulkCreateDatapoints,
+  countDatapoints,
+  createDatapoint,
+  datapointSchema,
+  listDatapoints,
+} from "@ronzz/ronstats-core"
+import type { DatapointInput } from "@ronzz/ronstats-core"
 import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { listDatapoints, countDatapoints, createDatapoint, bulkCreateDatapoints, datapointSchema } from "@ronzz/ronstats-core"
-import { apiHandler } from "$lib/server/middleware"
-import type { DatapointInput } from "@ronzz/ronstats-core"
+import type { RequestHandler } from "./$types"
 
 const DEFAULT_DATAPOINT_LIMIT = 1000
 const DATAPOINT_LIMIT_MAX = 10000
@@ -13,8 +19,11 @@ const DATAPOINT_BULK_MAX = 5000
 export const GET: RequestHandler = apiHandler(async ({ params, url }) => {
   const db = getDb() as Database
 
-  const limit = Math.min(parseInt(url.searchParams.get("limit") ?? String(DEFAULT_DATAPOINT_LIMIT), 10), DATAPOINT_LIMIT_MAX)
-  const offset = Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10))
+  const limit = Math.min(
+    Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_DATAPOINT_LIMIT), 10),
+    DATAPOINT_LIMIT_MAX,
+  )
+  const offset = Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10))
 
   const datapoints = await listDatapoints(db, params.uuid, { limit, offset })
   const total = await countDatapoints(db, params.uuid)

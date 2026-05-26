@@ -1,8 +1,8 @@
-import { redirect } from "@sveltejs/kit"
 import { createHash } from "node:crypto"
-import { eq } from "drizzle-orm"
+import { redirect } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
+import { eq } from "drizzle-orm"
 import type { RequestHandler } from "./$types"
 
 export const POST: RequestHandler = async ({ cookies }) => {

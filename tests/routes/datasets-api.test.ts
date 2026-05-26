@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { resetDb, getDb } from "database/db"
+import { getDb, resetDb } from "database/db"
 import type { Database } from "database/db-types"
+import { beforeEach, describe, expect, it } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 import { mockEvent } from "../helpers/mock-event"
 

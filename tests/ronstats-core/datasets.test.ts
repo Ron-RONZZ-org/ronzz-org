@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { resetDb, getDb } from "database/db"
-import type { Database } from "database/db-types"
 import {
-  listDatasets,
-  getDataset,
   createDataset,
-  softDeleteDataset,
+  getDataset,
+  hardDeleteDataset,
+  listDatasets,
   listTrashDatasets,
   restoreDataset,
-  hardDeleteDataset,
+  softDeleteDataset,
 } from "@ronzz/ronstats-core"
 import type { DatasetInput } from "@ronzz/ronstats-core"
+import { getDb, resetDb } from "database/db"
+import type { Database } from "database/db-types"
+import { beforeEach, describe, expect, it } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 
 const sampleInput: DatasetInput = {
@@ -151,7 +151,7 @@ describe("datasets queries", () => {
 
       const result = await getDataset(db, created.value.id)
       expect(result).toBeTruthy()
-      expect(result!.title).toBe("Test Dataset")
+      expect(result?.title).toBe("Test Dataset")
     })
 
     it("returns undefined for soft-deleted dataset", async () => {

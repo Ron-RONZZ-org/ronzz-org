@@ -1,10 +1,10 @@
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
+import { deleteArticle, listArticles, upsertArticleMetadata } from "@ronzz/ronencik-core"
+import { articleMetadataSchema } from "@ronzz/ronencik-core"
 import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { listArticles, upsertArticleMetadata, deleteArticle } from "@ronzz/ronencik-core"
-import { articleMetadataSchema } from "@ronzz/ronencik-core"
-import { requireAdmin, apiHandler } from "$lib/server/middleware"
+import type { RequestHandler } from "./$types"
 
 const MAX_LIMIT = 200
 const DEFAULT_LIMIT = 50
@@ -14,8 +14,11 @@ export const GET: RequestHandler = apiHandler(async ({ url, locals }) => {
   if (adminCheck) return adminCheck
   const db = getDb() as Database
   const { articles, total } = await listArticles(db, {
-    limit: Math.min(parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10), MAX_LIMIT),
-    offset: Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10)),
+    limit: Math.min(
+      Number.parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10),
+      MAX_LIMIT,
+    ),
+    offset: Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10)),
   })
   return json({ articles, total })
 })

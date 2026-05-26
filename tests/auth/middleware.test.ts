@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest"
 import { createHash, randomBytes } from "node:crypto"
-import { resetDb, getDb } from "database/db"
-import { schema } from "database/schema/proxy"
+import { getDb, resetDb } from "database/db"
 import type { Database } from "database/db-types"
-import { eq, and, gt, isNull } from "drizzle-orm"
+import { schema } from "database/schema/proxy"
+import { and, eq, gt, isNull } from "drizzle-orm"
+import { beforeEach, describe, expect, it } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 
 // NOTE: SQLite expects numbers for integer columns (not booleans).
@@ -44,12 +44,7 @@ describe("session auth logic", () => {
     const rows = await db
       .select({ userId: schema.sessions.userId })
       .from(schema.sessions)
-      .where(
-        and(
-          eq(schema.sessions.id, lookupHash),
-          gt(schema.sessions.expiresAt, Date.now()),
-        ),
-      )
+      .where(and(eq(schema.sessions.id, lookupHash), gt(schema.sessions.expiresAt, Date.now())))
 
     expect(rows).toHaveLength(1)
     expect(rows[0].userId).toBe(testUserId)
@@ -80,12 +75,7 @@ describe("session auth logic", () => {
     const rows = await db
       .select({ userId: schema.sessions.userId })
       .from(schema.sessions)
-      .where(
-        and(
-          eq(schema.sessions.id, lookupHash),
-          gt(schema.sessions.expiresAt, Date.now()),
-        ),
-      )
+      .where(and(eq(schema.sessions.id, lookupHash), gt(schema.sessions.expiresAt, Date.now())))
 
     expect(rows).toHaveLength(0)
   })
@@ -130,7 +120,7 @@ describe("token auth logic", () => {
       userId: testUserId,
       name: "test-token",
       tokenHash,
-      prefix: "ronzz_" + randomBytes(4).toString("hex"),
+      prefix: `ronzz_${randomBytes(4).toString("hex")}`,
       createdAt: new Date().toISOString(),
     })
 
@@ -143,12 +133,7 @@ describe("token auth logic", () => {
       })
       .from(schema.apiTokens)
       .innerJoin(schema.users, eq(schema.apiTokens.userId, schema.users.id))
-      .where(
-        and(
-          eq(schema.apiTokens.tokenHash, lookupHash),
-          isNull(schema.apiTokens.revokedAt),
-        ),
-      )
+      .where(and(eq(schema.apiTokens.tokenHash, lookupHash), isNull(schema.apiTokens.revokedAt)))
 
     expect(rows).toHaveLength(1)
     expect(rows[0].userEmail).toBe("token-test@example.com")
@@ -175,7 +160,7 @@ describe("token auth logic", () => {
       userId: testUserId,
       name: "revoked-token",
       tokenHash,
-      prefix: "ronzz_" + randomBytes(4).toString("hex"),
+      prefix: `ronzz_${randomBytes(4).toString("hex")}`,
       revokedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     })
@@ -185,12 +170,7 @@ describe("token auth logic", () => {
     const rows = await db
       .select()
       .from(schema.apiTokens)
-      .where(
-        and(
-          eq(schema.apiTokens.tokenHash, lookupHash),
-          isNull(schema.apiTokens.revokedAt),
-        ),
-      )
+      .where(and(eq(schema.apiTokens.tokenHash, lookupHash), isNull(schema.apiTokens.revokedAt)))
 
     expect(rows).toHaveLength(0)
   })
@@ -215,7 +195,7 @@ describe("token auth logic", () => {
         userId: testUserId,
         name: `token-${i}`,
         tokenHash: createHash("sha256").update(tokenValue).digest("hex"),
-        prefix: "ronzz_" + randomBytes(4).toString("hex"),
+        prefix: `ronzz_${randomBytes(4).toString("hex")}`,
         createdAt: new Date().toISOString(),
       })
     }

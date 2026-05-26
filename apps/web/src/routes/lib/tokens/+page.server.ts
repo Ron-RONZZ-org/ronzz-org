@@ -1,8 +1,8 @@
-import { fail, redirect } from "@sveltejs/kit"
-import { eq, and, isNull } from "drizzle-orm"
 import { createHash } from "node:crypto"
+import { fail, redirect } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
+import { and, eq, isNull } from "drizzle-orm"
 import type { Actions, PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -88,12 +88,7 @@ export const actions: Actions = {
     const tokenRows = await db
       .select({ id: schema.apiTokens.id })
       .from(schema.apiTokens)
-      .where(
-        and(
-          eq(schema.apiTokens.id, tokenId),
-          eq(schema.apiTokens.userId, locals.user.id),
-        ),
-      )
+      .where(and(eq(schema.apiTokens.id, tokenId), eq(schema.apiTokens.userId, locals.user.id)))
     const found = tokenRows[0]
 
     if (!found) {

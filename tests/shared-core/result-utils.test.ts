@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
-import { tryResult, ok, fail, AppError } from "@ronzz/shared-core"
+import { AppError, fail, ok, tryResult } from "@ronzz/shared-core"
+import { describe, expect, it } from "vitest"
 
 describe("tryResult", () => {
   it("returns ok for successful async function", async () => {
@@ -67,7 +67,6 @@ describe("tryResult", () => {
 
   it("handles non-Error throws gracefully", async () => {
     const result = await tryResult(async () => {
-      // biome-ignore lint/correctness/noThrowLiteral: testing non-Error throw handling
       throw "string error"
     })
     expect(result.ok).toBe(false)

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { resetDb, closeDb } from "database/db"
+import { closeDb, resetDb } from "database/db"
+import { beforeEach, describe, expect, it } from "vitest"
 import { mockEvent } from "../helpers/mock-event"
 
 describe("Health endpoint", () => {

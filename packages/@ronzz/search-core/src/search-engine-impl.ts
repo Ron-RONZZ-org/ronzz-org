@@ -1,8 +1,14 @@
-import { eq, and, like, or, sql } from "drizzle-orm"
-import { schema } from "database/schema/proxy"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
 import { escapeLike } from "@ronzz/shared-core"
-import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
+import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { schema } from "database/schema/proxy"
+import { and, eq, like, or, sql } from "drizzle-orm"
+import type {
+  SearchDocument,
+  SearchEngine,
+  SearchQuery,
+  SearchResult,
+  SearchResultSet,
+} from "./types"
 
 /**
  * Unified search engine implementation that works with both SQLite and PostgreSQL.
@@ -16,11 +22,13 @@ export class SearchEngineImpl implements SearchEngine {
   ) {}
 
   async search(query: SearchQuery): Promise<SearchResultSet> {
+    // biome-ignore lint/suspicious/noExplicitAny: Drizzle condition array accepts mixed types
     const conditions: any[] = []
 
     if (query.query) {
       const searchTerm = `%${escapeLike(query.query)}%`
       conditions.push(
+        // biome-ignore lint/style/noNonNullAssertion: or() returns undefined only for empty arrays
         or(
           like(schema.searchIndex.title, searchTerm),
           like(schema.searchIndex.description, searchTerm),
@@ -42,12 +50,7 @@ export class SearchEngineImpl implements SearchEngine {
     const offset = Math.max(0, query.offset ?? 0)
     const limit = Math.min(query.limit ?? DEFAULT_PAGE_SIZE, 1000)
 
-    const q = this.db
-      .select()
-      .from(schema.searchIndex)
-      .where(where)
-      .limit(limit)
-      .offset(offset)
+    const q = this.db.select().from(schema.searchIndex).where(where).limit(limit).offset(offset)
 
     const rows = await queryAll<Record<string, unknown>>(q)
 
@@ -103,11 +106,7 @@ export class SearchEngineImpl implements SearchEngine {
   }
 
   async remove(id: string): Promise<void> {
-    await queryRun(
-      this.db
-        .delete(schema.searchIndex)
-        .where(eq(schema.searchIndex.id, id)),
-    )
+    await queryRun(this.db.delete(schema.searchIndex).where(eq(schema.searchIndex.id, id)))
   }
 
   /** Batch-reindex documents. */

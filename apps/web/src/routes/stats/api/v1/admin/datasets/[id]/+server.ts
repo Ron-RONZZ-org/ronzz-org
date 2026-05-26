@@ -1,9 +1,9 @@
+import { apiHandler, requireAdmin } from "$lib/server/middleware"
+import { deleteDataset } from "@ronzz/ronstats-core"
 import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { deleteDataset } from "@ronzz/ronstats-core"
-import { requireAdmin, apiHandler } from "$lib/server/middleware"
+import type { RequestHandler } from "./$types"
 
 export const DELETE: RequestHandler = apiHandler(async ({ params, locals }) => {
   const adminCheck = requireAdmin(locals)

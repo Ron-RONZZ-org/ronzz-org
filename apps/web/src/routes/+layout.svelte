@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Seo, Nav, Footer } from "@ronzz/ui"
+  import { tr_multi, webSiteSchema } from "@ronzz/shared-core"
   import type { Locale } from "@ronzz/shared-core"
   import "@ronzz/ui/app.css"
   import { page } from "$app/stores"
-  import { webSiteSchema } from "@ronzz/shared-core"
 
   let skip = $state(false)
 
@@ -28,7 +28,7 @@
   href="#main-content"
   class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-blue-600 focus:shadow-lg"
 >
-  {data.locale === "fr" ? "Aller au contenu" : data.locale === "eo" ? "Salti al enhavo" : "Skip to content"}
+  {tr_multi(data.locale, "Aller au contenu", "Salti al enhavo", "Skip to content")}
 </a>
 
 <Seo

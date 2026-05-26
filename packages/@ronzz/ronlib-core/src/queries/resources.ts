@@ -1,8 +1,8 @@
-import { eq, like, or, and, desc, asc, isNull, isNotNull, sql } from "drizzle-orm"
-import { schema } from "database/schema/proxy"
+import { type AppError, type Result, escapeLike, toLocale, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
-import { tryResult, toLocale, escapeLike, type Result, type AppError } from "@ronzz/shared-core"
+import { schema } from "database/schema/proxy"
+import { and, asc, desc, eq, isNotNull, isNull, like, or, sql } from "drizzle-orm"
 import type { Resource, ResourceInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -34,10 +34,8 @@ export async function listResources(
   if (options.search) {
     const term = `%${escapeLike(options.search)}%`
     conditions.push(
-      or(
-        like(schema.resources.title, term),
-        like(schema.resources.description, term),
-      )!,
+      // biome-ignore lint/style/noNonNullAssertion: or() returns undefined only for empty arrays
+      or(like(schema.resources.title, term), like(schema.resources.description, term))!,
     )
   }
   const locale = toLocale(options.locale)
@@ -50,9 +48,7 @@ export async function listResources(
   const offset = options.offset ?? 0
 
   const orderColumn =
-    options.orderBy === "title"
-      ? schema.resources.title
-      : schema.resources.createdAt
+    options.orderBy === "title" ? schema.resources.title : schema.resources.createdAt
   const orderDir = options.orderDir === "asc" ? asc : desc
 
   const rows = await queryAll<Resource>(
@@ -66,27 +62,19 @@ export async function listResources(
   )
 
   const countResult = await queryGet<{ count: number }>(
-    d(db)
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.resources)
-      .where(where),
+    d(db).select({ count: sql<number>`count(*)` }).from(schema.resources).where(where),
   )
   const total = countResult?.count ?? 0
 
   return { resources: rows as Resource[], total }
 }
 
-export async function getResource(
-  db: Database,
-  id: string,
-): Promise<Resource | undefined> {
+export async function getResource(db: Database, id: string): Promise<Resource | undefined> {
   const row = await queryGet<Resource>(
     d(db)
       .select()
       .from(schema.resources)
-      .where(
-        and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
-      ),
+      .where(and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt))),
   )
   return row as Resource | undefined
 }
@@ -129,18 +117,13 @@ export async function createResource(
 }
 
 /** Soft-delete a resource by setting deletedAt. */
-export async function deleteResource(
-  db: Database,
-  id: string,
-): Promise<Result<boolean, AppError>> {
+export async function deleteResource(db: Database, id: string): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
     const result = await queryRun(
       d(db)
         .update(schema.resources)
         .set({ deletedAt: new Date().toISOString() })
-        .where(
-          and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt)),
-        ),
+        .where(and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
@@ -190,9 +173,7 @@ export async function restoreResource(
       d(db)
         .update(schema.resources)
         .set({ deletedAt: null })
-        .where(
-          and(eq(schema.resources.id, id), isNotNull(schema.resources.deletedAt)),
-        ),
+        .where(and(eq(schema.resources.id, id), isNotNull(schema.resources.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
@@ -204,11 +185,7 @@ export async function hardDeleteResource(
   id: string,
 ): Promise<Result<boolean, AppError>> {
   return tryResult(async () => {
-    const result = await queryRun(
-      d(db)
-        .delete(schema.resources)
-        .where(eq(schema.resources.id, id)),
-    )
+    const result = await queryRun(d(db).delete(schema.resources).where(eq(schema.resources.id, id)))
     return (result.changes ?? result.rowCount ?? 0) > 0
   })
 }

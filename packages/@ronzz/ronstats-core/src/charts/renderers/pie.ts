@@ -1,10 +1,7 @@
 import type { Datapoint } from "../../types"
-import type { PieChartResult, ChartDimensions } from "../types"
+import type { ChartDimensions, PieChartResult } from "../types"
 
-export function pieChart(
-  datapoints: Datapoint[],
-  _dim: ChartDimensions,
-): PieChartResult {
+export function pieChart(datapoints: Datapoint[], _dim: ChartDimensions): PieChartResult {
   const labelKey = (dp: Datapoint): string =>
     [dp.dimensionKey, dp.dimensionValue].filter(Boolean).join(":::") || dp.year || dp.id
 

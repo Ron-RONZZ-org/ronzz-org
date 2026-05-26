@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest"
 import Database from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core"
-import { sql } from "drizzle-orm"
-import { queryAll, queryGet, queryRun, dbNow } from "database/dialect-query"
+import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { resetDialectCache } from "database/schema/proxy"
+import { sql } from "drizzle-orm"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
+import { beforeEach, describe, expect, it } from "vitest"
 
 /**
  * Minimal inline schema for testing dialect-agnostic helpers.
@@ -56,9 +56,7 @@ describe("dialect-query helpers (SQLite)", () => {
         }),
       )
 
-      const result = await queryRun(
-        db.delete(testItems).where(sql`id = 'del'`),
-      )
+      const result = await queryRun(db.delete(testItems).where(sql`id = 'del'`))
       expect(result.changes).toBeGreaterThanOrEqual(1)
 
       const rows = await queryAll(db.select().from(testItems))
@@ -68,12 +66,8 @@ describe("dialect-query helpers (SQLite)", () => {
 
   describe("queryAll", () => {
     it("returns all rows as array", async () => {
-      await queryRun(
-        db.insert(testItems).values({ id: "a", name: "alpha", value: 1 }),
-      )
-      await queryRun(
-        db.insert(testItems).values({ id: "b", name: "beta", value: 2 }),
-      )
+      await queryRun(db.insert(testItems).values({ id: "a", name: "alpha", value: 1 }))
+      await queryRun(db.insert(testItems).values({ id: "b", name: "beta", value: 2 }))
 
       const rows = await queryAll<{ id: string; name: string; value: number }>(
         db.select().from(testItems),
@@ -82,30 +76,22 @@ describe("dialect-query helpers (SQLite)", () => {
     })
 
     it("returns empty array for no matches", async () => {
-      const rows = await queryAll(
-        db.select().from(testItems).where(sql`1=0`),
-      )
+      const rows = await queryAll(db.select().from(testItems).where(sql`1=0`))
       expect(rows).toEqual([])
     })
   })
 
   describe("queryGet", () => {
     it("returns first matching row", async () => {
-      await queryRun(
-        db.insert(testItems).values({ id: "a", name: "alpha", value: 1 }),
-      )
+      await queryRun(db.insert(testItems).values({ id: "a", name: "alpha", value: 1 }))
 
-      const row = await queryGet<{ id: string; name: string }>(
-        db.select().from(testItems),
-      )
+      const row = await queryGet<{ id: string; name: string }>(db.select().from(testItems))
       expect(row).toBeDefined()
-      expect(row!.name).toBe("alpha")
+      expect(row?.name).toBe("alpha")
     })
 
     it("returns undefined for no match", async () => {
-      const row = await queryGet(
-        db.select().from(testItems).where(sql`1=0`),
-      )
+      const row = await queryGet(db.select().from(testItems).where(sql`1=0`))
       expect(row).toBeUndefined()
     })
   })

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
 import { articleMetadataSchema } from "@ronzz/ronencik-core"
+import { describe, expect, it } from "vitest"
 
 describe("articleMetadataSchema", () => {
   it("accepts valid article metadata", () => {

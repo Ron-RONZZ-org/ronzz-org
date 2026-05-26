@@ -1,14 +1,14 @@
-import type { SearchEngine, SearchQuery, SearchDocument, SearchResultSet } from "./types"
 import { SearchEngineImpl } from "./search-engine-impl"
+import type { SearchDocument, SearchEngine, SearchQuery, SearchResultSet } from "./types"
 
 /**
  * SQLite search engine.
  * Thin wrapper around the unified SearchEngineImpl.
  */
-// biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB
 export class SqliteSearchEngine implements SearchEngine {
   private impl: SearchEngineImpl
 
+  // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB expects any
   constructor(db: any) {
     this.impl = new SearchEngineImpl(db, "sqlite")
   }

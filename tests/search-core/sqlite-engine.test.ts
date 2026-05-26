@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import Database from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import * as sqliteSchema from "database/schema/sqlite/index"
 import { SqliteSearchEngine } from "@ronzz/search-core"
 import type { SearchDocument, SearchQuery } from "@ronzz/search-core"
+import Database from "better-sqlite3"
+import * as sqliteSchema from "database/schema/sqlite/index"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import { beforeEach, describe, expect, it } from "vitest"
 
 function createTestDb() {
   const sqlite = new Database(":memory:")

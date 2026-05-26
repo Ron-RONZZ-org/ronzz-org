@@ -1,6 +1,4 @@
-export type JsonLd =
-  | Record<string, unknown>
-  | Record<string, unknown>[]
+export type JsonLd = Record<string, unknown> | Record<string, unknown>[]
 
 export function libSchema(title: string, description: string, url: string): JsonLd {
   return {

@@ -35,12 +35,28 @@
       "trailingCommas": "all"
     }
   },
+  "overrides": [
+    {
+      "include": ["tests/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noForEach": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ],
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".svelte-kit",
-      "*.db"
-    ]
+    "ignore": ["node_modules", "dist", ".svelte-kit", "*.db", "*.svelte"]
   }
 }

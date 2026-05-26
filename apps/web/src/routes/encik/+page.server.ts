@@ -1,7 +1,7 @@
-import type { PageServerLoad } from "./$types"
+import { listArticles } from "@ronzz/ronencik-core"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
-import { listArticles } from "@ronzz/ronencik-core"
+import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ locals }) => {
   const db = getDb() as Database

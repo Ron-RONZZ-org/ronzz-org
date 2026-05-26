@@ -6,7 +6,6 @@ import type { Database } from "database/db-types"
  * Tables are created in dependency-safe order (no FK enforcement in SQLite by default).
  */
 export function createTestTables(db: Database): void {
-  // biome-ignore lint/suspicious/noExplicitAny: need access to underlying SQLite connection
   const sqlite = (db as any).session?.client as any
   if (!sqlite?.exec) return
 

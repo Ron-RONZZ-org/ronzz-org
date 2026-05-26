@@ -1,11 +1,11 @@
-import { fail, redirect } from "@sveltejs/kit"
 import { createHash } from "node:crypto"
-import { eq } from "drizzle-orm"
 import { verify } from "@node-rs/argon2"
-import { getDb } from "database/db"
-import { schema } from "database/schema/proxy"
-import { dbNow } from "database/dialect-query"
 import { logger } from "@ronzz/shared-core"
+import { fail, redirect } from "@sveltejs/kit"
+import { getDb } from "database/db"
+import { dbNow } from "database/dialect-query"
+import { schema } from "database/schema/proxy"
+import { eq } from "drizzle-orm"
 import type { Actions } from "./$types"
 
 /** Basic email format validation regex (performs structural check, not RFC 5322). */
@@ -34,10 +34,7 @@ export const actions: Actions = {
 
       // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB abstraction
       const db = getDb() as any
-      const userRows = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.email, email))
+      const userRows = await db.select().from(schema.users).where(eq(schema.users.email, email))
       const user = userRows[0]
 
       if (!user) {

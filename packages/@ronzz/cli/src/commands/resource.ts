@@ -37,17 +37,22 @@ export function resourceCommand(yargs: Argv, client: ApiClient): Argv {
         console.log(`Imported ${count} resources.`)
       },
     )
-    .command("list", "List resources", () => {}, async () => {
-      const result = await client.listResources()
-      if (result.resources.length === 0) {
-        console.log("No resources found.")
-        return
-      }
-      for (const r of result.resources as { id: string; title: string }[]) {
-        console.log(`${r.id.padEnd(36)} ${r.title}`)
-      }
-      console.log(`Total: ${result.total}`)
-    })
+    .command(
+      "list",
+      "List resources",
+      () => {},
+      async () => {
+        const result = await client.listResources()
+        if (result.resources.length === 0) {
+          console.log("No resources found.")
+          return
+        }
+        for (const r of result.resources as { id: string; title: string }[]) {
+          console.log(`${r.id.padEnd(36)} ${r.title}`)
+        }
+        console.log(`Total: ${result.total}`)
+      },
+    )
     .command(
       "delete <id>",
       "Soft-delete a resource (move to trash)",
@@ -55,9 +60,7 @@ export function resourceCommand(yargs: Argv, client: ApiClient): Argv {
         ygs.positional("id", { type: "string", demandOption: true })
       },
       async (argv) => {
-        const result = (await client.deleteResource(
-          argv.id as string,
-        )) as { deleted: boolean }
+        const result = (await client.deleteResource(argv.id as string)) as { deleted: boolean }
         console.log(result.deleted ? "Resource moved to trash." : "Resource not found.")
       },
     )
@@ -83,12 +86,8 @@ export function resourceCommand(yargs: Argv, client: ApiClient): Argv {
         ygs.positional("id", { type: "string", demandOption: true })
       },
       async (argv) => {
-        const result = (await client.restoreResource(
-          argv.id as string,
-        )) as { restored: boolean }
-        console.log(
-          result.restored ? "Resource restored." : "Resource not found in trash.",
-        )
+        const result = (await client.restoreResource(argv.id as string)) as { restored: boolean }
+        console.log(result.restored ? "Resource restored." : "Resource not found in trash.")
       },
     )
     .command(
@@ -98,16 +97,9 @@ export function resourceCommand(yargs: Argv, client: ApiClient): Argv {
         ygs.positional("id", { type: "string", demandOption: true })
       },
       async (argv) => {
-        const result = (await client.purgeResource(
-          argv.id as string,
-        )) as { purged: boolean }
-        console.log(
-          result.purged ? "Resource permanently deleted." : "Resource not found.",
-        )
+        const result = (await client.purgeResource(argv.id as string)) as { purged: boolean }
+        console.log(result.purged ? "Resource permanently deleted." : "Resource not found.")
       },
     )
-    .demandCommand(
-      1,
-      "Please specify a subcommand: import, list, delete, trash, restore, purge",
-    )
+    .demandCommand(1, "Please specify a subcommand: import, list, delete, trash, restore, purge")
 }

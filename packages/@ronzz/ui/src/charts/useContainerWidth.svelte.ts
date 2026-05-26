@@ -1,7 +1,7 @@
 export function useContainerWidth(explicitWidth?: number | (() => number | undefined)) {
   let _element = $state<HTMLDivElement | null>(null)
   let _width = $state(
-    typeof explicitWidth === "function" ? explicitWidth() ?? 600 : explicitWidth ?? 600,
+    typeof explicitWidth === "function" ? (explicitWidth() ?? 600) : (explicitWidth ?? 600),
   )
 
   $effect(() => {

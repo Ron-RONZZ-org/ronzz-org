@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
-import { resetDb, getDb } from "database/db"
-import type { Database } from "database/db-types"
 import {
-  listDatapoints,
+  bulkCreateDatapoints,
   countDatapoints,
   createDatapoint,
-  bulkCreateDatapoints,
   createDataset,
+  listDatapoints,
 } from "@ronzz/ronstats-core"
 import type { DatapointInput } from "@ronzz/ronstats-core"
+import { getDb, resetDb } from "database/db"
+import type { Database } from "database/db-types"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 
 function unwrap<T>(result: { ok: boolean; value?: T }): T {
@@ -38,15 +38,17 @@ describe("datapoints queries", () => {
 
   describe("createDatapoint", () => {
     it("creates a datapoint with all fields", async () => {
-      const dp = unwrap(await createDatapoint(db, {
-        datasetId,
-        dimensionKey: "year",
-        dimensionValue: "2024",
-        value: 42.5,
-        unit: "%",
-        year: "2024",
-        metadata: { source: "test" },
-      }))
+      const dp = unwrap(
+        await createDatapoint(db, {
+          datasetId,
+          dimensionKey: "year",
+          dimensionValue: "2024",
+          value: 42.5,
+          unit: "%",
+          year: "2024",
+          metadata: { source: "test" },
+        }),
+      )
 
       expect(dp.id).toBeTruthy()
       expect(dp.datasetId).toBe(datasetId)
@@ -60,10 +62,12 @@ describe("datapoints queries", () => {
     })
 
     it("uses defaults for optional fields", async () => {
-      const dp = unwrap(await createDatapoint(db, {
-        datasetId,
-        value: 10,
-      }))
+      const dp = unwrap(
+        await createDatapoint(db, {
+          datasetId,
+          value: 10,
+        }),
+      )
 
       expect(dp.dimensionKey).toBe("")
       expect(dp.dimensionValue).toBe("")

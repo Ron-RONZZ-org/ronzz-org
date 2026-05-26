@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, real, jsonb } from "drizzle-orm/pg-core"
+import { jsonb, pgTable, real, text, timestamp } from "drizzle-orm/pg-core"
 import { datasets } from "./datasets"
 
 export const datapoints = pgTable("datapoint", {

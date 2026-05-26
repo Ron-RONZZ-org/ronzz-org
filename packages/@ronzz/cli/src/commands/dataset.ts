@@ -3,20 +3,6 @@ import { extname } from "node:path"
 import type { Argv } from "yargs"
 import type { ApiClient } from "../lib/api-client"
 
-function parseCsv(text: string): Record<string, string>[] {
-  const lines = text.trim().split("\n")
-  if (lines.length < 2) return []
-  const headers = lines[0].split(",").map((h) => h.trim())
-  return lines.slice(1).map((line) => {
-    const values = line.split(",").map((v) => v.trim())
-    const row: Record<string, string> = {}
-    for (let i = 0; i < headers.length; i++) {
-      row[headers[i]] = values[i] ?? ""
-    }
-    return row
-  })
-}
-
 export function datasetCommand(yargs: Argv, client: ApiClient): Argv {
   return yargs
     .command(
@@ -40,26 +26,34 @@ export function datasetCommand(yargs: Argv, client: ApiClient): Argv {
           source: argv.source ?? "",
           chartType: argv["chart-type"],
         })
-        console.log(
-          `Dataset created: ${(result as { dataset: { id: string } }).dataset.id}`,
-        )
+        console.log(`Dataset created: ${(result as { dataset: { id: string } }).dataset.id}`)
       },
     )
-    .command("list", "List datasets", () => {}, async () => {
-      const result = await client.listDatasets()
-      if (result.datasets.length === 0) {
-        console.log("No datasets found.")
-        return
-      }
-      for (const d of result.datasets as { id: string; title: string }[]) {
-        console.log(`${d.id.padEnd(36)} ${d.title}`)
-      }
-      console.log(`Total: ${result.total}`)
-    })
-    .command("list <id>", "Get dataset by ID", () => {}, async () => {
-      // Placeholder for future detail command
-      console.log("Use 'dataset list' to list all datasets.")
-    })
+    .command(
+      "list",
+      "List datasets",
+      () => {},
+      async () => {
+        const result = await client.listDatasets()
+        if (result.datasets.length === 0) {
+          console.log("No datasets found.")
+          return
+        }
+        for (const d of result.datasets as { id: string; title: string }[]) {
+          console.log(`${d.id.padEnd(36)} ${d.title}`)
+        }
+        console.log(`Total: ${result.total}`)
+      },
+    )
+    .command(
+      "list <id>",
+      "Get dataset by ID",
+      () => {},
+      async () => {
+        // Placeholder for future detail command
+        console.log("Use 'dataset list' to list all datasets.")
+      },
+    )
     .command(
       "delete <id>",
       "Soft-delete a dataset (move to trash)",
@@ -67,9 +61,7 @@ export function datasetCommand(yargs: Argv, client: ApiClient): Argv {
         ygs.positional("id", { type: "string", demandOption: true })
       },
       async (argv) => {
-        const result = (await client.deleteDataset(
-          argv.id as string,
-        )) as { deleted: boolean }
+        const result = (await client.deleteDataset(argv.id as string)) as { deleted: boolean }
         console.log(result.deleted ? "Dataset moved to trash." : "Dataset not found.")
       },
     )
@@ -95,9 +87,7 @@ export function datasetCommand(yargs: Argv, client: ApiClient): Argv {
         ygs.positional("id", { type: "string", demandOption: true })
       },
       async (argv) => {
-        const result = (await client.restoreDataset(
-          argv.id as string,
-        )) as { restored: boolean }
+        const result = (await client.restoreDataset(argv.id as string)) as { restored: boolean }
         console.log(result.restored ? "Dataset restored." : "Dataset not found in trash.")
       },
     )
@@ -108,9 +98,7 @@ export function datasetCommand(yargs: Argv, client: ApiClient): Argv {
         ygs.positional("id", { type: "string", demandOption: true })
       },
       async (argv) => {
-        const result = (await client.purgeDataset(
-          argv.id as string,
-        )) as { purged: boolean }
+        const result = (await client.purgeDataset(argv.id as string)) as { purged: boolean }
         console.log(result.purged ? "Dataset permanently deleted." : "Dataset not found.")
       },
     )

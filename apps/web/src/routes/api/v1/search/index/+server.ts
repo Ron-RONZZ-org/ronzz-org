@@ -1,11 +1,11 @@
-import { json } from "@sveltejs/kit"
-import type { RequestHandler } from "./$types"
-import { getDb } from "database/db"
+import { apiHandler } from "$lib/server/middleware"
 import { createSearchEngine } from "@ronzz/search-core"
 import type { SearchDocument, SearchResultType } from "@ronzz/search-core"
-import type { Database } from "database/db-types"
 import { logger, toLocale } from "@ronzz/shared-core"
-import { apiHandler } from "$lib/server/middleware"
+import { json } from "@sveltejs/kit"
+import { getDb } from "database/db"
+import type { Database } from "database/db-types"
+import type { RequestHandler } from "./$types"
 
 const VALID_TYPES = new Set<SearchResultType>(["resource", "dataset", "article"])
 
@@ -46,13 +46,20 @@ export const POST: RequestHandler = apiHandler(async ({ request, locals }) => {
     if (isValidSearchDocument(doc)) {
       validDocs.push(doc as SearchDocument)
     } else {
-      errors.push({ index: i, reason: "missing or invalid required fields (id, type, locale, title, description, content, url)" })
+      errors.push({
+        index: i,
+        reason:
+          "missing or invalid required fields (id, type, locale, title, description, content, url)",
+      })
     }
   }
 
   if (errors.length > 0) {
     logger.warn({ errors }, "Search reindex validation failed")
-    return json({ error: `Invalid documents at indices: ${errors.map((e) => e.index).join(", ")}` }, { status: 400 })
+    return json(
+      { error: `Invalid documents at indices: ${errors.map((e) => e.index).join(", ")}` },
+      { status: 400 },
+    )
   }
 
   const db = getDb() as Database
