@@ -1,10 +1,10 @@
-import { createHash, randomUUID } from "node:crypto"
-import type { Handle } from "@sveltejs/kit"
-import { eq, and, isNull, gt } from "drizzle-orm"
-import { requestLogger, checkRateLimit, detectLocale, logger } from "@ronzz/shared-core"
+import { createHash, randomBytes } from "node:crypto"
+import { checkRateLimit, detectLocale, logger, requestLogger } from "@ronzz/shared-core"
 import type { RateLimitConfig } from "@ronzz/shared-core"
+import type { Handle } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
+import { and, eq, gt, isNull } from "drizzle-orm"
 
 const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
 const searchLimiter: RateLimitConfig = { windowMs: 60_000, max: 30 }
@@ -20,14 +20,10 @@ function getClientIp(event: Parameters<Handle>[0]["event"]): string {
 }
 
 /** Attach request ID and locale to every request. */
-export async function handleRequestContext(
-  event: Parameters<Handle>[0]["event"],
-): Promise<void> {
-  const requestId = randomUUID().slice(0, 8)
+export async function handleRequestContext(event: Parameters<Handle>[0]["event"]): Promise<void> {
+  const requestId = randomBytes(4).toString("hex")
   event.locals.requestId = requestId
-  event.locals.locale = detectLocale(
-    event.request.headers.get("accept-language"),
-  )
+  event.locals.locale = detectLocale(event.request.headers.get("accept-language"))
 }
 
 /** Rate-limit login, search, API, and all unauthenticated endpoints. */
@@ -70,9 +66,7 @@ export async function handleRateLimit(
 }
 
 /** Validate session cookie and populate event.locals.user. */
-export async function handleSessionAuth(
-  event: Parameters<Handle>[0]["event"],
-): Promise<void> {
+export async function handleSessionAuth(event: Parameters<Handle>[0]["event"]): Promise<void> {
   const sessionId = event.cookies.get("session")
   if (!sessionId) return
 
@@ -91,12 +85,7 @@ export async function handleSessionAuth(
       })
       .from(schema.sessions)
       .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
-      .where(
-        and(
-          eq(schema.sessions.id, sessionHash),
-          gt(schema.sessions.expiresAt, now),
-        ),
-      )
+      .where(and(eq(schema.sessions.id, sessionHash), gt(schema.sessions.expiresAt, now)))
 
     // Both dialects return an array; pick the first if present
     const found = rows?.[0]
@@ -141,12 +130,7 @@ export async function handleTokenAuth(
       })
       .from(schema.apiTokens)
       .innerJoin(schema.users, eq(schema.apiTokens.userId, schema.users.id))
-      .where(
-        and(
-          eq(schema.apiTokens.tokenHash, tokenHash),
-          isNull(schema.apiTokens.revokedAt),
-        ),
-      )
+      .where(and(eq(schema.apiTokens.tokenHash, tokenHash), isNull(schema.apiTokens.revokedAt)))
 
     const found = rows?.[0]
     if (!found) {

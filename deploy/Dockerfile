@@ -15,6 +15,9 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter database build 2>/dev/null || true
 RUN pnpm build
 
+# Prune devDependencies to reduce production image size and attack surface
+RUN pnpm prune --prod
+
 # ---- Production stage ----
 FROM node:20-alpine AS runner
 

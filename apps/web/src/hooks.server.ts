@@ -1,22 +1,66 @@
-import type { Handle } from "@sveltejs/kit"
 import { randomUUID } from "node:crypto"
-import { logger } from "@ronzz/shared-core"
 import {
-  handleRequestContext,
   handleRateLimit,
+  handleRequestContext,
   handleSessionAuth,
   handleTokenAuth,
 } from "$lib/server/middleware"
+import { logger } from "@ronzz/shared-core"
+import type { Handle } from "@sveltejs/kit"
 
 const MAX_BODY_SIZE = 1_048_576 // 1 MB
 
 export const handle: Handle = async ({ event, resolve }) => {
   await handleRequestContext(event)
 
-  // Reject oversized request bodies early to avoid memory exhaustion
+  // Reject oversized request bodies early to avoid memory exhaustion.
+  // For requests with Content-Length, check the header directly.
+  // For transfer-encoding: chunked, buffer chunks with per-chunk limits
+  // to prevent TOCTOU attacks where a single huge chunk bypasses the total check.
   const contentLength = event.request.headers.get("content-length")
-  if (contentLength && Number.parseInt(contentLength, 10) > MAX_BODY_SIZE) {
-    return new Response("Request body too large", { status: 413 })
+  if (contentLength) {
+    const parsedSize = Number.parseInt(contentLength, 10)
+    if (!Number.isNaN(parsedSize) && parsedSize > MAX_BODY_SIZE) {
+      return new Response("Request body too large", { status: 413 })
+    }
+  } else if (
+    event.request.headers.get("transfer-encoding")?.includes("chunked") &&
+    event.request.body
+  ) {
+    // Buffer chunked body per-chunk limit to prevent memory exhaustion
+    const CHUNK_LIMIT = 65_536 // 64 KB per chunk
+    const chunks: Uint8Array[] = []
+    let total = 0
+    const reader = event.request.body.getReader()
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (value) {
+          // Per-chunk size check prevents TOCTOU: reject before buffering
+          if (value.byteLength > CHUNK_LIMIT) {
+            await reader.cancel()
+            return new Response("Request chunk too large", { status: 413 })
+          }
+          chunks.push(value)
+          total += value.byteLength
+          if (total > MAX_BODY_SIZE) {
+            await reader.cancel()
+            return new Response("Request body too large", { status: 413 })
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+    // Reconstruct request so downstream body parsers can read it
+    const body = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      body.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    event.request = new Request(event.request, { body })
   }
 
   const log = logger.child({ requestId: event.locals.requestId })

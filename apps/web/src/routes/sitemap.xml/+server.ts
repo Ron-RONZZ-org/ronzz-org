@@ -1,8 +1,8 @@
-import type { RequestHandler } from "./$types"
-import { isNull } from "drizzle-orm"
+import { TtlCache } from "@ronzz/shared-core"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
-import { TtlCache } from "@ronzz/shared-core"
+import { isNull } from "drizzle-orm"
+import type { RequestHandler } from "./$types"
 
 const BASE = "https://ronzz.org"
 
@@ -13,12 +13,14 @@ interface SitemapEntry {
   priority?: number
 }
 
+/** Escape special XML characters. */
 function escapeXml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
 }
 
 // Cache regenerated sitemap for 30 minutes

@@ -1,7 +1,13 @@
-import type { NodePgDatabase } from "drizzle-orm/node-postgres"
-import { eq, and, or, like, sql } from "drizzle-orm"
 import * as pgSchema from "database/schema/pg/index"
-import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
+import { and, eq, like, or, sql } from "drizzle-orm"
+import type { NodePgDatabase } from "drizzle-orm/node-postgres"
+import type {
+  SearchDocument,
+  SearchEngine,
+  SearchQuery,
+  SearchResult,
+  SearchResultSet,
+} from "./types"
 
 export class PostgresSearchEngine implements SearchEngine {
   constructor(private db: NodePgDatabase<typeof pgSchema>) {}
@@ -86,14 +92,40 @@ export class PostgresSearchEngine implements SearchEngine {
   }
 
   async remove(id: string): Promise<void> {
-    await this.db
-      .delete(pgSchema.searchIndex)
-      .where(eq(pgSchema.searchIndex.id, id))
+    await this.db.delete(pgSchema.searchIndex).where(eq(pgSchema.searchIndex.id, id))
   }
 
+  /** Batch-reindex documents in a single transaction for performance. */
   async reindex(docs: SearchDocument[]): Promise<void> {
-    for (const doc of docs) {
-      await this.index(doc)
-    }
+    if (docs.length === 0) return
+    await this.db.transaction(async (tx) => {
+      for (const doc of docs) {
+        const now = new Date()
+        await tx
+          .insert(pgSchema.searchIndex)
+          .values({
+            id: doc.id,
+            type: doc.type,
+            locale: doc.locale,
+            title: doc.title,
+            description: doc.description,
+            content: doc.content,
+            url: doc.url,
+            score: 0,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: pgSchema.searchIndex.id,
+            set: {
+              title: doc.title,
+              description: doc.description,
+              content: doc.content,
+              url: doc.url,
+              updatedAt: now,
+            },
+          })
+      }
+    })
   }
 }

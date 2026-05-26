@@ -1,17 +1,19 @@
-import type { RequestHandler } from "./$types"
-import { eq, desc, isNull } from "drizzle-orm"
+import { TtlCache } from "@ronzz/shared-core"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
-import { TtlCache } from "@ronzz/shared-core"
+import { desc, eq, isNull } from "drizzle-orm"
+import type { RequestHandler } from "./$types"
 
 const BASE = "https://ronzz.org"
 
+/** Escape special XML characters. */
 function escapeXml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
 }
 
 // Cache regenerated feed for 15 minutes
@@ -46,10 +48,7 @@ export const GET: RequestHandler = async () => {
         createdAt: schema.resources.createdAt,
       })
       .from(schema.resources)
-      .leftJoin(
-        schema.resourceTypes,
-        eq(schema.resources.typeId, schema.resourceTypes.id),
-      )
+      .leftJoin(schema.resourceTypes, eq(schema.resources.typeId, schema.resourceTypes.id))
       .where(isNull(schema.resources.deletedAt))
       .orderBy(desc(schema.resources.createdAt))
       .limit(50)

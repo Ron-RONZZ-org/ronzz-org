@@ -1,10 +1,7 @@
 import type { Datapoint } from "../../types"
-import type { PieChartResult, ChartDimensions } from "../types"
+import type { ChartDimensions, PieChartResult } from "../types"
 
-export function pieChart(
-  datapoints: Datapoint[],
-  _dim: ChartDimensions,
-): PieChartResult {
+export function pieChart(datapoints: Datapoint[], _dim: ChartDimensions): PieChartResult {
   const labelKey = (dp: Datapoint): string =>
     dp.dimensionValue || dp.dimensionKey || dp.year || dp.id
 
@@ -14,7 +11,8 @@ export function pieChart(
     grouped.set(key, (grouped.get(key) ?? 0) + dp.value)
   }
 
-  const total = [...grouped.values()].reduce((a, b) => a + b, 0) || 1
+  const rawTotal = [...grouped.values()].reduce((a, b) => a + b, 0)
+  const total = rawTotal || 1
 
   let currentAngle = 0
   const arcs = [...grouped.entries()].map(([key, value]) => {

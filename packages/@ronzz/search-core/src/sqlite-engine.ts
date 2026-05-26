@@ -1,6 +1,12 @@
-import { eq, and, like, or, sql } from "drizzle-orm"
 import { schema } from "database/schema/proxy"
-import type { SearchEngine, SearchDocument, SearchQuery, SearchResult, SearchResultSet } from "./types"
+import { and, eq, like, or, sql } from "drizzle-orm"
+import type {
+  SearchDocument,
+  SearchEngine,
+  SearchQuery,
+  SearchResult,
+  SearchResultSet,
+} from "./types"
 
 export class SqliteSearchEngine implements SearchEngine {
   // biome-ignore lint/suspicious/noExplicitAny: <dialect-agnostic db>
@@ -89,15 +95,42 @@ export class SqliteSearchEngine implements SearchEngine {
   }
 
   async remove(id: string): Promise<void> {
-    await this.db
-      .delete(schema.searchIndex)
-      .where(eq(schema.searchIndex.id, id))
-      .run()
+    await this.db.delete(schema.searchIndex).where(eq(schema.searchIndex.id, id)).run()
   }
 
+  /** Batch-reindex documents in a transaction for performance. */
   async reindex(docs: SearchDocument[]): Promise<void> {
-    for (const doc of docs) {
-      await this.index(doc)
-    }
+    if (docs.length === 0) return
+    const now = new Date().toISOString()
+    // Use synchronous transaction (better-sqlite3 doesn't support async)
+    // biome-ignore lint/suspicious/noExplicitAny: dialect-agnostic tx
+    this.db.transaction((tx: any) => {
+      for (const doc of docs) {
+        tx.insert(schema.searchIndex)
+          .values({
+            id: doc.id,
+            type: doc.type,
+            locale: doc.locale,
+            title: doc.title,
+            description: doc.description,
+            content: doc.content,
+            url: doc.url,
+            score: 0,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: schema.searchIndex.id,
+            set: {
+              title: doc.title,
+              description: doc.description,
+              content: doc.content,
+              url: doc.url,
+              updatedAt: now,
+            },
+          })
+          .run()
+      }
+    })
   }
 }
