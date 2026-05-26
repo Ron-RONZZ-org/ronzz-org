@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs"
-import { extname } from "node:path"
 import type { Argv } from "yargs"
 import type { ApiClient } from "../lib/api-client"
 

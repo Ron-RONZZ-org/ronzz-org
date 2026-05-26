@@ -2,9 +2,9 @@ import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { extname, join } from "node:path"
 import { type AppError, type Result, logger, toLocale, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
-import { queryAll, queryGet, queryRun } from "database/dialect-query"
+import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
-import { and, desc, eq, like, sql } from "drizzle-orm"
+import { and, desc, eq, sql } from "drizzle-orm"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -68,7 +68,7 @@ export async function upsertArticleMetadata(
 ): Promise<Result<ArticleMetadata, AppError>> {
   return tryResult(async () => {
     const existing = await getArticleBySlug(db, input.slug)
-    const now = new Date().toISOString()
+    const now = dbNow()
 
     if (existing) {
       await queryRun(
@@ -178,8 +178,9 @@ export async function syncEncikArticles(db: Database, contentDir: string): Promi
       })
       if (!result.ok) {
         logger.error({ error: result.error, file }, "Failed to upsert article metadata")
+      } else {
+        count++
       }
-      count++
     } catch (err) {
       logger.error({ err, file }, "Failed to sync article")
     }

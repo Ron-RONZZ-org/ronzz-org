@@ -1,3 +1,4 @@
+import { type AppError, type Result, tryResult } from "@ronzz/shared-core"
 import type { Database } from "database/db-types"
 import { queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
@@ -26,12 +27,14 @@ export async function getResourceTypeBySlug(
 export async function createResourceType(
   db: Database,
   input: ResourceTypeInput,
-): Promise<ResourceType> {
-  const id = crypto.randomUUID()
-  await queryRun(
-    d(db)
-      .insert(schema.resourceTypes)
-      .values({ ...input, id }),
-  )
-  return { id, ...input }
+): Promise<Result<ResourceType, AppError>> {
+  return tryResult(async () => {
+    const id = crypto.randomUUID()
+    await queryRun(
+      d(db)
+        .insert(schema.resourceTypes)
+        .values({ ...input, id }),
+    )
+    return { id, ...input } as ResourceType
+  })
 }
