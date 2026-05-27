@@ -104,36 +104,43 @@ ronzz-org/
 │       └── disk-usage.sh       # df alert on >90%
 ├── tests/
 │   ├── setup.ts                # beforeEach isolation fixture
-│   ├── auth/
-│   │   ├── middleware.test.ts   # Session + token auth validation
-│   │   └── csrf-origin.test.ts  # CSRF origin matching tests
-│   ├── shared-core/
-│   │   ├── result.test.ts  
-│   │   ├── result-utils.test.ts
-│   │   ├── i18n.test.ts
-│   │   ├── rate-limiter.test.ts
-│   │   └── ttl-cache.test.ts
-│   ├── validation/
-│   │   ├── ronstats-core.test.ts
-│   │   ├── ronlib-core.test.ts
-│   │   └── ronencik-core.test.ts
-│   ├── charts/
-│   │   ├── bar.test.ts
-│   │   ├── line.test.ts
-│   │   └── pie.test.ts
-│   ├── database/
-│   │   └── schema-proxy.test.ts # Schema proxy lazy resolution tests (detectDialect, getSchema, resetDialectCache)
-│   ├── search-core/
-│   │   ├── sqlite-engine.test.ts # SQLite search engine tests
-│   │   └── pg-engine.test.ts    # PostgreSQL search engine tests (mocked)
-│   ├── routes/
-│   │   ├── health.test.ts       # Health endpoint handler tests
-│   │   ├── datasets-api.test.ts # Dataset API route handler tests
-│   │   ├── datapoints-api.test.ts # Datapoint API route handler tests
-│   │   └── admin-api.test.ts    # Admin API route handler tests
-│   ├── ronstats-core/
-│   │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge (via getDb())
-│   │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination (via getDb())
+        ├── auth/
+        │   ├── middleware.test.ts   # Session + token auth validation
+        │   └── csrf-origin.test.ts  # CSRF origin matching tests
+        ├── shared-core/
+        │   ├── result.test.ts  
+        │   ├── result-utils.test.ts
+        │   ├── i18n.test.ts
+        │   ├── rate-limiter.test.ts
+        │   └── ttl-cache.test.ts
+        ├── validation/
+        │   ├── ronstats-core.test.ts
+        │   ├── ronlib-core.test.ts
+        │   └── ronencik-core.test.ts
+        ├── charts/
+        │   ├── bar.test.ts
+        │   ├── line.test.ts
+        │   └── pie.test.ts
+        ├── database/
+        │   └── schema-proxy.test.ts # Schema proxy lazy resolution tests (detectDialect, getSchema, resetDialectCache)
+        ├── search-core/
+        │   ├── sqlite-engine.test.ts # SQLite search engine tests
+        │   └── pg-engine.test.ts    # PostgreSQL search engine tests (mocked)
+        ├── routes/
+        │   ├── health.test.ts       # Health endpoint handler tests
+        │   ├── datasets-api.test.ts # Dataset API route handler tests
+        │   ├── datapoints-api.test.ts # Datapoint API route handler tests
+        │   ├── admin-api.test.ts    # Admin API route handler tests
+        │   ├── login.test.ts        # Login form action tests
+        │   ├── logout.test.ts       # Logout POST handler tests
+        │   ├── change-password.test.ts # Change-password form action tests
+        │   ├── tokens.test.ts       # Token management action tests
+        │   ├── feed.test.ts         # RSS feed XML output tests
+        │   ├── sitemap.test.ts      # Sitemap XML output tests
+        │   └── api-handler.test.ts  # apiHandler error behavior tests
+        ├── ronstats-core/
+        │   ├── datasets.test.ts     # Dataset CRUD + trash/restore/purge (via getDb())
+        │   └── datapoints.test.ts   # Datapoint CRUD + ordering + pagination (via getDb())
 │   ├── helpers/
 │   │   ├── create-test-tables.ts # Shared SQLite table creation for test isolation
 │   │   └── mock-event.ts        # Shared SvelteKit RequestEvent factory for route handler tests
@@ -260,6 +267,8 @@ ronzz-org/
 59. Test files (`tests/`) have relaxed Biome rules configured via `linter.overrides` in `biome.json` — `noExplicitAny`, `noNonNullAssertion`, `noUnusedVariables`, and `noForEach` are disabled for test code. Use `// biome-ignore` comments in source (non-test) files for intentional suppressions instead.
 
 60. **better-sqlite3 transactions are sync**: Drizzle's better-sqlite3 adapter wraps synchronous calls in Promises, but `db.transaction()` callbacks MUST be synchronous (no `async`/`await` inside). PostgreSQL transactions support async callbacks.
+
+61. **SQLite integer columns reject booleans**: better-sqlite3 cannot bind boolean values (throws `SQLite3 can only bind numbers, strings, bigints, buffers, and null`). When inserting/updating `integer` columns on SQLite, use `0`/`1` instead of `true`/`false`. This applies to Drizzle `.values()` calls for both INSERT and UPDATE on SQLite **and PostgreSQL** schemas (the PG columns are `boolean` so boolean is fine there, but code MUST use dialect-safe values — prefer `0`/`1` for columns defined as `integer` in any schema). The admin seed (`database/seeds/admin-user.ts`) sets `passwordChangeRequired: 1` for this reason.
 
 ---
 
