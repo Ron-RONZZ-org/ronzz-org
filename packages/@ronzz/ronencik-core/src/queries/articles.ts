@@ -4,7 +4,7 @@ import { type AppError, type Result, logger, toLocale, tryResult } from "@ronzz/
 import type { Database } from "database/db-types"
 import { dbNow, queryAll, queryGet, queryRun } from "database/dialect-query"
 import { schema } from "database/schema/proxy"
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, isNull, sql } from "drizzle-orm"
 import type { ArticleMetadata, ArticleMetadataInput } from "../types"
 
 /** Narrow the dual-dialect DB union to a minimal compatible type for Drizzle chain calls. */
@@ -24,7 +24,7 @@ export async function listArticles(
   options: ListOptions = {},
 ): Promise<{ articles: ArticleMetadata[]; total: number }> {
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle condition array accepts mixed types
-  const conditions: any[] = []
+  const conditions: any[] = [isNull(schema.articlesMetadata.deletedAt)]
   const locale = toLocale(options.locale)
   if (locale) {
     conditions.push(eq(schema.articlesMetadata.locale, locale))
