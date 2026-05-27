@@ -7,11 +7,16 @@ WORKDIR /app
 
 # Layer caching: copy manifests first, install, then source
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc tsconfig.json ./
+COPY packages/*/package.json packages/
+COPY apps/*/package.json apps/
+COPY database/package.json database/
+
+RUN pnpm install --frozen-lockfile
+
+# Copy source code — changes here don't invalidate the dependency layer above
 COPY packages/ packages/
 COPY apps/ apps/
 COPY database/ database/
-
-RUN pnpm install --frozen-lockfile
 
 RUN pnpm build
 
