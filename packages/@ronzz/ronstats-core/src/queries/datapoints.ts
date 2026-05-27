@@ -87,6 +87,8 @@ export async function bulkCreateDatapoints(
   inputs: DatapointInput[],
 ): Promise<Result<Datapoint[], AppError>> {
   return tryResult(async () => {
+    if (inputs.length === 0) return []
+
     const now = dbNow()
     const values = inputs.map((input) => ({
       id: crypto.randomUUID(),

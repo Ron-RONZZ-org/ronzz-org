@@ -51,6 +51,10 @@ export const actions: Actions = {
       return fail(400, { message: "Token name is required." })
     }
 
+    if (name.length > 100) {
+      return fail(400, { message: "Token name must be 100 characters or fewer." })
+    }
+
     try {
       const token = generateTokenValue()
       const tokenHash = createHash("sha256").update(token).digest("hex")

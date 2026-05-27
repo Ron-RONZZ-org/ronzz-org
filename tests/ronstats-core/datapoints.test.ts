@@ -176,5 +176,10 @@ describe("datapoints queries", () => {
       const total = await countDatapoints(db, datasetId)
       expect(total).toBe(3)
     })
+
+    it("returns empty array for empty input", async () => {
+      const results = unwrap(await bulkCreateDatapoints(db, []))
+      expect(results).toEqual([])
+    })
   })
 })

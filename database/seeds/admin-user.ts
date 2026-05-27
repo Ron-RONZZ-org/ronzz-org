@@ -37,7 +37,7 @@ async function seedAdminUser() {
     email: ADMIN_EMAIL,
     passwordHash,
     role: "admin",
-    passwordChangeRequired: true,
+    passwordChangeRequired: 1,
     createdAt: new Date().toISOString(),
   })
 

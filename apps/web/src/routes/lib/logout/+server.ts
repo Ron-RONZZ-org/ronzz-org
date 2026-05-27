@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { logger } from "@ronzz/shared-core"
 import { redirect } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
@@ -13,8 +14,8 @@ export const POST: RequestHandler = async ({ cookies }) => {
       const db = getDb() as any
       const sessionHash = createHash("sha256").update(sessionId).digest("hex")
       await db.delete(schema.sessions).where(eq(schema.sessions.id, sessionHash))
-    } catch {
-      // Best-effort cleanup; proceed with cookie deletion even if DB delete fails
+    } catch (err) {
+      logger.warn({ err }, "Failed to delete session during logout; proceeding with cookie deletion")
     }
   }
   cookies.delete("session", { path: "/" })

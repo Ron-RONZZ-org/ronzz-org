@@ -117,7 +117,7 @@ export async function softDeleteDataset(
     const result = await queryRun(
       d(db)
         .update(schema.datasets)
-        .set({ deletedAt: dbNow() })
+        .set({ deletedAt: dbNow(), updatedAt: dbNow() })
         .where(and(eq(schema.datasets.id, id), isNull(schema.datasets.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0

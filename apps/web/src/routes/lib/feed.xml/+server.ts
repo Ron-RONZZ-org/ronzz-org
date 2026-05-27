@@ -1,20 +1,10 @@
-import { TtlCache } from "@ronzz/shared-core"
+import { escapeXml, TtlCache } from "@ronzz/shared-core"
 import { getDb } from "database/db"
 import { schema } from "database/schema/proxy"
 import { desc, eq, isNull } from "drizzle-orm"
 import type { RequestHandler } from "./$types"
 
 const BASE = "https://ronzz.org"
-
-/** Escape special XML characters. */
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;")
-}
 
 // Cache regenerated feed for 15 minutes
 const feedCache = new TtlCache<string>(15 * 60 * 1000)

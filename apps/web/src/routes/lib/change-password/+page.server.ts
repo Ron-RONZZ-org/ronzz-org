@@ -46,9 +46,11 @@ export const actions: Actions = {
       return fail(400, { message: "New passwords do not match." })
     }
 
-    if (newPassword === "admin123") {
+    // Blocklist common weak passwords
+    const weakPasswords = ["admin123", "password", "12345678", "qwerty123", "letmein"]
+    if (weakPasswords.includes(newPassword.toLowerCase())) {
       return fail(400, {
-        message: "The default password 'admin123' is not allowed. Choose a secure password.",
+        message: "This password is too common. Choose a more secure password.",
       })
     }
 
@@ -95,7 +97,7 @@ export const actions: Actions = {
         .update(schema.users)
         .set({
           passwordHash: newPasswordHash,
-          passwordChangeRequired: false,
+          passwordChangeRequired: 0,
         })
         .where(eq(schema.users.id, user.id))
 

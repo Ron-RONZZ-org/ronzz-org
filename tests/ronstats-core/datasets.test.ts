@@ -9,7 +9,9 @@ import {
 } from "@ronzz/ronstats-core"
 import type { DatasetInput } from "@ronzz/ronstats-core"
 import { getDb, resetDb } from "database/db"
+import { schema } from "database/schema/proxy"
 import type { Database } from "database/db-types"
+import { eq } from "drizzle-orm"
 import { beforeEach, describe, expect, it } from "vitest"
 import { createTestTables } from "../helpers/create-test-tables"
 
@@ -192,6 +194,29 @@ describe("datasets queries", () => {
     it("returns false for non-existent dataset", async () => {
       const result = await softDeleteDataset(db, "non-existent")
       expect(result).toMatchObject({ ok: true, value: false })
+    })
+
+    it("updates updatedAt on soft-delete", async () => {
+      const created = await createDataset(db, sampleInput)
+      expect(created.ok).toBe(true)
+      if (!created.ok) return
+      const datasetId = created.value.id
+
+      // Wait a tick so timestamps differ
+      const originalUpdatedAt = created.value.updatedAt
+
+      // biome-ignore lint/suspicious/noExplicitAny: dual-dialect DB
+      const d = db as any
+      await softDeleteDataset(db, datasetId)
+
+      const updated = await d
+        .select({ updatedAt: schema.datasets.updatedAt, deletedAt: schema.datasets.deletedAt })
+        .from(schema.datasets)
+        .where(eq(schema.datasets.id, datasetId))
+      const row = updated[0]
+
+      expect(row.deletedAt).toBeTruthy()
+      expect(row.updatedAt).not.toBe(originalUpdatedAt)
     })
   })
 
