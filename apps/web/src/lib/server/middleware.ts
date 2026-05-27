@@ -3,7 +3,7 @@ import { checkRateLimit, detectLocale, logger, requestLogger } from "@ronzz/shar
 import type { RateLimitConfig } from "@ronzz/shared-core"
 import type { Handle } from "@sveltejs/kit"
 import { getDb } from "database/db"
-import { schema } from "database/schema/proxy"
+import { detectDialect, schema } from "database/schema/proxy"
 import { and, eq, gt, isNull } from "drizzle-orm"
 
 const loginLimiter: RateLimitConfig = { windowMs: 60_000, max: 5 }
@@ -75,8 +75,7 @@ export async function handleSessionAuth(event: Parameters<Handle>[0]["event"]): 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getDb() as any
-    const isPg = (process.env.DATABASE_URL ?? "").startsWith("postgres")
-    const now = isPg ? new Date() : Date.now()
+    const now = detectDialect() === "pg" ? new Date() : Date.now()
     const rows = await db
       .select({
         userId: schema.users.id,
