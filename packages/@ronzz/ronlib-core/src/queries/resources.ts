@@ -122,7 +122,7 @@ export async function deleteResource(db: Database, id: string): Promise<Result<b
     const result = await queryRun(
       d(db)
         .update(schema.resources)
-        .set({ deletedAt: dbNow() })
+        .set({ deletedAt: dbNow(), updatedAt: dbNow() })
         .where(and(eq(schema.resources.id, id), isNull(schema.resources.deletedAt))),
     )
     return (result.changes ?? result.rowCount ?? 0) > 0
