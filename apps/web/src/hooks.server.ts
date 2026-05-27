@@ -33,6 +33,16 @@ function validateEnv(): void {
 // Run once at module load
 validateEnv()
 
+// Graceful shutdown: close DB connections on SIGTERM/SIGINT
+process.on("SIGTERM", async () => {
+  const { closeDb } = await import("database/db")
+  await closeDb()
+})
+process.on("SIGINT", async () => {
+  const { closeDb } = await import("database/db")
+  await closeDb()
+})
+
 /** Allowed origins for CSRF check. Evaluated at module load — origins don't change at runtime. */
 function buildAllowedOrigins(): string[] {
   const origins: string[] = []
