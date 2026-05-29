@@ -74,7 +74,7 @@ jobs:
             if ! curl -sf http://localhost:3000/api/v1/health > /dev/null 2>&1; then
               echo "Health check FAILED — rolling back..."
               docker tag "$REGISTRY/$IMAGE_NAME:$ROLLBACK_TAG" "$REGISTRY/$IMAGE_NAME:latest"
-              docker compose up -d --wait --wait-timeout 60
+            docker compose up -d --force-recreate --wait --wait-timeout 60
               echo "Rollback to $ROLLBACK_TAG complete"
               exit 1
             fi
