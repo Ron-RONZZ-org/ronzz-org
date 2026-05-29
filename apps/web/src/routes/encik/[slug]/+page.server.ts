@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs"
 import { extname, join } from "node:path"
 import { getArticleBySlug } from "@ronzz/ronencik-core"
-import { HttpError, error } from "@sveltejs/kit"
+import { error as kitError } from "@sveltejs/kit"
 import { getDb } from "database/db"
 import type { Database } from "database/db-types"
 import type { PageServerLoad } from "./$types"
@@ -20,18 +20,12 @@ export function entries(): { slug: string }[] {
 }
 
 export const load: PageServerLoad = async ({ params }) => {
-  try {
-    const db = getDb() as Database
-    const article = await getArticleBySlug(db, params.slug)
+  const db = getDb() as Database
+  const article = await getArticleBySlug(db, params.slug)
 
-    if (!article) {
-      error(404, "Article not found")
-    }
-
-    return { article }
-  } catch (err) {
-    // Re-throw HttpError (from the 404 above) — don't mask it
-    if (err instanceof HttpError) throw err
-    error(404, "Article not found")
+  if (!article) {
+    kitError(404, "Article not found")
   }
+
+  return { article }
 }

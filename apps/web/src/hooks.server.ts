@@ -215,7 +215,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   const nonce = randomBytes(16).toString("hex")
   event.locals.nonce = nonce
 
-  const response = await resolve(event)
+  const response = await resolve(event, { nonce })
 
   // Set strict CSP header with nonce
   // NOTE: 'unsafe-inline' intentionally omitted — in a nonce-based policy,

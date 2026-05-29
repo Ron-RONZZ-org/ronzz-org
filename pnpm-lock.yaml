@@ -35,6 +35,15 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.0.0
         version: 2.0.2
+      '@ronzz/ronencik-core':
+        specifier: workspace:*
+        version: link:../../packages/@ronzz/ronencik-core
+      '@ronzz/ronlib-core':
+        specifier: workspace:*
+        version: link:../../packages/@ronzz/ronlib-core
+      '@ronzz/ronstats-core':
+        specifier: workspace:*
+        version: link:../../packages/@ronzz/ronstats-core
       '@ronzz/shared-core':
         specifier: workspace:*
         version: link:../../packages/@ronzz/shared-core

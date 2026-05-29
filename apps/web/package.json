@@ -10,6 +10,9 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@ronzz/ronencik-core": "workspace:*",
+    "@ronzz/ronlib-core": "workspace:*",
+    "@ronzz/ronstats-core": "workspace:*",
     "@ronzz/shared-core": "workspace:*",
     "@ronzz/ui": "workspace:*",
     "database": "workspace:*",
