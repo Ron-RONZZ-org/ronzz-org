@@ -26,6 +26,7 @@
     "onlyBuiltDependencies": ["@biomejs/biome", "@node-rs/argon2", "better-sqlite3", "esbuild"]
   },
   "devDependencies": {
+    "@sveltejs/adapter-node": "^5.0.0",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tailwindcss/postcss": "^4.3.0",

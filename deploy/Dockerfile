@@ -11,7 +11,7 @@ COPY packages/*/package.json packages/
 COPY apps/*/package.json apps/
 COPY database/package.json database/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --shamefully-hoist
 
 # Copy source code — changes here don't invalidate the dependency layer above
 COPY packages/ packages/
