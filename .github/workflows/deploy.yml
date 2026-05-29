@@ -10,7 +10,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ronzz-org/ronzz-org
+  IMAGE_NAME: ron-ronzz-org/ronzz-org
 
 jobs:
   deploy:

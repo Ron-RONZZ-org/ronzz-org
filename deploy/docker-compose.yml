@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/ronzz-org/ronzz-org:latest
+    image: ghcr.io/ron-ronzz-org/ronzz-org:latest
     build:
       context: ..
       dockerfile: deploy/Dockerfile
