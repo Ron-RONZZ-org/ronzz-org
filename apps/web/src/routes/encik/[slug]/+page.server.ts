@@ -15,7 +15,9 @@ export function entries(): { slug: string }[] {
       .filter((f) => extname(f) === ".svx")
       .map((f) => ({ slug: f.replace(/\.svx$/, "") }))
   } catch {
-    return [{ slug: "hello-world" }]
+    // No content directory yet — return empty to avoid attempting
+    // prerendering of slugs that don't exist in the database.
+    return []
   }
 }
 
