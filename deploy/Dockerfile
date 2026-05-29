@@ -25,6 +25,10 @@ ARG ADMIN_PASSWORD
 ENV ORIGIN=$ORIGIN
 ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
 
+# Re-install after source copy so all packages (including workspace deps and
+# their transitive dependencies) are properly linked for vite build.
+RUN pnpm install --frozen-lockfile --shamefully-hoist
+
 RUN pnpm build
 
 # Prune devDependencies to reduce production image size and attack surface
