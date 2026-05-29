@@ -21,7 +21,7 @@ COPY database/ database/
 # Build-time env vars (ARG) — validated at module load by hooks.server.ts.
 # ORIGIN is fixed for production; ADMIN_PASSWORD is passed as build-arg from CI.
 ARG ORIGIN=https://ronzz.org
-ARG ADMIN_PASSWORD
+ARG ADMIN_PASSWORD=build-only-placeholder
 ENV ORIGIN=$ORIGIN
 ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
 
