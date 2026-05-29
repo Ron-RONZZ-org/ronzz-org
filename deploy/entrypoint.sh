@@ -2,21 +2,18 @@
 set -e
 
 echo "Waiting for PostgreSQL..."
-DB_HOST="$(node -e "
-  const url = require('url');
-  const u = new URL(process.env.DATABASE_URL);
-  console.log(u.hostname);
-")"
-DB_USER="$(node -e "
-  const url = require('url');
-  const u = new URL(process.env.DATABASE_URL);
-  console.log(u.username);
-")"
-DB_NAME="$(node -e "
-  const url = require('url');
-  const u = new URL(process.env.DATABASE_URL);
-  console.log(u.pathname.replace(/^\//, ''));
-")"
+# Use port 5432 as default, extract host from DATABASE_URL via envsubst-free pattern
+# Avoid Node.js URL parsing as the password may contain special characters
+# that break the WHATWG URL parser (/, +, =).
+DB_HOST="${DATABASE_URL#*@}"
+DB_HOST="${DB_HOST%%:*}"
+
+DB_USER="${DATABASE_URL#*://}"
+DB_USER="${DB_USER%%:*}"
+
+DB_NAME="${DATABASE_URL##*/}"
+DB_NAME="${DB_NAME%%\?*}"
+
 until pg_isready -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" 2>/dev/null; do
   sleep 1
 done
