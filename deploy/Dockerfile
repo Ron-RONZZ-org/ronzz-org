@@ -30,6 +30,11 @@ ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
 # their transitive dependencies) are properly linked for vite build.
 RUN pnpm install --frozen-lockfile --shamefully-hoist
 
+# Create SQLite database tables so SvelteKit prerendering can query
+# (RonEncik pages are pre-rendered at build time). The database is
+# empty, so drizzle-kit push won't prompt.
+RUN pnpm --filter database db:migrate:sqlite
+
 RUN pnpm build
 
 # Prune devDependencies to reduce production image size and attack surface
