@@ -53,7 +53,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN,REGISTRY,GITHUB_ACTOR
+          envs: GITHUB_TOKEN,REGISTRY,GITHUB_ACTOR,IMAGE_NAME
           script: |
             cd /opt/ronzz-org
             echo "$GITHUB_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin

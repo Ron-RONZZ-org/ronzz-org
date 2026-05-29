@@ -68,7 +68,7 @@ ENV PORT=3000
 # Switch to non-root user for security
 USER node
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1
 
 EXPOSE 3000

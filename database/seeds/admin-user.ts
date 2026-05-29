@@ -2,6 +2,7 @@ import { Algorithm, hash } from "@node-rs/argon2"
 import { eq } from "drizzle-orm"
 import { getDb } from "../db"
 import { schema } from "../schema/proxy"
+import { dbNow } from "../dialect-query"
 
 const ADMIN_EMAIL = "admin@ronzz.org"
 
@@ -38,7 +39,7 @@ async function seedAdminUser() {
     passwordHash,
     role: "admin",
     passwordChangeRequired: 1,
-    createdAt: new Date().toISOString(),
+    createdAt: dbNow(),
   })
 
   console.log(`Admin user created: ${ADMIN_EMAIL}`)
