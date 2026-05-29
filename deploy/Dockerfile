@@ -18,6 +18,13 @@ COPY packages/ packages/
 COPY apps/ apps/
 COPY database/ database/
 
+# Build-time env vars (ARG) — validated at module load by hooks.server.ts.
+# ORIGIN is fixed for production; ADMIN_PASSWORD is passed as build-arg from CI.
+ARG ORIGIN=https://ronzz.org
+ARG ADMIN_PASSWORD
+ENV ORIGIN=$ORIGIN
+ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
+
 RUN pnpm build
 
 # Prune devDependencies to reduce production image size and attack surface

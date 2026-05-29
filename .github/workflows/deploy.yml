@@ -39,6 +39,9 @@ jobs:
           file: deploy/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            ORIGIN=https://ronzz.org
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
